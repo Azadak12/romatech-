@@ -1,374 +1,865 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Subaccount Change Tracker</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Workspace Task Tracker (Subaccounts)</title>
 
-<!-- Tailwind -->
-<script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-<!-- Firebase COMPAT -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase (Compat – reliable with window.* functions) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-<style>
-body { font-family: Inter, system-ui, sans-serif; }
-</style>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-thumb { background: rgba(100,116,139,.35); border-radius: 999px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+  </style>
 </head>
 
 <body class="bg-slate-50 text-slate-900">
 
-<!-- ================= ROLE MODAL ================= -->
-<div id="roleModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-  <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
-    <h2 class="text-lg font-semibold mb-4">Join Workspace</h2>
+<!-- ================= AUTH MODAL ================= -->
+<div id="authModal" class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+  <div class="w-full max-w-xl rounded-2xl bg-white border border-slate-200 shadow-xl overflow-hidden">
+    <div class="p-5 border-b border-slate-200">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500"></div>
+        <div>
+          <h2 class="text-lg font-semibold leading-tight">Workspace Task Tracker</h2>
+          <p class="text-sm text-slate-500">Login + Workspace + Role (Builder / GHL Expert / Client)</p>
+        </div>
+      </div>
+    </div>
 
-    <label class="text-sm font-medium">Your Name</label>
-    <input id="rmName" class="w-full border rounded-xl px-3 py-2 mt-1 mb-3">
+    <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div class="md:col-span-2">
+        <label class="text-xs font-semibold text-slate-600">Workspace ID</label>
+        <input id="wsInput" class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+               placeholder="e.g., branham-board" />
+        <p class="text-xs text-slate-500 mt-1">Same Workspace ID = shared board for you + client.</p>
+      </div>
 
-    <label class="text-sm font-medium">Role</label>
-    <select id="rmRole" class="w-full border rounded-xl px-3 py-2 mt-1 mb-3">
-      <option value="builder">Builder (Admin)</option>
-      <option value="client">Client</option>
-    </select>
+      <div>
+        <label class="text-xs font-semibold text-slate-600">Username (no spaces)</label>
+        <input id="usernameInput" class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+               placeholder="e.g., abdul, branham, pure" />
+        <p class="text-xs text-slate-500 mt-1">We auto-generate email: username@workspace.local</p>
+      </div>
 
-    <label class="text-sm font-medium">Workspace ID</label>
-    <input id="rmWorkspace" class="w-full border rounded-xl px-3 py-2 mt-1 mb-4"
-      placeholder="e.g. branham-board">
+      <div>
+        <label class="text-xs font-semibold text-slate-600">Password</label>
+        <input id="passwordInput" type="password" class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+               placeholder="min 6 chars (e.g., 1234ghl)" />
+        <p class="text-xs text-slate-500 mt-1">Firebase requires 6+ characters.</p>
+      </div>
 
-    <button onclick="enterApp()"
-      class="w-full bg-indigo-600 text-white rounded-xl py-2 font-semibold">
-      Enter
-    </button>
+      <div class="md:col-span-2">
+        <label class="text-xs font-semibold text-slate-600">Role</label>
+        <select id="roleInput" class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+          <option value="builder">Builder / Admin</option>
+          <option value="ghl_expert">GHL Expert</option>
+          <option value="client">Client</option>
+        </select>
+        <p class="text-xs text-slate-500 mt-1">
+          Builder can create tasks + subaccounts. Client can approve in “Client Review”.
+        </p>
+      </div>
+
+      <div class="md:col-span-2 flex flex-col md:flex-row gap-2">
+        <button id="loginBtn"
+          class="flex-1 rounded-xl bg-slate-900 text-white px-4 py-2.5 text-sm font-semibold hover:bg-slate-800">
+          Login
+        </button>
+        <button id="registerBtn"
+          class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-slate-50">
+          Register
+        </button>
+      </div>
+
+      <div class="md:col-span-2">
+        <div id="authMsg" class="text-sm text-rose-600"></div>
+      </div>
+    </div>
   </div>
 </div>
 
 <!-- ================= HEADER ================= -->
-<header class="bg-white border-b sticky top-0 z-40">
-  <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+<header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200">
+  <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
     <div>
-      <h1 class="font-semibold text-lg">Subaccount Change Tracker</h1>
-      <p class="text-sm text-slate-500">
-        Requested → Clarification → In Progress → Client Review → Done
-      </p>
+      <h1 class="text-lg font-semibold">Subaccount Change Tracker</h1>
+      <p class="text-sm text-slate-500">Requested → Clarification → In Progress → Client Review → Done</p>
     </div>
 
-    <div class="flex items-center gap-3 text-sm">
-      <!-- Filter -->
+    <div class="flex flex-col md:flex-row gap-2 md:items-center">
       <select id="filterSubaccount"
-        class="border rounded-xl px-3 py-2 bg-white">
+        class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm">
         <option value="">All Subaccounts</option>
       </select>
 
-      <!-- User badge -->
-      <span id="userBadge" class="text-slate-600"></span>
+      <button id="newTaskBtn"
+        class="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">
+        + New Task
+      </button>
 
-      <!-- Logout -->
-      <button onclick="logout()"
-        class="border rounded-xl px-3 py-2 hover:bg-slate-100">
+      <button id="logoutBtn"
+        class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-slate-50">
         Logout
       </button>
+
+      <div class="text-sm text-slate-600 md:ml-2">
+        <span id="userBadge" class="font-semibold"></span>
+        <span id="wsBadge" class="text-slate-400"></span>
+      </div>
     </div>
   </div>
 </header>
 
 <!-- ================= MAIN ================= -->
-<main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-5">
+<main class="max-w-7xl mx-auto px-4 py-6">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
 
-  <!-- SIDEBAR -->
-  <aside class="lg:col-span-3 bg-white rounded-2xl border p-4">
-    <div class="flex justify-between items-center mb-3">
-      <h2 class="font-semibold">Subaccounts</h2>
-      <button id="addSubBtn"
-        onclick="addSubaccount()"
-        class="text-sm border rounded-xl px-3 py-1">
-        + Add
-      </button>
-    </div>
+    <!-- SIDEBAR -->
+    <aside class="lg:col-span-3">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm">
+        <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+          <div>
+            <h2 class="font-semibold">Subaccounts</h2>
+            <p class="text-sm text-slate-500">Shared across your workspace</p>
+          </div>
+          <button id="addSubBtn"
+            class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-slate-50">
+            + Add
+          </button>
+        </div>
 
-    <div id="subList" class="space-y-2"></div>
-  </aside>
+        <div id="subList" class="p-3 space-y-2"></div>
 
-  <!-- BOARD -->
-  <section class="lg:col-span-9">
-    <div id="board"
-      class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-    </div>
-  </section>
+        <div class="p-4 border-t border-slate-200">
+          <div class="rounded-2xl bg-slate-50 border border-slate-200 p-3 text-sm text-slate-600">
+            Tip: Client can only approve when task is in <b>Client Review</b>.
+          </div>
+        </div>
+      </div>
+    </aside>
 
+    <!-- BOARD -->
+    <section class="lg:col-span-9">
+      <div id="board" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4"></div>
+    </section>
+  </div>
 </main>
 
+<!-- ================= NEW TASK MODAL ================= -->
+<div id="taskModal" class="fixed inset-0 z-50 hidden bg-black/40 items-center justify-center p-4">
+  <div class="w-full max-w-2xl bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+    <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+      <div>
+        <h3 class="font-semibold">New Change Request</h3>
+        <p class="text-sm text-slate-500">Builder/Admin creates tasks</p>
+      </div>
+      <button id="closeTaskModal" class="p-2 rounded-xl hover:bg-slate-100">✕</button>
+    </div>
+
+    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div class="md:col-span-2">
+        <label class="text-xs font-semibold text-slate-600">Title</label>
+        <input id="tTitle" class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+          placeholder="e.g., Remove promo messages after appointment booked" />
+      </div>
+
+      <div>
+        <label class="text-xs font-semibold text-slate-600">Subaccount</label>
+        <select id="tSub" class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"></select>
+      </div>
+
+      <div>
+        <label class="text-xs font-semibold text-slate-600">Assignee</label>
+        <input id="tAssignee" class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+          placeholder="e.g., Abdul" />
+      </div>
+
+      <div class="md:col-span-2">
+        <label class="text-xs font-semibold text-slate-600">Details (paste client message)</label>
+        <textarea id="tDetails" rows="4"
+          class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+          placeholder="Paste exact request from Branham / Kody / Martyna etc..."></textarea>
+      </div>
+
+      <div class="md:col-span-2 flex items-center justify-between gap-3">
+        <div class="text-sm text-slate-500">Starts in <b>Requested</b>.</div>
+        <button id="createTaskBtn"
+          class="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">
+          Create Task
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ================= DETAILS MODAL ================= -->
-<div id="detailsModal"
-  class="fixed inset-0 bg-black/40 hidden z-50 flex items-center justify-center">
-  <div class="bg-white rounded-2xl w-full max-w-2xl p-4">
-
-    <div class="flex justify-between items-center mb-3">
-      <h3 id="dTitle" class="font-semibold"></h3>
-      <button onclick="closeDetails()">✕</button>
+<div id="detailsModal" class="fixed inset-0 z-50 hidden bg-black/40 items-center justify-center p-4">
+  <div class="w-full max-w-3xl bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+    <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+      <div class="min-w-0">
+        <h3 id="dTitle" class="font-semibold truncate">Task</h3>
+        <p id="dMeta" class="text-sm text-slate-500">—</p>
+      </div>
+      <button id="closeDetailsModal" class="p-2 rounded-xl hover:bg-slate-100">✕</button>
     </div>
 
-    <div id="thread"
-      class="space-y-2 max-h-64 overflow-auto border rounded-xl p-2 mb-3">
-    </div>
+    <div class="p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- Left -->
+      <div class="lg:col-span-1 space-y-3">
+        <div class="rounded-2xl border border-slate-200 p-3">
+          <div class="flex items-center justify-between gap-2">
+            <div class="text-xs font-semibold text-slate-500">Status</div>
+            <select id="dStatus" class="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white"></select>
+          </div>
 
-    <div class="flex gap-2">
-      <input id="msgText"
-        placeholder="Write update…"
-        class="flex-1 border rounded-xl px-3 py-2">
-      <button onclick="addMessage()"
-        class="bg-indigo-600 text-white px-3 rounded-xl">
-        Send
-      </button>
-    </div>
+          <div class="mt-3">
+            <div class="text-xs font-semibold text-slate-500">Assignee</div>
+            <input id="dAssignee" class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+          </div>
 
-    <div id="builderActions"
-      class="mt-4 flex gap-2 hidden">
-      <button onclick="builderMove('clarify')"
-        class="border px-3 py-2 rounded-xl">
-        Need Clarification
-      </button>
-      <button onclick="builderMove('review')"
-        class="bg-slate-900 text-white px-3 py-2 rounded-xl">
-        Send for Review
-      </button>
-      <button onclick="builderMove('done')"
-        class="bg-emerald-600 text-white px-3 py-2 rounded-xl">
-        Mark Done
-      </button>
-    </div>
+          <div class="mt-3">
+            <div class="text-xs font-semibold text-slate-500">Subaccount</div>
+            <select id="dSub" class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white"></select>
+          </div>
 
-    <div id="clientActions"
-      class="mt-4 flex gap-2 hidden">
-      <button onclick="clientApprove()"
-        class="bg-emerald-600 text-white px-4 py-2 rounded-xl">
-        Approve Done
-      </button>
-      <button onclick="clientRequestChanges()"
-        class="border px-4 py-2 rounded-xl">
-        Request Changes
-      </button>
+          <div id="builderControls" class="mt-3 flex flex-col gap-2">
+            <button id="btnClarify" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-slate-50">
+              Need Clarification
+            </button>
+            <button id="btnReview" class="rounded-xl bg-slate-900 text-white px-3 py-2 text-sm font-semibold hover:bg-slate-800">
+              Send for Review
+            </button>
+            <button id="btnDone" class="rounded-xl bg-emerald-600 text-white px-3 py-2 text-sm font-semibold hover:bg-emerald-700">
+              Mark Done
+            </button>
+          </div>
+
+          <div id="clientControls" class="mt-3 flex flex-col gap-2 hidden">
+            <button id="btnApprove" class="rounded-xl bg-emerald-600 text-white px-3 py-2 text-sm font-semibold hover:bg-emerald-700">
+              Approve Done ✅
+            </button>
+            <button id="btnChanges" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-slate-50">
+              Request Changes
+            </button>
+          </div>
+
+          <div class="mt-3">
+            <button id="saveTaskBtn" class="w-full rounded-xl bg-indigo-600 text-white px-3 py-2 text-sm font-semibold hover:bg-indigo-700">
+              Save
+            </button>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 p-3">
+          <div class="text-xs font-semibold text-slate-500">Client Request / Details</div>
+          <textarea id="dDetails" rows="6" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"></textarea>
+        </div>
+      </div>
+
+      <!-- Right -->
+      <div class="lg:col-span-2">
+        <div class="rounded-2xl border border-slate-200 overflow-hidden">
+          <div class="p-3 border-b border-slate-200">
+            <div class="font-semibold">Conversation</div>
+            <div class="text-sm text-slate-500">Questions, replies, notes</div>
+          </div>
+
+          <div id="thread" class="p-3 space-y-2 max-h-[420px] overflow-auto bg-slate-50"></div>
+
+          <div class="p-3 border-t border-slate-200 bg-white">
+            <div class="flex gap-2">
+              <input id="msgInput" class="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                placeholder="Write an update…" />
+              <button id="sendMsgBtn" class="rounded-xl bg-indigo-600 text-white px-4 py-2 text-sm font-semibold hover:bg-indigo-700">
+                Send
+              </button>
+            </div>
+            <div class="mt-2 text-xs text-slate-500">Everyone in workspace can comment.</div>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>
 </div>
 
-<!-- ================= APP SCRIPT ================= -->
 <script>
-/* ================= FIREBASE INIT ================= */
+/* =========================
+   FIREBASE INIT
+========================= */
 const firebaseConfig = {
   apiKey: "AIzaSyDHL0tVJ7tm4lK4r7gQrZ7McPJwFOaRulc",
   authDomain: "romatech-system.firebaseapp.com",
   projectId: "romatech-system",
   storageBucket: "romatech-system.firebasestorage.app",
   messagingSenderId: "368102739583",
-  appId: "1:368102739583:web:92baa7b3abf14e7653b94a"
+  appId: "1:368102739583:web:92baa7b3abf14e7653b94a",
+  measurementId: "G-7CWF4D2V3T"
 };
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-/* ================= STATE ================= */
+/* =========================
+   DOM
+========================= */
+const $ = (id) => document.getElementById(id);
+
+const authModal = $("authModal");
+const authMsg = $("authMsg");
+
+const wsInput = $("wsInput");
+const usernameInput = $("usernameInput");
+const passwordInput = $("passwordInput");
+const roleInput = $("roleInput");
+
+const loginBtn = $("loginBtn");
+const registerBtn = $("registerBtn");
+
+const userBadge = $("userBadge");
+const wsBadge = $("wsBadge");
+const logoutBtn = $("logoutBtn");
+
+const addSubBtn = $("addSubBtn");
+const subList = $("subList");
+const board = $("board");
+const filterSubaccount = $("filterSubaccount");
+
+const newTaskBtn = $("newTaskBtn");
+const taskModal = $("taskModal");
+const closeTaskModal = $("closeTaskModal");
+const createTaskBtn = $("createTaskBtn");
+
+const tTitle = $("tTitle");
+const tSub = $("tSub");
+const tAssignee = $("tAssignee");
+const tDetails = $("tDetails");
+
+const detailsModal = $("detailsModal");
+const closeDetailsModal = $("closeDetailsModal");
+const dTitle = $("dTitle");
+const dMeta = $("dMeta");
+const dStatus = $("dStatus");
+const dAssignee = $("dAssignee");
+const dSub = $("dSub");
+const dDetails = $("dDetails");
+const saveTaskBtn = $("saveTaskBtn");
+
+const builderControls = $("builderControls");
+const clientControls = $("clientControls");
+const btnClarify = $("btnClarify");
+const btnReview = $("btnReview");
+const btnDone = $("btnDone");
+const btnApprove = $("btnApprove");
+const btnChanges = $("btnChanges");
+
+const thread = $("thread");
+const msgInput = $("msgInput");
+const sendMsgBtn = $("sendMsgBtn");
+
+/* =========================
+   STATE
+========================= */
+let WS = null;
 let USER = null;
 let ROLE = null;
-let WS = null;
+let UID = null;
+
 let subaccounts = [];
 let tasks = [];
-let currentTask = null;
-
-/* ================= HELPERS ================= */
-const $ = id => document.getElementById(id);
-const isBuilder = () => ROLE === "builder";
-const isClient  = () => ROLE === "client";
+let currentTaskId = null;
 
 const STATUS = [
-  {id:"requested",label:"Requested"},
-  {id:"clarify",label:"Clarification"},
-  {id:"progress",label:"In Progress"},
-  {id:"review",label:"Client Review"},
-  {id:"done",label:"Done"}
+  { id:"requested", label:"Requested" },
+  { id:"clarify", label:"Clarification" },
+  { id:"progress", label:"In Progress" },
+  { id:"review", label:"Client Review" },
+  { id:"done", label:"Done" }
 ];
 
-const subRef  = () => db.collection("workspaces").doc(WS).collection("subaccounts");
-const taskRef = () => db.collection("workspaces").doc(WS).collection("tasks");
+function isBuilder(){ return ROLE === "builder"; }
+function isExpert(){ return ROLE === "ghl_expert"; }
+function isClient(){ return ROLE === "client"; }
 
-/* ================= AUTH ================= */
-auth.signInAnonymously();
+function canCreate(){ return isBuilder(); }
+function canMove(){ return isBuilder() || isExpert(); } // you can change if you want
+function canApprove(){ return isClient(); }
 
-/* ================= ENTER ================= */
-window.enterApp = function(){
-  USER = $("rmName").value.trim();
-  ROLE = $("rmRole").value;
-  WS   = $("rmWorkspace").value.trim();
+/* =========================
+   FIRESTORE REFS
+========================= */
+function wsDoc(){ return db.collection("workspaces").doc(WS); }
+function usersRef(){ return wsDoc().collection("users"); }
+function subRef(){ return wsDoc().collection("subaccounts"); }
+function taskRef(){ return wsDoc().collection("tasks"); }
 
-  if(!USER || !WS) return alert("Name & Workspace required");
+/* =========================
+   AUTH UTIL
+========================= */
+function makeEmail(username, ws){
+  // Valid email format; doesn't need to exist.
+  return `${username.toLowerCase()}@${ws.toLowerCase()}.local`;
+}
+function clean(str){ return (str||"").trim(); }
 
-  $("roleModal").classList.add("hidden");
-  $("userBadge").textContent = `${USER} (${ROLE}) • ${WS}`;
-  $("addSubBtn").style.display = isBuilder() ? "inline-flex" : "none";
-
-  listenRealtime();
-};
-
-/* ================= LOGOUT ================= */
-window.logout = async function(){
-  if(!confirm("Logout from this workspace?")) return;
-  await auth.signOut();
-  location.reload();
-};
-
-/* ================= REALTIME ================= */
-function listenRealtime(){
-  subRef().onSnapshot(snap=>{
-    subaccounts = snap.docs.map(d=>({id:d.id,...d.data()}));
-    renderSubaccounts();
-    renderFilter();
-    renderBoard();
-  });
-
-  taskRef().onSnapshot(snap=>{
-    tasks = snap.docs.map(d=>({id:d.id,...d.data()}));
-    renderSubaccounts();
-    renderBoard();
-  });
+function setAuthError(msg){
+  authMsg.textContent = msg || "";
 }
 
-/* ================= FILTER ================= */
-$("filterSubaccount").addEventListener("change",renderBoard);
+/* =========================
+   LOGIN / REGISTER
+========================= */
+async function doRegister(){
+  setAuthError("");
+  const ws = clean(wsInput.value);
+  const username = clean(usernameInput.value).replace(/\s+/g,"");
+  const password = passwordInput.value;
+  const role = roleInput.value;
 
-function renderFilter(){
-  const sel = $("filterSubaccount");
-  const current = sel.value;
-  sel.innerHTML = `<option value="">All Subaccounts</option>` +
-    subaccounts.map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
-  sel.value = current || "";
+  if(!ws || !username || !password) return setAuthError("Workspace, Username, Password required.");
+  if(password.length < 6) return setAuthError("Password must be at least 6 characters.");
+
+  const email = makeEmail(username, ws);
+
+  try{
+    const cred = await auth.createUserWithEmailAndPassword(email, password);
+    await afterAuth(ws, username, role, cred.user.uid, true);
+  }catch(e){
+    console.error(e);
+    setAuthError(e.message || "Register failed");
+  }
 }
 
-/* ================= SUBACCOUNTS ================= */
-window.addSubaccount = async function(){
-  if(!isBuilder()) return alert("Only builder can add");
-  const name = prompt("Subaccount name");
-  if(!name) return;
-  await subRef().add({
-    name,
+async function doLogin(){
+  setAuthError("");
+  const ws = clean(wsInput.value);
+  const username = clean(usernameInput.value).replace(/\s+/g,"");
+  const password = passwordInput.value;
+  const role = roleInput.value;
+
+  if(!ws || !username || !password) return setAuthError("Workspace, Username, Password required.");
+
+  const email = makeEmail(username, ws);
+
+  try{
+    const cred = await auth.signInWithEmailAndPassword(email, password);
+    await afterAuth(ws, username, role, cred.user.uid, false);
+  }catch(e){
+    console.error(e);
+    setAuthError(e.message || "Login failed");
+  }
+}
+
+async function afterAuth(ws, username, role, uid, isNew){
+  WS = ws; USER = username; ROLE = role; UID = uid;
+
+  // Save user profile in workspace
+  // IMPORTANT: role is saved from the UI. If you want stricter security, we enforce later with rules.
+  await usersRef().doc(uid).set({
+    username,
+    role,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge:true });
+
+  authModal.classList.add("hidden");
+  userBadge.textContent = `${USER} (${ROLE})`;
+  wsBadge.textContent = ` • WS: ${WS}`;
+
+  // permissions
+  addSubBtn.style.display = isBuilder() ? "inline-flex" : "none";
+  newTaskBtn.style.display = canCreate() ? "inline-flex" : "none";
+
+  // Load dropdowns
+  dStatus.innerHTML = STATUS.map(s=>`<option value="${s.id}">${s.label}</option>`).join("");
+
+  // Start listeners
+  bindRealtime();
+}
+
+/* =========================
+   REALTIME
+========================= */
+let unsubSubs = null;
+let unsubTasks = null;
+
+function bindRealtime(){
+  if(unsubSubs) unsubSubs();
+  if(unsubTasks) unsubTasks();
+
+  unsubSubs = subRef().orderBy("createdAt","desc").onSnapshot(snap=>{
+    subaccounts = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    renderSubaccounts();
+    renderSubSelects();
+    renderFilterDropdown();
+    renderBoard();
   });
-};
+
+  unsubTasks = taskRef().orderBy("createdAt","desc").onSnapshot(snap=>{
+    tasks = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    renderSubaccounts(); // update progress
+    renderBoard();
+    if(currentTaskId){
+      const t = tasks.find(x=>x.id===currentTaskId);
+      if(t) renderDetails(t);
+    }
+  });
+}
+
+/* =========================
+   UI RENDER
+========================= */
+function escapeHtml(str){
+  return (str??"").toString()
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+function renderFilterDropdown(){
+  const cur = filterSubaccount.value;
+  filterSubaccount.innerHTML = `<option value="">All Subaccounts</option>` + subaccounts.map(sa=>
+    `<option value="${sa.id}">${escapeHtml(sa.name||"—")}</option>`
+  ).join("");
+  // restore if exists
+  const exists = [...filterSubaccount.options].some(o=>o.value===cur);
+  filterSubaccount.value = exists ? cur : "";
+}
+
+function renderSubSelects(){
+  tSub.innerHTML = subaccounts.map(sa=>`<option value="${sa.id}">${escapeHtml(sa.name||"—")}</option>`).join("");
+  dSub.innerHTML = subaccounts.map(sa=>`<option value="${sa.id}">${escapeHtml(sa.name||"—")}</option>`).join("");
+}
 
 function renderSubaccounts(){
-  const wrap = $("subList");
-  wrap.innerHTML = "";
+  subList.innerHTML = "";
+  if(subaccounts.length===0){
+    subList.innerHTML = `<div class="text-sm text-slate-500">No subaccounts yet.</div>`;
+    return;
+  }
 
   subaccounts.forEach(sa=>{
     const total = tasks.filter(t=>t.subaccountId===sa.id).length;
     const done  = tasks.filter(t=>t.subaccountId===sa.id && t.status==="done").length;
-    const pct   = total ? Math.round((done/total)*100) : 0;
+    const open  = total - done;
+    const pct = total===0 ? 0 : Math.round((done/total)*100);
 
-    const div = document.createElement("div");
-    div.className="border rounded-xl p-3 cursor-pointer hover:bg-slate-50";
-    div.innerHTML=`
-      <div class="font-medium">${sa.name}</div>
-      <div class="text-xs text-slate-500">${pct}% complete</div>
-      <div class="h-2 bg-slate-100 rounded mt-2">
-        <div class="h-2 bg-indigo-600 rounded" style="width:${pct}%"></div>
+    const card = document.createElement("button");
+    card.className = "w-full text-left rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 p-3";
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <div class="font-semibold truncate">${escapeHtml(sa.name||"—")}</div>
+          <div class="text-xs text-slate-500">${open} open • ${total} total • ${pct}% done</div>
+        </div>
+        <div class="text-xs font-semibold px-2 py-1 rounded-xl border bg-slate-50">${pct}%</div>
+      </div>
+      <div class="mt-2 h-2 bg-slate-100 rounded-full overflow-hidden">
+        <div class="h-2 bg-indigo-600" style="width:${pct}%"></div>
       </div>
     `;
-    div.onclick=()=>{
-      $("filterSubaccount").value=sa.id;
+    card.onclick = ()=>{
+      filterSubaccount.value = sa.id;
       renderBoard();
     };
-    wrap.appendChild(div);
+    subList.appendChild(card);
   });
 }
 
-/* ================= BOARD ================= */
+function filteredTasks(){
+  const f = filterSubaccount.value;
+  return f ? tasks.filter(t=>t.subaccountId===f) : tasks;
+}
+
 function renderBoard(){
-  const filter = $("filterSubaccount").value;
-  const list = filter ? tasks.filter(t=>t.subaccountId===filter) : tasks;
-  const board = $("board");
-  board.innerHTML="";
+  board.innerHTML = "";
+  const list = filteredTasks();
 
   STATUS.forEach(col=>{
-    const box=document.createElement("div");
-    box.className="bg-white border rounded-2xl p-3 min-h-[320px]";
-    const items=list.filter(t=>t.status===col.id);
+    const colTasks = list.filter(t=>t.status===col.id);
+    const el = document.createElement("div");
+    el.className = "rounded-2xl border border-slate-200 bg-white overflow-hidden";
 
-    box.innerHTML=`
-      <div class="flex justify-between mb-2">
-        <h3 class="font-semibold">${col.label}</h3>
-        <span class="text-xs">${items.length}</span>
+    el.innerHTML = `
+      <div class="p-3 border-b border-slate-200 flex items-start justify-between">
+        <div>
+          <div class="font-semibold">${col.label}</div>
+          <div class="text-xs text-slate-500">${colTasks.length} task(s)</div>
+        </div>
       </div>
+      <div class="p-3 space-y-2 bg-slate-50 min-h-[240px]"></div>
     `;
 
-    items.forEach(t=>{
-      const card=document.createElement("div");
-      card.className="border rounded-xl p-2 mb-2 hover:bg-slate-50 cursor-pointer";
-      card.textContent=t.title;
-      card.onclick=()=>openDetails(t.id);
-      box.appendChild(card);
+    const zone = el.querySelector(".p-3.space-y-2");
+    colTasks.forEach(t=>{
+      const saName = subaccounts.find(s=>s.id===t.subaccountId)?.name || "—";
+      const card = document.createElement("div");
+      card.className = "rounded-2xl border border-slate-200 bg-white p-3 cursor-pointer hover:shadow-sm";
+      card.innerHTML = `
+        <div class="font-semibold leading-snug">${escapeHtml(t.title||"Untitled")}</div>
+        <div class="mt-1 text-xs text-slate-500 truncate">${escapeHtml(saName)} • 👤 ${escapeHtml(t.assignee||"—")}</div>
+      `;
+      card.onclick = ()=>openDetails(t.id);
+      zone.appendChild(card);
     });
 
-    board.appendChild(box);
+    board.appendChild(el);
   });
 }
 
-/* ================= DETAILS ================= */
+/* =========================
+   TASKS: CREATE / EDIT
+========================= */
+function openTaskModal(){
+  if(!canCreate()){
+    alert("Only Builder/Admin can create tasks.");
+    return;
+  }
+  if(subaccounts.length===0){
+    alert("Add at least 1 subaccount first.");
+    return;
+  }
+  tTitle.value = "";
+  tDetails.value = "";
+  tAssignee.value = USER;
+  tSub.value = subaccounts[0].id;
+
+  taskModal.classList.remove("hidden");
+  taskModal.classList.add("flex");
+}
+function closeTask(){
+  taskModal.classList.add("hidden");
+  taskModal.classList.remove("flex");
+}
+
+async function createTask(){
+  const title = clean(tTitle.value);
+  const details = clean(tDetails.value);
+  const assignee = clean(tAssignee.value);
+  const subId = tSub.value;
+
+  if(!title) return alert("Title required");
+  if(!subId) return alert("Subaccount required");
+
+  await taskRef().add({
+    title,
+    details,
+    assignee,
+    subaccountId: subId,
+    status: "requested",
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    messages: [
+      { by: USER, role: ROLE, text: "Task created.", at: new Date().toISOString() }
+    ]
+  });
+
+  closeTask();
+}
+
+/* =========================
+   DETAILS + THREAD
+========================= */
 function openDetails(id){
-  currentTask = tasks.find(t=>t.id===id);
-  $("detailsModal").classList.remove("hidden");
-  $("dTitle").textContent=currentTask.title;
-  renderThread();
-  updatePanels();
+  const t = tasks.find(x=>x.id===id);
+  if(!t) return;
+  currentTaskId = id;
+  renderDetails(t);
+
+  detailsModal.classList.remove("hidden");
+  detailsModal.classList.add("flex");
 }
 
-window.closeDetails=function(){
-  $("detailsModal").classList.add("hidden");
-  currentTask=null;
-};
-
-function updatePanels(){
-  $("builderActions").classList.toggle("hidden",!isBuilder());
-  $("clientActions").classList.toggle("hidden",!(isClient() && currentTask.status==="review"));
+function closeDetails(){
+  detailsModal.classList.add("hidden");
+  detailsModal.classList.remove("flex");
+  currentTaskId = null;
 }
 
-function renderThread(){
-  const t=$("thread");
-  t.innerHTML="";
-  (currentTask.messages||[]).forEach(m=>{
-    const d=document.createElement("div");
-    d.className="border rounded p-2 text-sm";
-    d.innerHTML=`<b>${m.by}</b>: ${m.text}`;
-    t.appendChild(d);
-  });
+function renderDetails(t){
+  dTitle.textContent = t.title || "Task";
+  const saName = subaccounts.find(s=>s.id===t.subaccountId)?.name || "—";
+  dMeta.textContent = `${saName} • Status: ${t.status}`;
+
+  dStatus.value = t.status || "requested";
+  dAssignee.value = t.assignee || "";
+  dSub.value = t.subaccountId || "";
+  dDetails.value = t.details || "";
+
+  // Thread
+  thread.innerHTML = "";
+  const msgs = Array.isArray(t.messages) ? t.messages.slice() : [];
+  msgs.sort((a,b)=> (a.at>b.at ? 1 : -1));
+  if(msgs.length===0){
+    thread.innerHTML = `<div class="text-sm text-slate-500">No updates yet.</div>`;
+  }else{
+    msgs.forEach(m=>{
+      const div = document.createElement("div");
+      div.className = "rounded-2xl border border-slate-200 bg-white p-3 text-sm";
+      div.innerHTML = `
+        <div class="flex items-center justify-between gap-2">
+          <div class="font-semibold">${escapeHtml(m.by||"—")} <span class="text-xs text-slate-400">(${escapeHtml(m.role||"")})</span></div>
+          <div class="text-xs text-slate-400">${escapeHtml(m.at||"")}</div>
+        </div>
+        <div class="mt-2 whitespace-pre-wrap">${escapeHtml(m.text||"")}</div>
+      `;
+      thread.appendChild(div);
+    });
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  // Controls
+  // Builder/Expert can move status
+  builderControls.style.display = canMove() ? "block" : "none";
+
+  // Client controls only if status is review
+  const showClient = canApprove() && t.status === "review";
+  clientControls.classList.toggle("hidden", !showClient);
 }
 
-/* ================= MESSAGES ================= */
-window.addMessage=async function(){
-  const text=$("msgText").value.trim();
-  if(!text) return;
-  await taskRef().doc(currentTask.id).update({
+async function saveTask(){
+  if(!currentTaskId) return;
+  const t = tasks.find(x=>x.id===currentTaskId);
+  if(!t) return;
+
+  // Only builder/expert can change status; client can't change status field manually
+  const newStatus = dStatus.value;
+  const newAssignee = clean(dAssignee.value);
+  const newSub = dSub.value;
+  const newDetails = dDetails.value;
+
+  const patch = {
+    assignee: newAssignee,
+    subaccountId: newSub,
+    details: newDetails,
+  };
+
+  if(canMove()){
+    patch.status = newStatus;
+  }else{
+    // if client tried to change status dropdown, revert by saving old
+    patch.status = t.status;
+    dStatus.value = t.status;
+  }
+
+  await taskRef().doc(currentTaskId).update(patch);
+
+  await addMessageToTask(currentTaskId, "Saved changes.");
+}
+
+async function addMessageToTask(taskId, text){
+  await taskRef().doc(taskId).update({
     messages: firebase.firestore.FieldValue.arrayUnion({
-      text, by:USER, at:new Date().toISOString()
+      by: USER,
+      role: ROLE,
+      text,
+      at: new Date().toISOString()
     })
   });
-  $("msgText").value="";
-};
+}
 
-/* ================= MOVES ================= */
-window.builderMove=async function(s){
-  await taskRef().doc(currentTask.id).update({status:s});
-};
+async function sendMessage(){
+  if(!currentTaskId) return;
+  const text = clean(msgInput.value);
+  if(!text) return;
+  msgInput.value = "";
+  await addMessageToTask(currentTaskId, text);
+}
 
-window.clientApprove=async function(){
-  await taskRef().doc(currentTask.id).update({status:"done"});
-};
+/* =========================
+   QUICK ACTIONS
+========================= */
+async function setStatus(status, note){
+  if(!currentTaskId) return;
+  const t = tasks.find(x=>x.id===currentTaskId);
+  if(!t) return;
 
-window.clientRequestChanges=async function(){
-  await taskRef().doc(currentTask.id).update({status:"progress"});
-};
+  // Permission
+  if(status === "done" && canApprove()){
+    // client approve allowed only in review
+    if(t.status !== "review") return alert("Client can approve only in Client Review.");
+  } else {
+    if(!canMove()) return alert("You don't have permission to move status.");
+  }
+
+  await taskRef().doc(currentTaskId).update({ status });
+  if(note) await addMessageToTask(currentTaskId, note);
+}
+
+async function clientApprove(){
+  await setStatus("done", "Approved ✅");
+}
+async function clientRequestChanges(){
+  await setStatus("progress", "Requesting changes / revisions");
+}
+
+/* =========================
+   SUBACCOUNTS
+========================= */
+async function addSubaccount(){
+  if(!isBuilder()){
+    alert("Only Builder/Admin can add subaccounts.");
+    return;
+  }
+  const name = prompt("Subaccount name (e.g., VIP Tires - Ohio):");
+  if(!name) return;
+  await subRef().add({
+    name: name.trim(),
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+/* =========================
+   LOGOUT
+========================= */
+async function logout(){
+  if(!confirm("Logout?")) return;
+  await auth.signOut();
+  location.reload();
+}
+
+/* =========================
+   EVENTS
+========================= */
+loginBtn.onclick = doLogin;
+registerBtn.onclick = doRegister;
+
+logoutBtn.onclick = logout;
+
+addSubBtn.onclick = addSubaccount;
+filterSubaccount.onchange = renderBoard;
+
+newTaskBtn.onclick = openTaskModal;
+closeTaskModal.onclick = closeTask;
+createTaskBtn.onclick = createTask;
+
+closeDetailsModal.onclick = closeDetails;
+saveTaskBtn.onclick = saveTask;
+
+sendMsgBtn.onclick = sendMessage;
+msgInput.addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); sendMessage(); }});
+
+btnClarify.onclick = ()=>setStatus("clarify","Moved to Clarification");
+btnReview.onclick  = ()=>setStatus("review","Sent to Client Review");
+btnDone.onclick    = ()=>setStatus("done","Marked Done ✅");
+
+btnApprove.onclick = clientApprove;
+btnChanges.onclick = clientRequestChanges;
+
+// expose some for safety
+window.logout = logout;
 </script>
 
 </body>

@@ -13,6 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
+
 <style>
 body { font-family: Inter, system-ui, sans-serif; }
 </style>
@@ -129,23 +130,8 @@ body { font-family: Inter, system-ui, sans-serif; }
   </div>
 </div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-  import {
-    getFirestore,
-    collection,
-    doc,
-    addDoc,
-    updateDoc,
-    onSnapshot,
-    query,
-    orderBy,
-    serverTimestamp,
-    arrayUnion
-  } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
-
-  // ✅ Your config
+<script>
+  // ✅ Your Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyDHL0tVJ7tm4lK4r7gQrZ7McPJwFOaRulc",
     authDomain: "romatech-system.firebaseapp.com",
@@ -156,23 +142,20 @@ body { font-family: Inter, system-ui, sans-serif; }
     measurementId: "G-7CWF4D2V3T"
   };
 
-  // Firebase init
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+  // ✅ Init
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 
-  // DOM helpers
+  // ✅ DOM
   const $ = (id) => document.getElementById(id);
 
-  // Elements
   const roleModal = $("roleModal");
   const rmName = $("rmName");
   const rmRole = $("rmRole");
   const rmWorkspace = $("rmWorkspace");
-  const enterBtn = $("enterBtn");
 
   const userBadge = $("userBadge");
-
   const addSubBtn = $("addSubBtn");
   const subList = $("subList");
   const board = $("board");
@@ -189,7 +172,7 @@ body { font-family: Inter, system-ui, sans-serif; }
   const builderActions = $("builderActions");
   const clientActions = $("clientActions");
 
-  // App state
+  // ✅ State
   let ROLE = null;
   let USER = null;
   let WS = null;
@@ -207,59 +190,53 @@ body { font-family: Inter, system-ui, sans-serif; }
   ];
 
   const isBuilder = () => ROLE === "builder";
-  const isClient = () => ROLE === "client";
+  const isClient  = () => ROLE === "client";
 
-  const subRef = () => collection(db, "workspaces", WS, "subaccounts");
-  const taskRef = () => collection(db, "workspaces", WS, "tasks");
+  function subRef(){ return db.collection("workspaces").doc(WS).collection("subaccounts"); }
+  function taskRef(){ return db.collection("workspaces").doc(WS).collection("tasks"); }
 
-  // ✅ IMPORTANT: bind click AFTER DOM ready (module safe)
-  enterBtn.addEventListener("click", enterApp);
+  // ✅ Sign in once on load
+  auth.signInAnonymously().catch(console.error);
 
-  async function enterApp() {
+  // =========================
+  // ✅ ENTER APP (onclick works now)
+  // =========================
+  window.enterApp = function enterApp(){
     USER = rmName.value.trim();
     ROLE = rmRole.value;
-    WS = rmWorkspace.value.trim();
+    WS   = rmWorkspace.value.trim();
 
-    if (!USER || !WS) {
+    if(!USER || !WS){
       alert("Name + Workspace ID required");
-      return;
-    }
-
-    // ✅ Auth safe (if already signed in, this won't break)
-    try {
-      await signInAnonymously(auth);
-    } catch (e) {
-      console.error("Auth error:", e);
-      alert("Firebase Auth error. Open console (F12) for details.");
       return;
     }
 
     roleModal.classList.add("hidden");
     userBadge.textContent = `${USER} (${ROLE}) • WS: ${WS}`;
 
-    // Role lock
-    if (addSubBtn) addSubBtn.style.display = isBuilder() ? "inline-flex" : "none";
+    // lock builder features
+    addSubBtn.style.display = isBuilder() ? "inline-flex" : "none";
 
     listenRealtime();
   }
 
-  function listenRealtime() {
-    // Subaccounts
-    onSnapshot(query(subRef(), orderBy("createdAt", "desc")), (snap) => {
-      subaccounts = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  function listenRealtime(){
+    // subaccounts
+    subRef().orderBy("createdAt","desc").onSnapshot((snap)=>{
+      subaccounts = snap.docs.map(d=>({id:d.id, ...d.data()}));
       renderSubaccounts();
       renderSubSelect();
+      renderBoard();
     });
 
-    // Tasks
-    onSnapshot(query(taskRef(), orderBy("createdAt", "desc")), (snap) => {
-      tasks = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    // tasks
+    taskRef().orderBy("createdAt","desc").onSnapshot((snap)=>{
+      tasks = snap.docs.map(d=>({id:d.id, ...d.data()}));
       renderBoard();
 
-      // keep modal in sync
-      if (currentTask?.id) {
-        const updated = tasks.find(t => t.id === currentTask.id);
-        if (updated) {
+      if(currentTask?.id){
+        const updated = tasks.find(t=>t.id===currentTask.id);
+        if(updated){
           currentTask = updated;
           renderThread(updated);
           updateActionPanels();
@@ -268,28 +245,33 @@ body { font-family: Inter, system-ui, sans-serif; }
     });
   }
 
-  // ---- Subaccounts ----
-  window.addSubaccount = async function addSubaccount() {
-    if (!isBuilder()) return alert("Client cannot add subaccounts");
+  // =========================
+  // ✅ SUBACCOUNTS
+  // =========================
+  window.addSubaccount = async function addSubaccount(){
+    if(!isBuilder()) return alert("Client cannot add subaccounts");
     const name = prompt("Subaccount name:");
-    if (!name) return;
+    if(!name) return;
 
-    await addDoc(subRef(), { name: name.trim(), createdAt: serverTimestamp() });
-  };
+    await subRef().add({
+      name: name.trim(),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
 
-  function renderSubaccounts() {
+  function renderSubaccounts(){
     subList.innerHTML = "";
-    if (subaccounts.length === 0) {
+    if(subaccounts.length===0){
       subList.innerHTML = `<div class="text-sm text-slate-500">No subaccounts yet.</div>`;
       return;
     }
 
-    subaccounts.forEach(sa => {
-      const total = tasks.filter(t => t.subaccountId === sa.id).length;
-      const open = tasks.filter(t => t.subaccountId === sa.id && t.status !== "done").length;
+    subaccounts.forEach(sa=>{
+      const total = tasks.filter(t=>t.subaccountId===sa.id).length;
+      const open  = tasks.filter(t=>t.subaccountId===sa.id && t.status!=="done").length;
 
       const div = document.createElement("div");
-      div.className = "border rounded-xl px-3 py-2 text-sm bg-white";
+      div.className="border rounded-xl px-3 py-2 text-sm bg-white";
       div.innerHTML = `
         <div class="font-medium">${escapeHtml(sa.name)}</div>
         <div class="text-xs text-slate-500">${open} open • ${total} total</div>
@@ -298,18 +280,59 @@ body { font-family: Inter, system-ui, sans-serif; }
     });
   }
 
-  function renderSubSelect() {
-    if (!tSub) return;
-    tSub.innerHTML = subaccounts.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
+  function renderSubSelect(){
+    tSub.innerHTML = subaccounts.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
   }
 
-  // ---- Board ----
-  function renderBoard() {
+  // =========================
+  // ✅ TASK MODAL
+  // =========================
+  window.closeTaskModal = function closeTaskModal(){
+    taskModal.classList.add("hidden");
+  }
+
+  // (You can open it from column later; for now you already have Create button)
+  window.createTask = async function createTask(){
+    if(!isBuilder()) return alert("Client cannot create tasks");
+    if(subaccounts.length===0) return alert("Add a subaccount first");
+
+    const title = tTitle.value.trim();
+    const details = tDetails.value.trim();
+    const subaccountId = tSub.value;
+
+    if(!title) return alert("Title required");
+    if(!subaccountId) return alert("Select subaccount");
+
+    await taskRef().add({
+      title,
+      details,
+      subaccountId,
+      status: "requested",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      messages: [{
+        type:"note",
+        text:"Task created.",
+        by: USER,
+        at: new Date().toISOString()
+      }]
+    });
+
+    tTitle.value = "";
+    tDetails.value = "";
+    taskModal.classList.add("hidden");
+  }
+
+  // =========================
+  // ✅ BOARD
+  // =========================
+  function renderBoard(){
     board.innerHTML = "";
-    STATUS.forEach(col => {
+
+    STATUS.forEach(col=>{
       const colWrap = document.createElement("div");
-      colWrap.className = "bg-white rounded-2xl border p-3 min-h-[320px]";
-      const colTasks = tasks.filter(t => t.status === col.id);
+      colWrap.className="bg-white rounded-2xl border p-3 min-h-[320px]";
+
+      const colTasks = tasks.filter(t=>t.status===col.id);
 
       colWrap.innerHTML = `
         <div class="flex items-center justify-between mb-2">
@@ -318,15 +341,15 @@ body { font-family: Inter, system-ui, sans-serif; }
         </div>
       `;
 
-      colTasks.forEach(t => {
+      colTasks.forEach(t=>{
         const card = document.createElement("div");
-        card.className = "border rounded-xl p-2 mb-2 cursor-pointer hover:bg-slate-50";
-        const saName = subaccounts.find(s => s.id === t.subaccountId)?.name || "—";
+        card.className="border rounded-xl p-2 mb-2 cursor-pointer hover:bg-slate-50";
+        const saName = subaccounts.find(s=>s.id===t.subaccountId)?.name || "—";
         card.innerHTML = `
-          <div class="font-medium">${escapeHtml(t.title || "Untitled")}</div>
+          <div class="font-medium">${escapeHtml(t.title||"Untitled")}</div>
           <div class="text-xs text-slate-500 truncate">${escapeHtml(saName)}</div>
         `;
-        card.onclick = () => openDetails(t.id);
+        card.onclick = ()=>openDetails(t.id);
         colWrap.appendChild(card);
       });
 
@@ -334,57 +357,122 @@ body { font-family: Inter, system-ui, sans-serif; }
     });
   }
 
-  // ---- Details modal (keep your existing functions if already added) ----
-  function openDetails(taskId) {
-    const t = tasks.find(x => x.id === taskId);
-    if (!t) return;
+  // =========================
+  // ✅ DETAILS + THREAD
+  // =========================
+  function openDetails(taskId){
+    const t = tasks.find(x=>x.id===taskId);
+    if(!t) return;
     currentTask = t;
+
     detailsModal.classList.remove("hidden");
     dTitle.textContent = t.title || "Task";
     renderThread(t);
     updateActionPanels();
   }
 
-  window.closeDetails = function closeDetails() {
+  window.closeDetails = function closeDetails(){
     detailsModal.classList.add("hidden");
     currentTask = null;
-    if (msgText) msgText.value = "";
-  };
-
-  function updateActionPanels() {
-    if (builderActions) builderActions.classList.toggle("hidden", !isBuilder());
-    const showClient = isClient() && currentTask && currentTask.status === "review";
-    if (clientActions) clientActions.classList.toggle("hidden", !showClient);
+    msgText.value = "";
   }
 
-  function renderThread(task) {
-    if (!thread) return;
+  function updateActionPanels(){
+    builderActions.classList.toggle("hidden", !isBuilder());
+    const showClient = isClient() && currentTask && currentTask.status==="review";
+    clientActions.classList.toggle("hidden", !showClient);
+  }
+
+  function renderThread(task){
     thread.innerHTML = "";
     const msgs = Array.isArray(task.messages) ? task.messages : [];
-    if (msgs.length === 0) {
+    if(msgs.length===0){
       thread.innerHTML = `<div class="text-sm text-slate-500">No updates yet.</div>`;
       return;
     }
-    msgs.slice().sort((a,b)=> (a.at>b.at?1:-1)).forEach(m=>{
-      const div = document.createElement("div");
-      div.className = "border rounded-xl p-2 text-sm bg-white";
-      div.innerHTML = `<b>${escapeHtml(m.by || "—")}</b>: ${escapeHtml(m.text || "")}`;
+    msgs.slice().sort((a,b)=>(a.at>b.at?1:-1)).forEach(m=>{
+      const div=document.createElement("div");
+      div.className="border rounded-xl p-2 text-sm bg-white";
+      div.innerHTML = `<b>${escapeHtml(m.by||"—")}</b>: ${escapeHtml(m.text||"")}`;
       thread.appendChild(div);
     });
     thread.scrollTop = thread.scrollHeight;
   }
 
-  function escapeHtml(str) {
-    return (str ?? "").toString()
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+  window.addMessage = async function addMessage(){
+    if(!currentTask) return;
+    const text = msgText.value.trim();
+    if(!text) return;
+
+    await taskRef().doc(currentTask.id).update({
+      messages: firebase.firestore.FieldValue.arrayUnion({
+        type: isClient() ? "client" : "note",
+        text,
+        by: USER,
+        at: new Date().toISOString()
+      })
+    });
+
+    msgText.value = "";
   }
 
-  console.log("✅ App script loaded (module)");
+  // =========================
+  // ✅ BUILDER / CLIENT ACTIONS
+  // =========================
+  window.builderMove = async function builderMove(status){
+    if(!isBuilder() || !currentTask) return;
+
+    await taskRef().doc(currentTask.id).update({
+      status,
+      messages: firebase.firestore.FieldValue.arrayUnion({
+        type:"note",
+        text:`Moved to ${status}`,
+        by: USER,
+        at: new Date().toISOString()
+      })
+    });
+  }
+
+  window.clientApprove = async function clientApprove(){
+    if(!isClient() || !currentTask) return;
+
+    await taskRef().doc(currentTask.id).update({
+      status:"done",
+      messages: firebase.firestore.FieldValue.arrayUnion({
+        type:"client",
+        text:"Approved ✅",
+        by: USER,
+        at: new Date().toISOString()
+      })
+    });
+  }
+
+  window.clientRequestChanges = async function clientRequestChanges(){
+    if(!isClient() || !currentTask) return;
+
+    await taskRef().doc(currentTask.id).update({
+      status:"progress",
+      messages: firebase.firestore.FieldValue.arrayUnion({
+        type:"client",
+        text:"Requesting changes / revisions",
+        by: USER,
+        at: new Date().toISOString()
+      })
+    });
+  }
+
+  function escapeHtml(str){
+    return (str ?? "").toString()
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  console.log("✅ Compat Firebase loaded. Ready.");
 </script>
+
 
 
 

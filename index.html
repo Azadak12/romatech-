@@ -1364,13 +1364,13 @@ saveTaskBtn.onclick = async ()=>{
   if(!currentTaskId || !canMove()) return;
   const t = tasks.find(x=>x.id===currentTaskId);
 
-  await taskRef().doc(currentTaskId).update({
-    details: clean(dDetails.value),
-    assigneeUsername: clean(dAssignee.value),
-    subaccountId: dSub.value,
-    status: dStatus.value,
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
+await taskRef().doc(currentTaskId).update({
+  details: clean(dDetails.value),
+  assigneeUsername: clean(dAssignee.value).toLowerCase(),
+  subaccountId: dSub.value,
+  status: dStatus.value,
+  updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+});
 
   await notifyRelevantUsers(
     t,

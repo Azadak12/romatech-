@@ -13,7 +13,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-
 <style>
 body { font-family: Inter, system-ui, sans-serif; }
 </style>
@@ -36,9 +35,11 @@ body { font-family: Inter, system-ui, sans-serif; }
     </select>
 
     <label class="text-sm font-medium">Workspace ID</label>
-    <input id="rmWorkspace" class="w-full border rounded-xl px-3 py-2 mt-1 mb-4" placeholder="e.g. branham-board">
+    <input id="rmWorkspace" class="w-full border rounded-xl px-3 py-2 mt-1 mb-4"
+      placeholder="e.g. branham-board">
 
-    <button onclick="enterApp()" class="w-full bg-indigo-600 text-white rounded-xl py-2 font-semibold">
+    <button onclick="enterApp()"
+      class="w-full bg-indigo-600 text-white rounded-xl py-2 font-semibold">
       Enter
     </button>
   </div>
@@ -49,10 +50,26 @@ body { font-family: Inter, system-ui, sans-serif; }
   <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
     <div>
       <h1 class="font-semibold text-lg">Subaccount Change Tracker</h1>
-      <p class="text-sm text-slate-500">Requested → Clarification → In Progress → Client Review → Done</p>
+      <p class="text-sm text-slate-500">
+        Requested → Clarification → In Progress → Client Review → Done
+      </p>
     </div>
-    <div class="text-sm text-slate-600">
-      <span id="userBadge"></span>
+
+    <div class="flex items-center gap-3 text-sm">
+      <!-- Filter -->
+      <select id="filterSubaccount"
+        class="border rounded-xl px-3 py-2 bg-white">
+        <option value="">All Subaccounts</option>
+      </select>
+
+      <!-- User badge -->
+      <span id="userBadge" class="text-slate-600"></span>
+
+      <!-- Logout -->
+      <button onclick="logout()"
+        class="border rounded-xl px-3 py-2 hover:bg-slate-100">
+        Logout
+      </button>
     </div>
   </div>
 </header>
@@ -64,65 +81,73 @@ body { font-family: Inter, system-ui, sans-serif; }
   <aside class="lg:col-span-3 bg-white rounded-2xl border p-4">
     <div class="flex justify-between items-center mb-3">
       <h2 class="font-semibold">Subaccounts</h2>
-      <button id="addSubBtn" onclick="addSubaccount()" class="text-sm border rounded-xl px-3 py-1">
+      <button id="addSubBtn"
+        onclick="addSubaccount()"
+        class="text-sm border rounded-xl px-3 py-1">
         + Add
       </button>
     </div>
+
     <div id="subList" class="space-y-2"></div>
   </aside>
 
   <!-- BOARD -->
   <section class="lg:col-span-9">
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4" id="board"></div>
+    <div id="board"
+      class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+    </div>
   </section>
 
 </main>
 
-<!-- ================= NEW TASK MODAL ================= -->
-<div id="taskModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
-  <div class="bg-white rounded-2xl p-5 w-full max-w-lg">
-    <h3 class="font-semibold mb-3">New Change Request</h3>
-
-    <input id="tTitle" placeholder="Title" class="w-full border rounded-xl px-3 py-2 mb-2">
-    <textarea id="tDetails" placeholder="Client request / details"
-      class="w-full border rounded-xl px-3 py-2 mb-2"></textarea>
-
-    <select id="tSub" class="w-full border rounded-xl px-3 py-2 mb-3"></select>
-
-    <div class="flex justify-end gap-2">
-      <button onclick="closeTaskModal()" class="px-4 py-2 border rounded-xl">Cancel</button>
-      <button onclick="createTask()" class="px-4 py-2 bg-indigo-600 text-white rounded-xl">Create</button>
-    </div>
-  </div>
-</div>
-
 <!-- ================= DETAILS MODAL ================= -->
-<div id="detailsModal" class="fixed inset-0 bg-black/40 hidden z-50 flex items-center justify-center">
+<div id="detailsModal"
+  class="fixed inset-0 bg-black/40 hidden z-50 flex items-center justify-center">
   <div class="bg-white rounded-2xl w-full max-w-2xl p-4">
 
     <div class="flex justify-between items-center mb-3">
       <h3 id="dTitle" class="font-semibold"></h3>
-      <button onclick="closeDetails()" class="text-sm">✕</button>
+      <button onclick="closeDetails()">✕</button>
     </div>
 
-    <div id="thread" class="space-y-2 max-h-64 overflow-auto border rounded-xl p-2 mb-3"></div>
+    <div id="thread"
+      class="space-y-2 max-h-64 overflow-auto border rounded-xl p-2 mb-3">
+    </div>
 
     <div class="flex gap-2">
-      <input id="msgText" placeholder="Write update…" class="flex-1 border rounded-xl px-3 py-2">
-      <button onclick="addMessage()" class="bg-indigo-600 text-white px-3 rounded-xl">Send</button>
+      <input id="msgText"
+        placeholder="Write update…"
+        class="flex-1 border rounded-xl px-3 py-2">
+      <button onclick="addMessage()"
+        class="bg-indigo-600 text-white px-3 rounded-xl">
+        Send
+      </button>
     </div>
 
-    <div id="builderActions" class="mt-4 flex gap-2 hidden">
-      <button onclick="builderMove('clarify')" class="border px-3 py-2 rounded-xl">Need Clarification</button>
-      <button onclick="builderMove('review')" class="bg-slate-900 text-white px-3 py-2 rounded-xl">Send for Review</button>
-      <button onclick="builderMove('done')" class="bg-emerald-600 text-white px-3 py-2 rounded-xl">Mark Done</button>
+    <div id="builderActions"
+      class="mt-4 flex gap-2 hidden">
+      <button onclick="builderMove('clarify')"
+        class="border px-3 py-2 rounded-xl">
+        Need Clarification
+      </button>
+      <button onclick="builderMove('review')"
+        class="bg-slate-900 text-white px-3 py-2 rounded-xl">
+        Send for Review
+      </button>
+      <button onclick="builderMove('done')"
+        class="bg-emerald-600 text-white px-3 py-2 rounded-xl">
+        Mark Done
+      </button>
     </div>
 
-    <div id="clientActions" class="mt-4 flex gap-2 hidden">
-      <button onclick="clientApprove()" class="bg-emerald-600 text-white px-4 py-2 rounded-xl">
+    <div id="clientActions"
+      class="mt-4 flex gap-2 hidden">
+      <button onclick="clientApprove()"
+        class="bg-emerald-600 text-white px-4 py-2 rounded-xl">
         Approve Done
       </button>
-      <button onclick="clientRequestChanges()" class="border px-4 py-2 rounded-xl">
+      <button onclick="clientRequestChanges()"
+        class="border px-4 py-2 rounded-xl">
         Request Changes
       </button>
     </div>
@@ -130,351 +155,221 @@ body { font-family: Inter, system-ui, sans-serif; }
   </div>
 </div>
 
+<!-- ================= APP SCRIPT ================= -->
 <script>
-  // ✅ Your Firebase config
-  const firebaseConfig = {
-    apiKey: "AIzaSyDHL0tVJ7tm4lK4r7gQrZ7McPJwFOaRulc",
-    authDomain: "romatech-system.firebaseapp.com",
-    projectId: "romatech-system",
-    storageBucket: "romatech-system.firebasestorage.app",
-    messagingSenderId: "368102739583",
-    appId: "1:368102739583:web:92baa7b3abf14e7653b94a",
-    measurementId: "G-7CWF4D2V3T"
-  };
+/* ================= FIREBASE INIT ================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDHL0tVJ7tm4lK4r7gQrZ7McPJwFOaRulc",
+  authDomain: "romatech-system.firebaseapp.com",
+  projectId: "romatech-system",
+  storageBucket: "romatech-system.firebasestorage.app",
+  messagingSenderId: "368102739583",
+  appId: "1:368102739583:web:92baa7b3abf14e7653b94a"
+};
 
-  // ✅ Init
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-  // ✅ DOM
-  const $ = (id) => document.getElementById(id);
+/* ================= STATE ================= */
+let USER = null;
+let ROLE = null;
+let WS = null;
+let subaccounts = [];
+let tasks = [];
+let currentTask = null;
 
-  const roleModal = $("roleModal");
-  const rmName = $("rmName");
-  const rmRole = $("rmRole");
-  const rmWorkspace = $("rmWorkspace");
+/* ================= HELPERS ================= */
+const $ = id => document.getElementById(id);
+const isBuilder = () => ROLE === "builder";
+const isClient  = () => ROLE === "client";
 
-  const userBadge = $("userBadge");
-  const addSubBtn = $("addSubBtn");
-  const subList = $("subList");
+const STATUS = [
+  {id:"requested",label:"Requested"},
+  {id:"clarify",label:"Clarification"},
+  {id:"progress",label:"In Progress"},
+  {id:"review",label:"Client Review"},
+  {id:"done",label:"Done"}
+];
+
+const subRef  = () => db.collection("workspaces").doc(WS).collection("subaccounts");
+const taskRef = () => db.collection("workspaces").doc(WS).collection("tasks");
+
+/* ================= AUTH ================= */
+auth.signInAnonymously();
+
+/* ================= ENTER ================= */
+window.enterApp = function(){
+  USER = $("rmName").value.trim();
+  ROLE = $("rmRole").value;
+  WS   = $("rmWorkspace").value.trim();
+
+  if(!USER || !WS) return alert("Name & Workspace required");
+
+  $("roleModal").classList.add("hidden");
+  $("userBadge").textContent = `${USER} (${ROLE}) • ${WS}`;
+  $("addSubBtn").style.display = isBuilder() ? "inline-flex" : "none";
+
+  listenRealtime();
+};
+
+/* ================= LOGOUT ================= */
+window.logout = async function(){
+  if(!confirm("Logout from this workspace?")) return;
+  await auth.signOut();
+  location.reload();
+};
+
+/* ================= REALTIME ================= */
+function listenRealtime(){
+  subRef().onSnapshot(snap=>{
+    subaccounts = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderSubaccounts();
+    renderFilter();
+    renderBoard();
+  });
+
+  taskRef().onSnapshot(snap=>{
+    tasks = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderSubaccounts();
+    renderBoard();
+  });
+}
+
+/* ================= FILTER ================= */
+$("filterSubaccount").addEventListener("change",renderBoard);
+
+function renderFilter(){
+  const sel = $("filterSubaccount");
+  const current = sel.value;
+  sel.innerHTML = `<option value="">All Subaccounts</option>` +
+    subaccounts.map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
+  sel.value = current || "";
+}
+
+/* ================= SUBACCOUNTS ================= */
+window.addSubaccount = async function(){
+  if(!isBuilder()) return alert("Only builder can add");
+  const name = prompt("Subaccount name");
+  if(!name) return;
+  await subRef().add({
+    name,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+};
+
+function renderSubaccounts(){
+  const wrap = $("subList");
+  wrap.innerHTML = "";
+
+  subaccounts.forEach(sa=>{
+    const total = tasks.filter(t=>t.subaccountId===sa.id).length;
+    const done  = tasks.filter(t=>t.subaccountId===sa.id && t.status==="done").length;
+    const pct   = total ? Math.round((done/total)*100) : 0;
+
+    const div = document.createElement("div");
+    div.className="border rounded-xl p-3 cursor-pointer hover:bg-slate-50";
+    div.innerHTML=`
+      <div class="font-medium">${sa.name}</div>
+      <div class="text-xs text-slate-500">${pct}% complete</div>
+      <div class="h-2 bg-slate-100 rounded mt-2">
+        <div class="h-2 bg-indigo-600 rounded" style="width:${pct}%"></div>
+      </div>
+    `;
+    div.onclick=()=>{
+      $("filterSubaccount").value=sa.id;
+      renderBoard();
+    };
+    wrap.appendChild(div);
+  });
+}
+
+/* ================= BOARD ================= */
+function renderBoard(){
+  const filter = $("filterSubaccount").value;
+  const list = filter ? tasks.filter(t=>t.subaccountId===filter) : tasks;
   const board = $("board");
+  board.innerHTML="";
 
-  const taskModal = $("taskModal");
-  const tTitle = $("tTitle");
-  const tDetails = $("tDetails");
-  const tSub = $("tSub");
+  STATUS.forEach(col=>{
+    const box=document.createElement("div");
+    box.className="bg-white border rounded-2xl p-3 min-h-[320px]";
+    const items=list.filter(t=>t.status===col.id);
 
-  const detailsModal = $("detailsModal");
-  const dTitle = $("dTitle");
-  const thread = $("thread");
-  const msgText = $("msgText");
-  const builderActions = $("builderActions");
-  const clientActions = $("clientActions");
+    box.innerHTML=`
+      <div class="flex justify-between mb-2">
+        <h3 class="font-semibold">${col.label}</h3>
+        <span class="text-xs">${items.length}</span>
+      </div>
+    `;
 
-  // ✅ State
-  let ROLE = null;
-  let USER = null;
-  let WS = null;
-
-  let subaccounts = [];
-  let tasks = [];
-  let currentTask = null;
-
-  const STATUS = [
-    { id: "requested", label: "Requested" },
-    { id: "clarify", label: "Clarification" },
-    { id: "progress", label: "In Progress" },
-    { id: "review", label: "Client Review" },
-    { id: "done", label: "Done" }
-  ];
-
-  const isBuilder = () => ROLE === "builder";
-  const isClient  = () => ROLE === "client";
-
-  function subRef(){ return db.collection("workspaces").doc(WS).collection("subaccounts"); }
-  function taskRef(){ return db.collection("workspaces").doc(WS).collection("tasks"); }
-
-  // ✅ Sign in once on load
-  auth.signInAnonymously().catch(console.error);
-
-  // =========================
-  // ✅ ENTER APP (onclick works now)
-  // =========================
-  window.enterApp = function enterApp(){
-    USER = rmName.value.trim();
-    ROLE = rmRole.value;
-    WS   = rmWorkspace.value.trim();
-
-    if(!USER || !WS){
-      alert("Name + Workspace ID required");
-      return;
-    }
-
-    roleModal.classList.add("hidden");
-    userBadge.textContent = `${USER} (${ROLE}) • WS: ${WS}`;
-
-    // lock builder features
-    addSubBtn.style.display = isBuilder() ? "inline-flex" : "none";
-
-    listenRealtime();
-  }
-
-  function listenRealtime(){
-    // subaccounts
-    subRef().orderBy("createdAt","desc").onSnapshot((snap)=>{
-      subaccounts = snap.docs.map(d=>({id:d.id, ...d.data()}));
-      renderSubaccounts();
-      renderSubSelect();
-      renderBoard();
+    items.forEach(t=>{
+      const card=document.createElement("div");
+      card.className="border rounded-xl p-2 mb-2 hover:bg-slate-50 cursor-pointer";
+      card.textContent=t.title;
+      card.onclick=()=>openDetails(t.id);
+      box.appendChild(card);
     });
 
-    // tasks
-    taskRef().orderBy("createdAt","desc").onSnapshot((snap)=>{
-      tasks = snap.docs.map(d=>({id:d.id, ...d.data()}));
-      renderBoard();
+    board.appendChild(box);
+  });
+}
 
-      if(currentTask?.id){
-        const updated = tasks.find(t=>t.id===currentTask.id);
-        if(updated){
-          currentTask = updated;
-          renderThread(updated);
-          updateActionPanels();
-        }
-      }
-    });
-  }
+/* ================= DETAILS ================= */
+function openDetails(id){
+  currentTask = tasks.find(t=>t.id===id);
+  $("detailsModal").classList.remove("hidden");
+  $("dTitle").textContent=currentTask.title;
+  renderThread();
+  updatePanels();
+}
 
-  // =========================
-  // ✅ SUBACCOUNTS
-  // =========================
-  window.addSubaccount = async function addSubaccount(){
-    if(!isBuilder()) return alert("Client cannot add subaccounts");
-    const name = prompt("Subaccount name:");
-    if(!name) return;
+window.closeDetails=function(){
+  $("detailsModal").classList.add("hidden");
+  currentTask=null;
+};
 
-    await subRef().add({
-      name: name.trim(),
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  }
+function updatePanels(){
+  $("builderActions").classList.toggle("hidden",!isBuilder());
+  $("clientActions").classList.toggle("hidden",!(isClient() && currentTask.status==="review"));
+}
 
-  function renderSubaccounts(){
-    subList.innerHTML = "";
-    if(subaccounts.length===0){
-      subList.innerHTML = `<div class="text-sm text-slate-500">No subaccounts yet.</div>`;
-      return;
-    }
+function renderThread(){
+  const t=$("thread");
+  t.innerHTML="";
+  (currentTask.messages||[]).forEach(m=>{
+    const d=document.createElement("div");
+    d.className="border rounded p-2 text-sm";
+    d.innerHTML=`<b>${m.by}</b>: ${m.text}`;
+    t.appendChild(d);
+  });
+}
 
-    subaccounts.forEach(sa=>{
-      const total = tasks.filter(t=>t.subaccountId===sa.id).length;
-      const open  = tasks.filter(t=>t.subaccountId===sa.id && t.status!=="done").length;
+/* ================= MESSAGES ================= */
+window.addMessage=async function(){
+  const text=$("msgText").value.trim();
+  if(!text) return;
+  await taskRef().doc(currentTask.id).update({
+    messages: firebase.firestore.FieldValue.arrayUnion({
+      text, by:USER, at:new Date().toISOString()
+    })
+  });
+  $("msgText").value="";
+};
 
-      const div = document.createElement("div");
-      div.className="border rounded-xl px-3 py-2 text-sm bg-white";
-      div.innerHTML = `
-        <div class="font-medium">${escapeHtml(sa.name)}</div>
-        <div class="text-xs text-slate-500">${open} open • ${total} total</div>
-      `;
-      subList.appendChild(div);
-    });
-  }
+/* ================= MOVES ================= */
+window.builderMove=async function(s){
+  await taskRef().doc(currentTask.id).update({status:s});
+};
 
-  function renderSubSelect(){
-    tSub.innerHTML = subaccounts.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
-  }
+window.clientApprove=async function(){
+  await taskRef().doc(currentTask.id).update({status:"done"});
+};
 
-  // =========================
-  // ✅ TASK MODAL
-  // =========================
-  window.closeTaskModal = function closeTaskModal(){
-    taskModal.classList.add("hidden");
-  }
-
-  // (You can open it from column later; for now you already have Create button)
-  window.createTask = async function createTask(){
-    if(!isBuilder()) return alert("Client cannot create tasks");
-    if(subaccounts.length===0) return alert("Add a subaccount first");
-
-    const title = tTitle.value.trim();
-    const details = tDetails.value.trim();
-    const subaccountId = tSub.value;
-
-    if(!title) return alert("Title required");
-    if(!subaccountId) return alert("Select subaccount");
-
-    await taskRef().add({
-      title,
-      details,
-      subaccountId,
-      status: "requested",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      messages: [{
-        type:"note",
-        text:"Task created.",
-        by: USER,
-        at: new Date().toISOString()
-      }]
-    });
-
-    tTitle.value = "";
-    tDetails.value = "";
-    taskModal.classList.add("hidden");
-  }
-
-  // =========================
-  // ✅ BOARD
-  // =========================
-  function renderBoard(){
-    board.innerHTML = "";
-
-    STATUS.forEach(col=>{
-      const colWrap = document.createElement("div");
-      colWrap.className="bg-white rounded-2xl border p-3 min-h-[320px]";
-
-      const colTasks = tasks.filter(t=>t.status===col.id);
-
-      colWrap.innerHTML = `
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="font-semibold">${col.label}</h3>
-          <span class="text-xs px-2 py-0.5 rounded-full border bg-slate-50">${colTasks.length}</span>
-        </div>
-      `;
-
-      colTasks.forEach(t=>{
-        const card = document.createElement("div");
-        card.className="border rounded-xl p-2 mb-2 cursor-pointer hover:bg-slate-50";
-        const saName = subaccounts.find(s=>s.id===t.subaccountId)?.name || "—";
-        card.innerHTML = `
-          <div class="font-medium">${escapeHtml(t.title||"Untitled")}</div>
-          <div class="text-xs text-slate-500 truncate">${escapeHtml(saName)}</div>
-        `;
-        card.onclick = ()=>openDetails(t.id);
-        colWrap.appendChild(card);
-      });
-
-      board.appendChild(colWrap);
-    });
-  }
-
-  // =========================
-  // ✅ DETAILS + THREAD
-  // =========================
-  function openDetails(taskId){
-    const t = tasks.find(x=>x.id===taskId);
-    if(!t) return;
-    currentTask = t;
-
-    detailsModal.classList.remove("hidden");
-    dTitle.textContent = t.title || "Task";
-    renderThread(t);
-    updateActionPanels();
-  }
-
-  window.closeDetails = function closeDetails(){
-    detailsModal.classList.add("hidden");
-    currentTask = null;
-    msgText.value = "";
-  }
-
-  function updateActionPanels(){
-    builderActions.classList.toggle("hidden", !isBuilder());
-    const showClient = isClient() && currentTask && currentTask.status==="review";
-    clientActions.classList.toggle("hidden", !showClient);
-  }
-
-  function renderThread(task){
-    thread.innerHTML = "";
-    const msgs = Array.isArray(task.messages) ? task.messages : [];
-    if(msgs.length===0){
-      thread.innerHTML = `<div class="text-sm text-slate-500">No updates yet.</div>`;
-      return;
-    }
-    msgs.slice().sort((a,b)=>(a.at>b.at?1:-1)).forEach(m=>{
-      const div=document.createElement("div");
-      div.className="border rounded-xl p-2 text-sm bg-white";
-      div.innerHTML = `<b>${escapeHtml(m.by||"—")}</b>: ${escapeHtml(m.text||"")}`;
-      thread.appendChild(div);
-    });
-    thread.scrollTop = thread.scrollHeight;
-  }
-
-  window.addMessage = async function addMessage(){
-    if(!currentTask) return;
-    const text = msgText.value.trim();
-    if(!text) return;
-
-    await taskRef().doc(currentTask.id).update({
-      messages: firebase.firestore.FieldValue.arrayUnion({
-        type: isClient() ? "client" : "note",
-        text,
-        by: USER,
-        at: new Date().toISOString()
-      })
-    });
-
-    msgText.value = "";
-  }
-
-  // =========================
-  // ✅ BUILDER / CLIENT ACTIONS
-  // =========================
-  window.builderMove = async function builderMove(status){
-    if(!isBuilder() || !currentTask) return;
-
-    await taskRef().doc(currentTask.id).update({
-      status,
-      messages: firebase.firestore.FieldValue.arrayUnion({
-        type:"note",
-        text:`Moved to ${status}`,
-        by: USER,
-        at: new Date().toISOString()
-      })
-    });
-  }
-
-  window.clientApprove = async function clientApprove(){
-    if(!isClient() || !currentTask) return;
-
-    await taskRef().doc(currentTask.id).update({
-      status:"done",
-      messages: firebase.firestore.FieldValue.arrayUnion({
-        type:"client",
-        text:"Approved ✅",
-        by: USER,
-        at: new Date().toISOString()
-      })
-    });
-  }
-
-  window.clientRequestChanges = async function clientRequestChanges(){
-    if(!isClient() || !currentTask) return;
-
-    await taskRef().doc(currentTask.id).update({
-      status:"progress",
-      messages: firebase.firestore.FieldValue.arrayUnion({
-        type:"client",
-        text:"Requesting changes / revisions",
-        by: USER,
-        at: new Date().toISOString()
-      })
-    });
-  }
-
-  function escapeHtml(str){
-    return (str ?? "").toString()
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
-
-  console.log("✅ Compat Firebase loaded. Ready.");
+window.clientRequestChanges=async function(){
+  await taskRef().doc(currentTask.id).update({status:"progress"});
+};
 </script>
-
-
-
 
 </body>
 </html>

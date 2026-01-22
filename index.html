@@ -8,27 +8,24 @@
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Firebase (Compat – stable + simple) -->
+  <!-- Firebase (Compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
     body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
-    ::-webkit-scrollbar { width: 10px; height: 10px; }
-    ::-webkit-scrollbar-thumb { background: rgba(100,116,139,.35); border-radius: 999px; }
-    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar{ width: 10px; height: 10px; }
+    ::-webkit-scrollbar-thumb{ background: rgba(148,163,184,.45); border-radius: 999px; }
+    ::-webkit-scrollbar-track{ background: transparent; }
 
-    /* subtle fade/scale */
     .fade-in { animation: fadeIn .18s ease-out both; }
-    @keyframes fadeIn { from {opacity:.0; transform: translateY(6px) scale(.99);} to {opacity:1; transform:none;} }
+    @keyframes fadeIn { from {opacity:0; transform: translateY(8px) scale(.99);} to {opacity:1; transform:none;} }
 
-    /* modal backdrop click shield */
-    .modal-backdrop { backdrop-filter: blur(6px); }
-
-    /* toast animation */
     .toast-in { animation: toastIn .18s ease-out both; }
     @keyframes toastIn { from {opacity:0; transform: translateY(10px);} to {opacity:1; transform:none;} }
+
+    .glass { backdrop-filter: blur(10px); }
   </style>
 
   <script>
@@ -36,8 +33,8 @@
       theme: {
         extend: {
           boxShadow: {
-            soft: "0 10px 25px rgba(15, 23, 42, .08)",
-            lift: "0 14px 35px rgba(15, 23, 42, .14)"
+            soft: "0 10px 30px rgba(2, 6, 23, .08)",
+            lift: "0 18px 45px rgba(2, 6, 23, .14)"
           }
         }
       }
@@ -55,60 +52,59 @@
 </div>
 
 <!-- ===================== AUTH MODAL ===================== -->
-<div id="authModal" class="fixed inset-0 z-50 bg-black/40 modal-backdrop flex items-center justify-center p-4">
-  <div class="fade-in w-full max-w-xl rounded-2xl bg-white border border-slate-200 shadow-lift overflow-hidden">
-    <div class="p-5 border-b border-slate-200">
+<div id="authModal" class="fixed inset-0 z-50 bg-black/40 glass flex items-center justify-center p-4">
+  <div class="fade-in w-full max-w-xl rounded-3xl bg-white shadow-lift overflow-hidden border border-slate-200">
+    <div class="p-6 border-b border-slate-100">
       <div class="flex items-center gap-3">
         <div class="h-11 w-11 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 shadow-soft"></div>
         <div>
           <h2 class="text-lg font-semibold leading-tight">Workspace Task Tracker</h2>
-          <p class="text-sm text-slate-500">Login + Workspace + Role (Builder / GHL Expert / Client)</p>
+          <p class="text-sm text-slate-500">Login with username + password</p>
         </div>
       </div>
     </div>
 
-    <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-3">
       <div class="md:col-span-2">
         <label class="text-xs font-semibold text-slate-600">Workspace ID</label>
         <input id="wsInput"
-          class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
+          class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
           placeholder="e.g., branham-board" />
-        <p class="text-xs text-slate-500 mt-1">Same Workspace ID = shared board for you + client.</p>
+        <p class="text-xs text-slate-500 mt-1">Same Workspace ID = shared workspace.</p>
       </div>
 
       <div>
-        <label class="text-xs font-semibold text-slate-600">Username (no spaces)</label>
+        <label class="text-xs font-semibold text-slate-600">Username</label>
         <input id="usernameInput"
-          class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
-          placeholder="e.g., abdul, branham, martyna" />
-        <p class="text-xs text-slate-500 mt-1">Auto email: username@workspace.local</p>
+          class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
+          placeholder="e.g., abdul" />
       </div>
 
       <div>
         <label class="text-xs font-semibold text-slate-600">Password</label>
         <input id="passwordInput" type="password"
-          class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
+          class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
           placeholder="min 6 chars" />
       </div>
 
       <div class="md:col-span-2">
         <label class="text-xs font-semibold text-slate-600">Role</label>
         <select id="roleInput"
-          class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300">
+          class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300">
           <option value="builder">Builder / Admin</option>
           <option value="ghl_expert">GHL Expert</option>
           <option value="client">Client</option>
         </select>
-        <p class="text-xs text-slate-500 mt-1">Builder can create tasks + subaccounts. Client can approve in “Client Review”.</p>
+        <p class="text-xs text-slate-500 mt-1">Client can approve only in “Client Review”.</p>
       </div>
 
-      <div class="md:col-span-2 flex flex-col md:flex-row gap-2">
+      <div class="md:col-span-2 flex gap-2">
         <button id="loginBtn"
-          class="flex-1 rounded-xl bg-slate-900 text-white px-4 py-2.5 text-sm font-semibold hover:bg-slate-800 active:scale-[.99] transition">
+          class="flex-1 rounded-2xl bg-slate-900 text-white px-4 py-2.5 text-sm font-semibold hover:bg-slate-800 active:scale-[.99] transition">
           Login
         </button>
         <button id="registerBtn"
-          class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 active:scale-[.99] transition">
+          class="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 active:scale-[.99] transition">
           Register
         </button>
       </div>
@@ -121,90 +117,96 @@
 </div>
 
 <!-- ===================== HEADER ===================== -->
-<header class="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200">
-  <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-    <div class="flex items-center gap-3">
+<header class="sticky top-0 z-40 bg-white/70 glass border-b border-slate-100">
+  <div class="max-w-7xl mx-auto px-5 py-4 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 min-w-0">
       <div class="h-10 w-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 shadow-soft"></div>
-      <div>
-        <h1 class="text-lg font-semibold leading-tight">Subaccount Change Tracker</h1>
-        <p class="text-sm text-slate-500">Requested → Clarification → In Progress → Client Review → Done</p>
+      <div class="min-w-0">
+        <h1 class="text-base font-semibold leading-tight truncate">Subaccount Change Tracker</h1>
+        <p class="text-xs text-slate-500 truncate">Requested → Clarification → In Progress → Client Review → Done</p>
       </div>
     </div>
 
-    <div class="flex flex-col md:flex-row gap-2 md:items-center">
-      <div class="relative">
-        <input id="searchInput" type="text" placeholder="Search tasks..."
-          class="w-full md:w-72 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300" />
+    <div class="flex items-center gap-2">
+      <div class="relative hidden md:block">
+        <input id="searchInput" type="text" placeholder="Search…"
+          class="w-64 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300" />
         <div class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">⌘K</div>
       </div>
 
       <select id="filterSubaccount"
-        class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300">
-        <option value="">All Subaccounts</option>
+        class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300">
+        <option value="">All</option>
       </select>
 
       <button id="newTaskBtn"
-        class="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-indigo-700 active:scale-[.99] transition">
-        + New Task
+        class="rounded-2xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-indigo-700 active:scale-[.99] transition">
+        + Task
       </button>
 
       <!-- Notifications -->
       <div class="relative">
         <button id="notifBtn"
-          class="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold hover:bg-slate-50 active:scale-[.99] transition flex items-center gap-2">
+          class="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold hover:bg-slate-50 active:scale-[.99] transition flex items-center gap-2">
           🔔 <span id="notifCount" class="hidden text-xs font-bold px-2 py-0.5 rounded-full bg-rose-600 text-white">0</span>
         </button>
 
-        <div id="notifPanel" class="hidden absolute right-0 mt-2 w-[360px] max-w-[90vw] rounded-2xl bg-white border border-slate-200 shadow-lift overflow-hidden">
-          <div class="p-3 border-b border-slate-200 flex items-center justify-between">
+        <div id="notifPanel" class="hidden absolute right-0 mt-2 w-[360px] max-w-[92vw] rounded-3xl bg-white border border-slate-200 shadow-lift overflow-hidden">
+          <div class="p-3 border-b border-slate-100 flex items-center justify-between">
             <div class="font-semibold">Notifications</div>
-            <button id="markAllReadBtn" class="text-xs font-semibold px-2 py-1 rounded-xl border border-slate-200 hover:bg-slate-50">
+            <button id="markAllReadBtn" class="text-xs font-semibold px-2 py-1 rounded-2xl border border-slate-200 hover:bg-slate-50">
               Mark all read
             </button>
           </div>
-          <div id="notifList" class="max-h-[360px] overflow-auto bg-slate-50 p-2 space-y-2"></div>
-          <div class="p-2 border-t border-slate-200 bg-white text-xs text-slate-500">
+          <div id="notifList" class="max-h-[380px] overflow-auto bg-slate-50 p-2 space-y-2"></div>
+          <div class="p-2 border-t border-slate-100 bg-white text-xs text-slate-500">
             In-app notifications (reliable). Push notifications need FCM later.
           </div>
         </div>
       </div>
 
       <button id="logoutBtn"
-        class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 active:scale-[.99] transition">
+        class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 active:scale-[.99] transition">
         Logout
       </button>
 
-      <div class="text-sm text-slate-600 md:ml-2 whitespace-nowrap">
+      <div class="hidden lg:block text-sm text-slate-600 whitespace-nowrap">
         <span id="userBadge" class="font-semibold"></span>
         <span id="wsBadge" class="text-slate-400"></span>
       </div>
     </div>
   </div>
+
+  <!-- mobile search row -->
+  <div class="max-w-7xl mx-auto px-5 pb-4 md:hidden">
+    <input id="searchInputMobile" type="text" placeholder="Search…"
+      class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300" />
+  </div>
 </header>
 
 <!-- ===================== MAIN ===================== -->
-<main class="max-w-7xl mx-auto px-4 py-6">
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+<main class="max-w-7xl mx-auto px-5 py-6">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
     <!-- SIDEBAR -->
     <aside class="lg:col-span-3">
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-soft overflow-hidden">
-        <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+      <div class="rounded-3xl bg-white border border-slate-100 shadow-soft overflow-hidden">
+        <div class="p-4 flex items-center justify-between">
           <div>
             <h2 class="font-semibold">Subaccounts</h2>
-            <p class="text-sm text-slate-500">Shared across workspace</p>
+            <p class="text-xs text-slate-500">Click to filter</p>
           </div>
           <button id="addSubBtn"
-            class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-slate-50 active:scale-[.99] transition">
+            class="rounded-2xl border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-slate-50 active:scale-[.99] transition">
             + Add
           </button>
         </div>
 
-        <div id="subList" class="p-3 space-y-2"></div>
+        <div id="subList" class="px-3 pb-3 space-y-1"></div>
 
-        <div class="p-4 border-t border-slate-200">
-          <div class="rounded-2xl bg-slate-50 border border-slate-200 p-3 text-sm text-slate-600">
-            Tip: Client can approve only when a task is in <b>Client Review</b>.
+        <div class="p-4 border-t border-slate-100 bg-slate-50">
+          <div class="rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-600">
+            Tip: Client can approve only in <b>Client Review</b>.
           </div>
         </div>
       </div>
@@ -218,32 +220,30 @@
   </div>
 </main>
 
-<!-- ===================== ADD SUBACCOUNT MODAL ===================== -->
-<div id="subModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 modal-backdrop p-4">
-  <div class="fade-in w-full max-w-lg rounded-2xl bg-white border border-slate-200 shadow-lift overflow-hidden">
-    <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+<!-- ===================== SUB MODAL ===================== -->
+<div id="subModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 glass p-4">
+  <div class="fade-in w-full max-w-lg rounded-3xl bg-white border border-slate-200 shadow-lift overflow-hidden">
+    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
       <div>
         <h3 class="font-semibold">Add Subaccount</h3>
         <p class="text-sm text-slate-500">Example: VIP Tires - Ohio</p>
       </div>
-      <button id="closeSubModalBtn" class="p-2 rounded-xl hover:bg-slate-100">✕</button>
+      <button id="closeSubModalBtn" class="p-2 rounded-2xl hover:bg-slate-100">✕</button>
     </div>
 
     <div class="p-4">
       <label class="text-xs font-semibold text-slate-600">Subaccount name</label>
       <input id="subNameInput"
-        class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
+        class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
         placeholder="Type subaccount name..." />
 
       <div id="subErr" class="mt-2 text-sm text-rose-600 hidden"></div>
 
       <div class="mt-4 flex justify-end gap-2">
-        <button id="cancelSubBtn"
-          class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50 active:scale-[.99] transition">
+        <button id="cancelSubBtn" class="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50 active:scale-[.99] transition">
           Cancel
         </button>
-        <button id="saveSubBtn"
-          class="rounded-xl bg-indigo-600 text-white px-4 py-2 text-sm font-semibold hover:bg-indigo-700 active:scale-[.99] transition">
+        <button id="saveSubBtn" class="rounded-2xl bg-indigo-600 text-white px-4 py-2 text-sm font-semibold hover:bg-indigo-700 active:scale-[.99] transition">
           Save
         </button>
       </div>
@@ -251,160 +251,115 @@
   </div>
 </div>
 
-<!-- ===================== NEW TASK MODAL ===================== -->
-<div id="taskModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 modal-backdrop p-4">
-  <div class="fade-in w-full max-w-2xl rounded-2xl bg-white border border-slate-200 shadow-lift overflow-hidden">
-    <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+<!-- ===================== TASK MODAL ===================== -->
+<div id="taskModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 glass p-4">
+  <div class="fade-in w-full max-w-2xl rounded-3xl bg-white border border-slate-200 shadow-lift overflow-hidden">
+    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
       <div>
         <h3 class="font-semibold">New Task</h3>
         <p class="text-sm text-slate-500">Log a client change request</p>
       </div>
-      <button id="closeTaskModal" class="p-2 rounded-xl hover:bg-slate-100">✕</button>
+      <button id="closeTaskModal" class="p-2 rounded-2xl hover:bg-slate-100">✕</button>
     </div>
 
     <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
       <div class="md:col-span-2">
         <label class="text-xs font-semibold text-slate-600">Title</label>
-        <input id="tTitle"
-          class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
+        <input id="tTitle" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
           placeholder="e.g., Remove promo messages after appointment booked" />
       </div>
 
       <div>
         <label class="text-xs font-semibold text-slate-600">Subaccount</label>
-        <select id="tSub"
-          class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"></select>
+        <select id="tSub" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"></select>
       </div>
 
       <div>
         <label class="text-xs font-semibold text-slate-600">Assignee (username)</label>
-        <input id="tAssignee"
-          class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
+        <input id="tAssignee" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
           placeholder="e.g., abdul" />
-        <p class="text-xs text-slate-500 mt-1">This triggers notification for that username.</p>
       </div>
 
       <div class="md:col-span-2">
-        <label class="text-xs font-semibold text-slate-600">Details (paste exact message)</label>
-        <textarea id="tDetails" rows="4"
-          class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
+        <label class="text-xs font-semibold text-slate-600">Details</label>
+        <textarea id="tDetails" rows="4" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
           placeholder="Paste the client message + what to change..."></textarea>
       </div>
 
       <div id="taskErr" class="md:col-span-2 text-sm text-rose-600 hidden"></div>
 
       <div class="md:col-span-2 flex items-center justify-end gap-2">
-        <button id="cancelTaskBtn"
-          class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50 active:scale-[.99] transition">
-          Cancel
-        </button>
-        <button id="createTaskBtn"
-          class="rounded-xl bg-indigo-600 text-white px-4 py-2 text-sm font-semibold hover:bg-indigo-700 active:scale-[.99] transition">
-          Create
-        </button>
+        <button id="cancelTaskBtn" class="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50 active:scale-[.99] transition">Cancel</button>
+        <button id="createTaskBtn" class="rounded-2xl bg-indigo-600 text-white px-4 py-2 text-sm font-semibold hover:bg-indigo-700 active:scale-[.99] transition">Create</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ===================== DETAILS MODAL (CLEAN) ===================== -->
-<div id="detailsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 modal-backdrop p-4">
-  <div class="fade-in w-full max-w-5xl rounded-2xl bg-white border border-slate-200 shadow-lift overflow-hidden">
-    <div class="p-4 border-b border-slate-200 flex items-start justify-between gap-3">
+<!-- ===================== DETAILS MODAL ===================== -->
+<div id="detailsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 glass p-4">
+  <div class="fade-in w-full max-w-5xl rounded-3xl bg-white border border-slate-200 shadow-lift overflow-hidden">
+    <div class="p-4 border-b border-slate-100 flex items-start justify-between gap-3">
       <div class="min-w-0">
         <h3 id="dTitle" class="font-semibold text-lg truncate">Task</h3>
         <p id="dMeta" class="text-sm text-slate-500 truncate">—</p>
       </div>
-      <div class="flex items-center gap-2">
-        <button id="closeDetailsModal" class="p-2 rounded-xl hover:bg-slate-100">✕</button>
-      </div>
+      <button id="closeDetailsModal" class="p-2 rounded-2xl hover:bg-slate-100">✕</button>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-0">
-      <!-- LEFT PANEL -->
-      <div class="lg:col-span-4 border-b lg:border-b-0 lg:border-r border-slate-200 p-4">
+    <div class="grid grid-cols-1 lg:grid-cols-12">
+      <!-- Left -->
+      <div class="lg:col-span-4 border-b lg:border-b-0 lg:border-r border-slate-100 p-4 bg-slate-50">
         <div class="space-y-3">
-          <div class="rounded-2xl border border-slate-200 p-3 bg-slate-50">
-            <div class="grid grid-cols-2 gap-2">
-              <div class="col-span-2">
-                <div class="text-xs font-semibold text-slate-500">Status</div>
-                <select id="dStatus"
-                  class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"></select>
-              </div>
+          <div class="rounded-3xl bg-white border border-slate-200 p-3">
+            <div class="text-xs font-semibold text-slate-500">Status</div>
+            <select id="dStatus" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"></select>
 
-              <div class="col-span-2">
-                <div class="text-xs font-semibold text-slate-500">Subaccount</div>
-                <select id="dSub"
-                  class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"></select>
-              </div>
+            <div class="mt-3 text-xs font-semibold text-slate-500">Subaccount</div>
+            <select id="dSub" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"></select>
 
-              <div class="col-span-2">
-                <div class="text-xs font-semibold text-slate-500">Assignee (username)</div>
-                <input id="dAssignee"
-                  class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300" />
-              </div>
+            <div class="mt-3 text-xs font-semibold text-slate-500">Assignee</div>
+            <input id="dAssignee" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300" />
+
+            <div class="mt-3 grid grid-cols-2 gap-2">
+              <button id="btnClarify" class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 transition">Clarify</button>
+              <button id="btnProgress" class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 transition">In Progress</button>
+              <button id="btnReview" class="rounded-2xl bg-slate-900 text-white px-3 py-2 text-sm font-semibold hover:bg-slate-800 transition col-span-2">Send to Review</button>
+              <button id="btnDone" class="rounded-2xl bg-emerald-600 text-white px-3 py-2 text-sm font-semibold hover:bg-emerald-700 transition col-span-2">Mark Done</button>
             </div>
 
-            <div class="mt-3 flex flex-col gap-2">
-              <div id="builderControls" class="flex flex-col gap-2">
-                <button id="btnClarify" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 transition">
-                  Need Clarification
-                </button>
-                <button id="btnProgress" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 transition">
-                  Move to In Progress
-                </button>
-                <button id="btnReview" class="rounded-xl bg-slate-900 text-white px-3 py-2 text-sm font-semibold hover:bg-slate-800 transition">
-                  Send for Review
-                </button>
-                <button id="btnDone" class="rounded-xl bg-emerald-600 text-white px-3 py-2 text-sm font-semibold hover:bg-emerald-700 transition">
-                  Mark Done
-                </button>
-              </div>
-
-              <div id="clientControls" class="hidden flex flex-col gap-2">
-                <button id="btnApprove" class="rounded-xl bg-emerald-600 text-white px-3 py-2 text-sm font-semibold hover:bg-emerald-700 transition">
-                  Approve Done ✅
-                </button>
-                <button id="btnChanges" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 transition">
-                  Request Changes
-                </button>
-              </div>
-
-              <button id="saveTaskBtn" class="rounded-xl bg-indigo-600 text-white px-3 py-2 text-sm font-semibold hover:bg-indigo-700 transition">
-                Save Changes
-              </button>
+            <div id="clientControls" class="hidden mt-3 grid grid-cols-2 gap-2">
+              <button id="btnApprove" class="rounded-2xl bg-emerald-600 text-white px-3 py-2 text-sm font-semibold hover:bg-emerald-700 transition col-span-2">Approve Done ✅</button>
+              <button id="btnChanges" class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 transition col-span-2">Request Changes</button>
             </div>
+
+            <button id="saveTaskBtn" class="mt-3 w-full rounded-2xl bg-indigo-600 text-white px-3 py-2 text-sm font-semibold hover:bg-indigo-700 transition">Save Changes</button>
           </div>
 
-          <div class="rounded-2xl border border-slate-200 p-3">
-            <div class="text-xs font-semibold text-slate-500">Client Request / Details</div>
-            <textarea id="dDetails" rows="7"
-              class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"></textarea>
+          <div class="rounded-3xl bg-white border border-slate-200 p-3">
+            <div class="text-xs font-semibold text-slate-500">Details</div>
+            <textarea id="dDetails" rows="7" class="mt-2 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"></textarea>
           </div>
         </div>
       </div>
 
-      <!-- RIGHT PANEL -->
+      <!-- Right -->
       <div class="lg:col-span-8 p-4">
-        <div class="rounded-2xl border border-slate-200 overflow-hidden">
-          <div class="p-3 border-b border-slate-200 flex items-center justify-between">
+        <div class="rounded-3xl border border-slate-200 overflow-hidden bg-white">
+          <div class="p-3 border-b border-slate-100 flex items-center justify-between">
             <div>
               <div class="font-semibold">Conversation</div>
-              <div class="text-sm text-slate-500">Questions, replies, notes (clean thread)</div>
+              <div class="text-sm text-slate-500">Clean thread, easy for client</div>
             </div>
           </div>
 
           <div id="thread" class="p-3 space-y-2 max-h-[520px] overflow-auto bg-slate-50"></div>
 
-          <div class="p-3 border-t border-slate-200 bg-white">
+          <div class="p-3 border-t border-slate-100 bg-white">
             <div class="flex gap-2">
-              <input id="msgInput"
-                class="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
+              <input id="msgInput" class="flex-1 rounded-2xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
                 placeholder="Write an update..." />
-              <button id="sendMsgBtn"
-                class="rounded-xl bg-indigo-600 text-white px-4 py-2 text-sm font-semibold hover:bg-indigo-700 transition">
-                Send
-              </button>
+              <button id="sendMsgBtn" class="rounded-2xl bg-indigo-600 text-white px-4 py-2 text-sm font-semibold hover:bg-indigo-700 transition">Send</button>
             </div>
             <div class="mt-2 text-xs text-slate-500">Press Enter to send.</div>
           </div>
@@ -460,6 +415,7 @@ const wsBadge = $("wsBadge");
 const logoutBtn = $("logoutBtn");
 
 const searchInput = $("searchInput");
+const searchInputMobile = $("searchInputMobile");
 const filterSubaccount = $("filterSubaccount");
 const newTaskBtn = $("newTaskBtn");
 const addSubBtn = $("addSubBtn");
@@ -494,14 +450,13 @@ const dAssignee = $("dAssignee");
 const dDetails = $("dDetails");
 const saveTaskBtn = $("saveTaskBtn");
 
-const builderControls = $("builderControls");
-const clientControls = $("clientControls");
 const btnClarify = $("btnClarify");
 const btnProgress = $("btnProgress");
 const btnReview = $("btnReview");
 const btnDone = $("btnDone");
 const btnApprove = $("btnApprove");
 const btnChanges = $("btnChanges");
+const clientControls = $("clientControls");
 
 const thread = $("thread");
 const msgInput = $("msgInput");
@@ -516,15 +471,9 @@ const markAllReadBtn = $("markAllReadBtn");
 /* =========================
    STATE
 ========================= */
-let WS = null;
-let USER = null;
-let ROLE = null;
-let UID = null;
-
-let subaccounts = [];
-let tasks = [];
-let currentTaskId = null;
-let notifications = [];
+let WS=null, USER=null, ROLE=null, UID=null;
+let subaccounts=[], tasks=[], notifications=[];
+let currentTaskId=null;
 
 const STATUS = [
   { id:"requested", label:"Requested" },
@@ -534,25 +483,22 @@ const STATUS = [
   { id:"done", label:"Done" }
 ];
 
-function isBuilder(){ return ROLE === "builder"; }
-function isExpert(){ return ROLE === "ghl_expert"; }
-function isClient(){ return ROLE === "client"; }
+function isBuilder(){ return ROLE==="builder"; }
+function isExpert(){ return ROLE==="ghl_expert"; }
+function isClient(){ return ROLE==="client"; }
 function canCreate(){ return isBuilder(); }
-function canMove(){ return isBuilder() || isExpert(); } // you can tighten later
+function canMove(){ return isBuilder() || isExpert(); }
 function canApprove(){ return isClient(); }
 
 function clean(str){ return (str||"").trim(); }
 function escapeHtml(str){
   return (str??"").toString()
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
+    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
 
 /* =========================
-   FIRESTORE REFS
+   REFS
 ========================= */
 function wsDoc(){ return db.collection("workspaces").doc(WS); }
 function usersRef(){ return wsDoc().collection("users"); }
@@ -561,19 +507,17 @@ function taskRef(){ return wsDoc().collection("tasks"); }
 function notifRef(){ return wsDoc().collection("notifications"); }
 
 /* =========================
-   AUTH UTIL
+   AUTH
 ========================= */
-function makeEmail(username, ws){
-  return `${username.toLowerCase()}@${ws.toLowerCase()}.local`;
-}
+function makeEmail(username, ws){ return `${username.toLowerCase()}@${ws.toLowerCase()}.local`; }
 function setAuthError(msg){ authMsg.textContent = msg || ""; }
 
 async function doRegister(){
   setAuthError("");
-  const ws = clean(wsInput.value);
-  const username = clean(usernameInput.value).replace(/\s+/g,"");
-  const password = passwordInput.value;
-  const role = roleInput.value;
+  const ws=clean(wsInput.value);
+  const username=clean(usernameInput.value).replace(/\s+/g,"");
+  const password=passwordInput.value;
+  const role=roleInput.value;
 
   if(!ws || !username || !password) return setAuthError("Workspace, Username, Password required.");
   if(password.length < 6) return setAuthError("Password must be at least 6 characters.");
@@ -591,10 +535,10 @@ async function doRegister(){
 
 async function doLogin(){
   setAuthError("");
-  const ws = clean(wsInput.value);
-  const username = clean(usernameInput.value).replace(/\s+/g,"");
-  const password = passwordInput.value;
-  const role = roleInput.value;
+  const ws=clean(wsInput.value);
+  const username=clean(usernameInput.value).replace(/\s+/g,"");
+  const password=passwordInput.value;
+  const role=roleInput.value;
 
   if(!ws || !username || !password) return setAuthError("Workspace, Username, Password required.");
 
@@ -610,11 +554,11 @@ async function doLogin(){
 }
 
 async function afterAuth(ws, username, role, uid){
-  WS = ws; USER = username; ROLE = role; UID = uid;
+  WS=ws; USER=username.toLowerCase(); ROLE=role; UID=uid;
 
   await usersRef().doc(uid).set({
-    username,
-    role,
+    username: USER,
+    role: ROLE,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   }, { merge:true });
@@ -633,11 +577,9 @@ async function afterAuth(ws, username, role, uid){
 }
 
 /* =========================
-   REALTIME LISTENERS
+   REALTIME
 ========================= */
-let unsubSubs = null;
-let unsubTasks = null;
-let unsubNotifs = null;
+let unsubSubs=null, unsubTasks=null, unsubNotifs=null;
 
 function bindRealtime(){
   if(unsubSubs) unsubSubs();
@@ -646,8 +588,8 @@ function bindRealtime(){
 
   unsubSubs = subRef().orderBy("createdAt","desc").onSnapshot(snap=>{
     subaccounts = snap.docs.map(d=>({id:d.id, ...d.data()}));
-    renderSubaccounts();
     renderDropdowns();
+    renderSubaccounts();
     renderBoard();
   });
 
@@ -655,14 +597,12 @@ function bindRealtime(){
     tasks = snap.docs.map(d=>({id:d.id, ...d.data()}));
     renderSubaccounts();
     renderBoard();
-
     if(currentTaskId){
       const t = tasks.find(x=>x.id===currentTaskId);
       if(t) renderDetails(t);
     }
   });
 
-  // notifications to current username
   unsubNotifs = notifRef()
     .where("toUsername","==", USER)
     .orderBy("createdAt","desc")
@@ -674,65 +614,33 @@ function bindRealtime(){
 }
 
 /* =========================
-   UI RENDER
+   UI HELPERS
 ========================= */
 function renderDropdowns(){
-  // filter dropdown
   const cur = filterSubaccount.value;
-  filterSubaccount.innerHTML = `<option value="">All Subaccounts</option>` + subaccounts.map(sa =>
-    `<option value="${sa.id}">${escapeHtml(sa.name||"—")}</option>`
-  ).join("");
+  filterSubaccount.innerHTML =
+    `<option value="">All</option>` +
+    subaccounts.map(sa=>`<option value="${sa.id}">${escapeHtml(sa.name||"—")}</option>`).join("");
 
-  const exists = [...filterSubaccount.options].some(o=>o.value===cur);
-  filterSubaccount.value = exists ? cur : "";
+  if([...filterSubaccount.options].some(o=>o.value===cur)) filterSubaccount.value = cur;
+  else filterSubaccount.value = "";
 
-  // task create + details dropdowns
   tSub.innerHTML = subaccounts.map(sa=>`<option value="${sa.id}">${escapeHtml(sa.name||"—")}</option>`).join("");
   dSub.innerHTML = subaccounts.map(sa=>`<option value="${sa.id}">${escapeHtml(sa.name||"—")}</option>`).join("");
 }
 
-function renderSubaccounts(){
-  subList.innerHTML = "";
-  if(subaccounts.length===0){
-    subList.innerHTML = `<div class="text-sm text-slate-500">No subaccounts yet.</div>`;
-    return;
-  }
-
-  subaccounts.forEach(sa=>{
-    const total = tasks.filter(t=>t.subaccountId===sa.id).length;
-    const done = tasks.filter(t=>t.subaccountId===sa.id && t.status==="done").length;
-    const open = total - done;
-    const pct = total===0 ? 0 : Math.round((done/total)*100);
-
-    const card = document.createElement("button");
-    card.className = "w-full text-left rounded-2xl border border-slate-200 bg-white hover:shadow-soft hover:border-slate-300 p-3 transition active:scale-[.99]";
-    card.innerHTML = `
-      <div class="flex items-start justify-between gap-2">
-        <div class="min-w-0">
-          <div class="font-semibold truncate">${escapeHtml(sa.name||"—")}</div>
-          <div class="text-xs text-slate-500 mt-0.5">${open} open • ${total} total • ${pct}% done</div>
-        </div>
-        <div class="text-xs font-bold px-2 py-1 rounded-xl border bg-slate-50">${pct}%</div>
-      </div>
-      <div class="mt-2 h-2 bg-slate-100 rounded-full overflow-hidden">
-        <div class="h-2 bg-gradient-to-r from-indigo-600 to-violet-600" style="width:${pct}%"></div>
-      </div>
-    `;
-    card.onclick = ()=>{
-      filterSubaccount.value = sa.id;
-      renderBoard();
-    };
-    subList.appendChild(card);
-  });
+function getSearchText(){
+  return (clean(searchInput?.value) || clean(searchInputMobile?.value)).toLowerCase();
 }
 
 function getFilteredTasks(){
-  const q = clean(searchInput.value).toLowerCase();
+  const q = getSearchText();
   const f = filterSubaccount.value;
 
   return tasks.filter(t=>{
     if(f && t.subaccountId !== f) return false;
     if(!q) return true;
+
     const saName = (subaccounts.find(s=>s.id===t.subaccountId)?.name || "").toLowerCase();
     return (
       (t.title||"").toLowerCase().includes(q) ||
@@ -744,21 +652,61 @@ function getFilteredTasks(){
   });
 }
 
+/* =========================
+   RENDER: SUBACCOUNTS
+========================= */
+function renderSubaccounts(){
+  subList.innerHTML = "";
+  if(subaccounts.length===0){
+    subList.innerHTML = `<div class="text-sm text-slate-500 px-1 pb-2">No subaccounts yet.</div>`;
+    return;
+  }
+
+  subaccounts.forEach(sa=>{
+    const total = tasks.filter(t=>t.subaccountId===sa.id).length;
+    const done = tasks.filter(t=>t.subaccountId===sa.id && t.status==="done").length;
+    const open = total - done;
+    const pct = total===0 ? 0 : Math.round((done/total)*100);
+
+    const item = document.createElement("button");
+    item.className = "w-full text-left px-3 py-2 rounded-2xl hover:bg-slate-50 transition flex items-center justify-between gap-3";
+    item.innerHTML = `
+      <div class="min-w-0">
+        <div class="font-semibold truncate">${escapeHtml(sa.name||"—")}</div>
+        <div class="text-xs text-slate-500">${open} open • ${total} total</div>
+      </div>
+      <div class="shrink-0 flex items-center gap-2">
+        <div class="h-2 w-16 bg-slate-100 rounded-full overflow-hidden">
+          <div class="h-2 bg-gradient-to-r from-indigo-600 to-violet-600" style="width:${pct}%"></div>
+        </div>
+        <div class="text-xs font-semibold text-slate-500 w-10 text-right">${pct}%</div>
+      </div>
+    `;
+    item.onclick = ()=>{
+      filterSubaccount.value = sa.id;
+      renderBoard();
+    };
+    subList.appendChild(item);
+  });
+}
+
+/* =========================
+   RENDER: BOARD
+========================= */
 function renderBoard(){
   board.innerHTML = "";
   const list = getFilteredTasks();
 
   STATUS.forEach(col=>{
     const colTasks = list.filter(t=>t.status===col.id);
+
     const wrap = document.createElement("div");
-    wrap.className = "rounded-2xl border border-slate-200 bg-white shadow-soft overflow-hidden flex flex-col";
+    wrap.className = "rounded-3xl bg-white border border-slate-100 shadow-soft overflow-hidden flex flex-col";
 
     wrap.innerHTML = `
-      <div class="p-3 border-b border-slate-200 flex items-start justify-between">
-        <div>
-          <div class="font-semibold">${col.label}</div>
-          <div class="text-xs text-slate-500">${colTasks.length} task(s)</div>
-        </div>
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+        <div class="font-semibold">${col.label}</div>
+        <div class="text-xs text-slate-500">${colTasks.length}</div>
       </div>
       <div class="p-3 space-y-2 bg-slate-50 min-h-[260px] flex-1"></div>
     `;
@@ -768,25 +716,23 @@ function renderBoard(){
       const saName = subaccounts.find(s=>s.id===t.subaccountId)?.name || "—";
       const msgCount = Array.isArray(t.messages) ? t.messages.length : 0;
 
-      const card = document.createElement("div");
-      card.className = "rounded-2xl border border-slate-200 bg-white p-3 cursor-pointer hover:border-slate-300 hover:shadow-soft transition active:scale-[.99]";
+      const card = document.createElement("button");
+      card.className = "w-full text-left rounded-3xl bg-white border border-slate-200 hover:border-slate-300 hover:shadow-soft transition px-4 py-3 active:scale-[.99]";
       card.innerHTML = `
-        <div class="flex items-start justify-between gap-2">
+        <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
-            <div class="font-semibold leading-snug">${escapeHtml(t.title||"Untitled")}</div>
+            <div class="font-semibold leading-snug line-clamp-2">${escapeHtml(t.title||"Untitled")}</div>
             <div class="mt-1 text-xs text-slate-500 truncate">${escapeHtml(saName)}</div>
           </div>
-          <div class="shrink-0 text-xs font-semibold px-2 py-1 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-800">
-            ${escapeHtml(t.status||"")}
+          <div class="shrink-0 text-xs font-semibold px-2 py-1 rounded-2xl bg-slate-100 text-slate-700">
+            ${escapeHtml(col.label)}
           </div>
         </div>
 
         <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
-          <div>👤 ${escapeHtml(t.assigneeUsername||"—")}</div>
-          <div class="flex items-center gap-2">
+          <div class="truncate">Assigned: <span class="font-semibold text-slate-700">${escapeHtml(t.assigneeUsername||"—")}</span></div>
+          <div class="flex items-center gap-2 shrink-0">
             <span>💬 ${msgCount}</span>
-            <span class="text-slate-300">•</span>
-            <span>🧾 ${escapeHtml(t.createdByUsername||"—")}</span>
           </div>
         </div>
       `;
@@ -803,8 +749,8 @@ function renderBoard(){
 ========================= */
 function renderNotifications(){
   notifList.innerHTML = "";
-
   const unread = notifications.filter(n=>!n.read).length;
+
   if(unread > 0){
     notifCount.textContent = unread;
     notifCount.classList.remove("hidden");
@@ -819,12 +765,12 @@ function renderNotifications(){
 
   notifications.forEach(n=>{
     const item = document.createElement("button");
-    item.className = `w-full text-left rounded-2xl border p-3 transition hover:shadow-soft active:scale-[.99] ${n.read ? "border-slate-200 bg-white" : "border-indigo-200 bg-indigo-50"}`;
+    item.className = `w-full text-left rounded-3xl border p-3 transition hover:shadow-soft active:scale-[.99] ${n.read ? "border-slate-200 bg-white" : "border-indigo-200 bg-indigo-50"}`;
     item.innerHTML = `
       <div class="flex items-start justify-between gap-2">
         <div class="min-w-0">
           <div class="text-sm font-semibold ${n.read ? "text-slate-900" : "text-indigo-900"}">
-            ${escapeHtml(n.title||"Notification")}
+            ${escape Html(n.title||"Notification")}
           </div>
           <div class="mt-1 text-xs text-slate-600 whitespace-pre-wrap">${escapeHtml(n.body||"")}</div>
           <div class="mt-2 text-xs text-slate-400">${escapeHtml(n.createdAtText||"")}</div>
@@ -832,30 +778,22 @@ function renderNotifications(){
         ${n.read ? "" : `<div class="h-2 w-2 rounded-full bg-indigo-600 mt-1"></div>`}
       </div>
     `;
-
     item.onclick = async ()=>{
-      // mark read
-      if(!n.read){
-        await notifRef().doc(n.id).update({ read:true });
-      }
-      // open task if present
-      if(n.taskId){
-        const t = tasks.find(x=>x.id===n.taskId);
-        if(t) openDetails(n.taskId);
-      }
+      if(!n.read) await notifRef().doc(n.id).update({ read:true });
+      if(n.taskId) openDetails(n.taskId);
     };
-
     notifList.appendChild(item);
   });
 }
 
 async function createNotification(toUsername, title, body, taskId=null){
   if(!toUsername) return;
-  if(toUsername.toLowerCase() === USER.toLowerCase()) return; // don't notify yourself
+  const to = toUsername.toLowerCase();
+  if(to === USER) return;
 
   const now = new Date();
   await notifRef().add({
-    toUsername: toUsername.toLowerCase(),
+    toUsername: to,
     title,
     body,
     taskId: taskId || null,
@@ -867,36 +805,35 @@ async function createNotification(toUsername, title, body, taskId=null){
 
 async function markAllRead(){
   const unread = notifications.filter(n=>!n.read);
+  if(unread.length===0) return;
   const batch = db.batch();
-  unread.forEach(n=>{
-    batch.update(notifRef().doc(n.id), { read:true });
-  });
+  unread.forEach(n=>batch.update(notifRef().doc(n.id), { read:true }));
   await batch.commit();
-  showToast("Marked all as read");
+  showToast("Marked all read");
 }
 
 /* =========================
-   SUBACCOUNT MODAL
+   MODALS: SUB + TASK
 ========================= */
 function openSubModal(){
+  if(!isBuilder()) return alert("Only Builder/Admin can add subaccounts.");
   subErr.classList.add("hidden");
   subErr.textContent = "";
   subNameInput.value = "";
   subModal.classList.remove("hidden");
   subModal.classList.add("flex");
-  setTimeout(()=>subNameInput.focus(), 50);
+  setTimeout(()=>subNameInput.focus(), 60);
 }
 function closeSubModal(){
   subModal.classList.add("hidden");
   subModal.classList.remove("flex");
 }
-
 closeSubModalBtn.onclick = closeSubModal;
 cancelSubBtn.onclick = closeSubModal;
 subModal.addEventListener("click",(e)=>{ if(e.target===subModal) closeSubModal(); });
 
 saveSubBtn.onclick = async ()=>{
-  if(!isBuilder()) return alert("Only Builder/Admin can add subaccounts.");
+  if(!isBuilder()) return;
 
   const name = clean(subNameInput.value);
   if(!name){
@@ -906,10 +843,7 @@ saveSubBtn.onclick = async ()=>{
   }
 
   try{
-    await subRef().add({
-      name,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    await subRef().add({ name, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
     closeSubModal();
     showToast("Subaccount added");
   }catch(e){
@@ -920,30 +854,25 @@ saveSubBtn.onclick = async ()=>{
 };
 subNameInput.addEventListener("keydown",(e)=>{ if(e.key==="Enter") saveSubBtn.click(); });
 
-/* =========================
-   TASK MODAL
-========================= */
 function openTaskModal(){
   if(!canCreate()) return alert("Only Builder/Admin can create tasks.");
   if(subaccounts.length===0) return alert("Add at least 1 subaccount first.");
 
   taskErr.classList.add("hidden");
   taskErr.textContent = "";
-
   tTitle.value = "";
   tDetails.value = "";
-  tAssignee.value = USER.toLowerCase();
-  tSub.value = subaccounts[0].id;
+  tAssignee.value = USER;
+  tSub.value = subaccounts[0]?.id || "";
 
   taskModal.classList.remove("hidden");
   taskModal.classList.add("flex");
-  setTimeout(()=>tTitle.focus(), 50);
+  setTimeout(()=>tTitle.focus(), 60);
 }
 function closeTaskModalFn(){
   taskModal.classList.add("hidden");
   taskModal.classList.remove("flex");
 }
-
 closeTaskModal.onclick = closeTaskModalFn;
 cancelTaskBtn.onclick = closeTaskModalFn;
 taskModal.addEventListener("click",(e)=>{ if(e.target===taskModal) closeTaskModalFn(); });
@@ -981,15 +910,12 @@ createTaskBtn.onclick = async ()=>{
       subaccountId: subId,
       status: "requested",
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      createdByUsername: USER.toLowerCase(),
+      createdByUsername: USER,
       createdByUid: UID,
       assigneeUsername,
-      messages: [
-        { by: USER.toLowerCase(), role: ROLE, text: "Task created.", at: nowISO }
-      ]
+      messages: [{ by: USER, role: ROLE, text: "Task created.", at: nowISO }]
     });
 
-    // Notifications
     await createNotification(
       assigneeUsername,
       "New task assigned",
@@ -1007,17 +933,22 @@ createTaskBtn.onclick = async ()=>{
 };
 
 /* =========================
-   DETAILS MODAL (CLEAN)
+   DETAILS MODAL + THREAD
 ========================= */
 function openDetails(taskId){
   const t = tasks.find(x=>x.id===taskId);
   if(!t) return;
   currentTaskId = taskId;
-
   detailsModal.classList.remove("hidden");
   detailsModal.classList.add("flex");
   renderDetails(t);
+
+  // mark notifications about this task as read (optional)
+  notifications.filter(n=>n.taskId===taskId && !n.read).forEach(n=>{
+    notifRef().doc(n.id).update({ read:true }).catch(()=>{});
+  });
 }
+
 function closeDetails(){
   detailsModal.classList.add("hidden");
   detailsModal.classList.remove("flex");
@@ -1026,6 +957,13 @@ function closeDetails(){
 }
 closeDetailsModal.onclick = closeDetails;
 detailsModal.addEventListener("click",(e)=>{ if(e.target===detailsModal) closeDetails(); });
+
+function formatRole(r){
+  if(r==="builder") return "Builder";
+  if(r==="ghl_expert") return "GHL Expert";
+  if(r==="client") return "Client";
+  return r || "";
+}
 
 function renderDetails(t){
   const saName = subaccounts.find(s=>s.id===t.subaccountId)?.name || "—";
@@ -1037,42 +975,64 @@ function renderDetails(t){
   dAssignee.value = t.assigneeUsername || "";
   dDetails.value = t.details || "";
 
-  // permissions UI
-  builderControls.style.display = canMove() ? "flex" : "none";
+  // Client buttons only in review
+  clientControls.classList.toggle("hidden", !(canApprove() && t.status==="review"));
 
-  const showClient = canApprove() && (t.status === "review");
-  clientControls.classList.toggle("hidden", !showClient);
+  // Disable moves for clients
+  dStatus.disabled = !canMove();
+  dSub.disabled = !canMove();
+  dAssignee.disabled = !canMove();
+  dDetails.disabled = !canMove();
+
+  btnClarify.disabled = !canMove();
+  btnProgress.disabled = !canMove();
+  btnReview.disabled = !canMove();
+  btnDone.disabled = !canMove();
 
   // thread render
   thread.innerHTML = "";
   const msgs = Array.isArray(t.messages) ? t.messages.slice() : [];
   msgs.sort((a,b)=> (a.at>b.at ? 1 : -1));
+
   if(msgs.length===0){
     thread.innerHTML = `<div class="text-sm text-slate-500">No updates yet.</div>`;
-  }else{
-    msgs.forEach(m=>{
-      const mine = (m.by||"").toLowerCase() === USER.toLowerCase();
-      const bubble = document.createElement("div");
-      bubble.className = `rounded-2xl border p-3 ${mine ? "bg-white border-indigo-200" : "bg-white border-slate-200"} shadow-sm`;
-      bubble.innerHTML = `
-        <div class="flex items-center justify-between gap-2">
-          <div class="text-sm font-semibold">
-                    ${escapeHtml(m.by || "—")}
-          <span class="text-xs font-medium text-slate-400">(${escapeHtml(m.role || "—")})</span>
-        </div>
-        <div class="text-xs text-slate-400">${escapeHtml(new Date(m.at || Date.now()).toLocaleString())}</div>
-      </div>
-      <div class="mt-2 text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">${escapeHtml(m.text || "")}</div>
-      `;
-      thread.appendChild(bubble);
-    });
-    // auto scroll bottom
-    thread.scrollTop = thread.scrollHeight;
+    return;
   }
+
+  msgs.forEach(m=>{
+    const mine = (m.by||"").toLowerCase() === USER;
+    const when = m.at ? new Date(m.at).toLocaleString() : "";
+    const bubble = document.createElement("div");
+    bubble.className = `rounded-3xl border px-4 py-3 ${mine ? "bg-white border-indigo-200" : "bg-white border-slate-200"}`;
+    bubble.innerHTML = `
+      <div class="flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <div class="text-sm font-semibold truncate">${escapeHtml(m.by||"—")} <span class="text-xs font-semibold text-slate-400">(${escapeHtml(formatRole(m.role))})</span></div>
+          <div class="mt-1 text-sm text-slate-700 whitespace-pre-wrap">${escapeHtml(m.text||"")}</div>
+        </div>
+        <div class="text-xs text-slate-400 shrink-0">${escapeHtml(when)}</div>
+      </div>
+    `;
+    thread.appendChild(bubble);
+  });
+
+  thread.scrollTop = thread.scrollHeight;
 }
 
-// Save changes (status/sub/assignee/details)
-async function saveTaskChanges(){
+/* =========================
+   SAVE TASK + QUICK MOVES
+========================= */
+async function addSystemMessage(text){
+  if(!currentTaskId) return;
+  const nowISO = new Date().toISOString();
+  await taskRef().doc(currentTaskId).update({
+    messages: firebase.firestore.FieldValue.arrayUnion({
+      by: USER, role: ROLE, text, at: nowISO
+    })
+  });
+}
+
+async function saveTask(){
   if(!currentTaskId) return;
   const t = tasks.find(x=>x.id===currentTaskId);
   if(!t) return;
@@ -1082,57 +1042,48 @@ async function saveTaskChanges(){
   const newAssignee = clean(dAssignee.value).toLowerCase();
   const newDetails = dDetails.value || "";
 
-  // permissions:
-  // - builder/expert can change status
-  // - builder can change subaccount/assignee/details
-  if(!canMove() && newStatus !== (t.status||"requested")) {
-    return alert("You cannot change status.");
-  }
-  if(!isBuilder()){
-    // lock fields for non-builder
-    if(newSub !== (t.subaccountId||"")) return alert("Only Builder can change subaccount.");
-    if(newAssignee !== (t.assigneeUsername||"")) return alert("Only Builder can change assignee.");
-    if(newDetails !== (t.details||"")) return alert("Only Builder can change details.");
+  // permission: clients can't edit
+  if(!canMove()){
+    showToast("Client cannot edit");
+    return;
   }
 
-  const updates = {
-    status: newStatus,
-    subaccountId: newSub,
-    assigneeUsername: newAssignee,
-    details: newDetails,
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
+  const changes = [];
+  if(newStatus !== (t.status||"")) changes.push(`Status → ${newStatus}`);
+  if(newSub !== (t.subaccountId||"")) changes.push(`Subaccount changed`);
+  if(newAssignee !== (t.assigneeUsername||"")) changes.push(`Assignee → ${newAssignee}`);
 
   try{
-    await taskRef().doc(currentTaskId).update(updates);
+    await taskRef().doc(currentTaskId).update({
+      status: newStatus,
+      subaccountId: newSub,
+      assigneeUsername: newAssignee,
+      details: newDetails,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
 
-    // notify assignee if changed
-    if(newAssignee && newAssignee !== (t.assigneeUsername||"").toLowerCase()){
-      await createNotification(
-        newAssignee,
-        "Task assigned to you",
-        `Task: "${t.title}"\nAssigned by: ${USER}\nStatus: ${newStatus}`,
-        currentTaskId
-      );
-    }
+    if(changes.length){
+      await addSystemMessage(`Updated: ${changes.join(" • ")}`);
 
-    // notify previous assignee (optional) if unassigned/changed
-    const oldAssignee = (t.assigneeUsername||"").toLowerCase();
-    if(oldAssignee && oldAssignee !== newAssignee){
-      await createNotification(
-        oldAssignee,
-        "Task reassigned",
-        `Task: "${t.title}" is no longer assigned to you.`,
-        currentTaskId
-      );
-    }
+      // notify assignee if changed OR status changed
+      if(newAssignee && newAssignee !== (t.assigneeUsername||"")){
+        await createNotification(
+          newAssignee,
+          "Task assigned to you",
+          `Task: "${t.title||"Untitled"}"\nAssigned by: ${USER}\nStatus: ${newStatus}`,
+          currentTaskId
+        );
+      }
 
-    // notify creator + assignee when status changes
-    if(newStatus !== (t.status||"")){
-      const title = "Task status updated";
-      const body = `Task: "${t.title}"\nNew Status: ${newStatus}\nUpdated by: ${USER}`;
-      await createNotification((t.createdByUsername||"").toLowerCase(), title, body, currentTaskId);
-      await createNotification(newAssignee, title, body, currentTaskId);
+      // notify creator about status updates (optional)
+      if(t.createdByUsername && t.createdByUsername !== USER){
+        await createNotification(
+          t.createdByUsername,
+          "Task updated",
+          `Task: "${t.title||"Untitled"}"\nUpdated by: ${USER}\n${changes.join(" • ")}`,
+          currentTaskId
+        );
+      }
     }
 
     showToast("Saved");
@@ -1142,174 +1093,142 @@ async function saveTaskChanges(){
   }
 }
 
-saveTaskBtn.onclick = saveTaskChanges;
+saveTaskBtn.onclick = saveTask;
 
-// quick move buttons
-async function quickMove(newStatus){
-  if(!currentTaskId) return;
-  if(!canMove()) return alert("You cannot move status.");
-  dStatus.value = newStatus;
-  await saveTaskChanges();
-}
+btnClarify.onclick = ()=>{ dStatus.value="clarify"; saveTask(); };
+btnProgress.onclick = ()=>{ dStatus.value="progress"; saveTask(); };
+btnReview.onclick = ()=>{ dStatus.value="review"; saveTask(); };
+btnDone.onclick = ()=>{ dStatus.value="done"; saveTask(); };
 
-btnClarify.onclick = ()=>quickMove("clarify");
-btnProgress.onclick = ()=>quickMove("progress");
-btnReview.onclick = ()=>quickMove("review");
-btnDone.onclick = ()=>quickMove("done");
-
-// client approve / request changes
 btnApprove.onclick = async ()=>{
   if(!currentTaskId) return;
   const t = tasks.find(x=>x.id===currentTaskId);
   if(!t) return;
+  if(!(canApprove() && t.status==="review")) return;
 
-  if(!(canApprove() && t.status==="review")){
-    return alert("You can only approve in Client Review.");
-  }
-  dStatus.value = "done";
-  await saveTaskChanges();
-
-  // add a message
-  await addMessageToTask("Approved ✅");
+  // client approves -> done
+  dStatus.value="done";
+  await addSystemMessage("Client approved ✅");
+  await saveTask();
 };
 
 btnChanges.onclick = async ()=>{
   if(!currentTaskId) return;
   const t = tasks.find(x=>x.id===currentTaskId);
   if(!t) return;
+  if(!(canApprove() && t.status==="review")) return;
 
-  if(!(canApprove() && t.status==="review")){
-    return alert("You can only request changes in Client Review.");
-  }
-  dStatus.value = "progress";
-  await saveTaskChanges();
-  await addMessageToTask("Requested changes (moved back to In Progress).");
+  // back to progress
+  dStatus.value="progress";
+  await addSystemMessage("Client requested changes 🔁");
+  await saveTask();
 };
 
-// send message
-async function addMessageToTask(text){
+/* =========================
+   MESSAGES
+========================= */
+async function sendMessage(){
   if(!currentTaskId) return;
-  const msg = clean(text || msgInput.value);
-  if(!msg) return;
+  const text = clean(msgInput.value);
+  if(!text) return;
 
-  const atISO = new Date().toISOString();
+  const nowISO = new Date().toISOString();
+  msgInput.value = "";
+
   try{
     await taskRef().doc(currentTaskId).update({
       messages: firebase.firestore.FieldValue.arrayUnion({
-        by: USER.toLowerCase(),
-        role: ROLE,
-        text: msg,
-        at: atISO
-      }),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        by: USER, role: ROLE, text, at: nowISO
+      })
     });
 
-    // notify creator + assignee on new message (except yourself)
+    // notify the other party (assignee + creator) except self
     const t = tasks.find(x=>x.id===currentTaskId);
     if(t){
-      const title = "New message on task";
-      const body = `Task: "${t.title}"\nFrom: ${USER}\nMessage: ${msg}`;
-      await createNotification((t.createdByUsername||"").toLowerCase(), title, body, currentTaskId);
-      await createNotification((t.assigneeUsername||"").toLowerCase(), title, body, currentTaskId);
+      if(t.assigneeUsername) await createNotification(t.assigneeUsername, "New message on task", `Task: "${t.title||"Untitled"}"\nFrom: ${USER}\n\n${text}`, currentTaskId);
+      if(t.createdByUsername) await createNotification(t.createdByUsername, "New message on task", `Task: "${t.title||"Untitled"}"\nFrom: ${USER}\n\n${text}`, currentTaskId);
     }
 
-    msgInput.value = "";
+    showToast("Message sent");
   }catch(e){
     console.error(e);
-    alert(e.message || "Message failed");
+    alert(e.message || "Send failed");
   }
 }
 
-sendMsgBtn.onclick = ()=>addMessageToTask();
-msgInput.addEventListener("keydown",(e)=>{
-  if(e.key==="Enter"){
-    e.preventDefault();
-    addMessageToTask();
-  }
-});
-
-/* =========================
-   NOTIF UI
-========================= */
-notifBtn.onclick = ()=>{
-  notifPanel.classList.toggle("hidden");
-};
-
-markAllReadBtn.onclick = markAllRead;
-
-// close notif on outside click
-document.addEventListener("click",(e)=>{
-  const inside = notifPanel.contains(e.target) || notifBtn.contains(e.target);
-  if(!inside) notifPanel.classList.add("hidden");
-});
+sendMsgBtn.onclick = sendMessage;
+msgInput.addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); sendMessage(); } });
 
 /* =========================
    NAV / BUTTONS
 ========================= */
-filterSubaccount.onchange = renderBoard;
-searchInput.addEventListener("input", renderBoard);
-
-addSubBtn.onclick = ()=>{
-  if(!isBuilder()) return alert("Only Builder/Admin can add subaccounts.");
-  openSubModal();
-};
-
-newTaskBtn.onclick = openTaskModal;
+loginBtn.onclick = doLogin;
+registerBtn.onclick = doRegister;
 
 logoutBtn.onclick = async ()=>{
   try{
     await auth.signOut();
   }catch(e){}
-  // reset UI
+  // reset
   WS=null; USER=null; ROLE=null; UID=null;
-  subaccounts=[]; tasks=[]; notifications=[]; currentTaskId=null;
-
-  userBadge.textContent = "";
-  wsBadge.textContent = "";
-  notifPanel.classList.add("hidden");
+  currentTaskId=null;
+  subaccounts=[]; tasks=[]; notifications=[];
+  board.innerHTML=""; subList.innerHTML="";
   authModal.classList.remove("hidden");
   showToast("Logged out");
 };
 
-/* =========================
-   KEYBOARD SHORTCUTS
-========================= */
-document.addEventListener("keydown",(e)=>{
-  if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==="k"){
-    e.preventDefault();
-    searchInput.focus();
+newTaskBtn.onclick = openTaskModal;
+addSubBtn.onclick = openSubModal;
+
+filterSubaccount.onchange = renderBoard;
+
+function syncSearch(){
+  if(searchInputMobile && searchInput && document.activeElement === searchInputMobile){
+    searchInput.value = searchInputMobile.value;
   }
-  if(e.key==="Escape"){
-    // close modals/panels
-    notifPanel.classList.add("hidden");
-    if(!detailsModal.classList.contains("hidden")) closeDetails();
-    if(!taskModal.classList.contains("hidden")) closeTaskModalFn();
-    if(!subModal.classList.contains("hidden")) closeSubModal();
+  if(searchInput && searchInputMobile && document.activeElement === searchInput){
+    searchInputMobile.value = searchInput.value;
   }
-});
-
-/* =========================
-   AUTH BUTTONS
-========================= */
-loginBtn.onclick = doLogin;
-registerBtn.onclick = doRegister;
-
-// If already logged-in session exists (optional)
-auth.onAuthStateChanged(async (user)=>{
-  // keep it simple: always show auth modal until user logs in via UI (workspace+role required)
-  // This avoids confusion with workspace routing.
-  // You can enhance later by storing WS/ROLE in localStorage and auto-enter.
-});
-
-/* =========================
-   INITIAL UI STATE
-========================= */
-function lockUIUntilAuth(){
-  // hide risky buttons until login
-  addSubBtn.style.display = "none";
-  newTaskBtn.style.display = "none";
+  renderBoard();
 }
-lockUIUntilAuth();
+searchInput?.addEventListener("input", syncSearch);
+searchInputMobile?.addEventListener("input", syncSearch);
+
+/* =========================
+   NOTIF PANEL
+========================= */
+notifBtn.onclick = ()=>{
+  notifPanel.classList.toggle("hidden");
+};
+markAllReadBtn.onclick = markAllRead;
+
+// close notif panel on outside click
+document.addEventListener("click",(e)=>{
+  const inside = notifPanel.contains(e.target) || notifBtn.contains(e.target);
+  if(!inside) notifPanel.classList.add("hidden");
+});
+
+// basic shortcut
+document.addEventListener("keydown",(e)=>{
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==="k"){
+    e.preventDefault();
+    (searchInput || searchInputMobile)?.focus();
+  }
+});
+
+/* =========================
+   START
+========================= */
+showToast("Ready");
+
+// optional: keep auth state (if already logged)
+auth.onAuthStateChanged(async (user)=>{
+  if(user && WS && USER && ROLE){
+    // already in
+    return;
+  }
+});
 </script>
 
 </body>

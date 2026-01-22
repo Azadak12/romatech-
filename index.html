@@ -371,997 +371,323 @@
 
   </div>
 </div>
-
 <script>
-/* =========================
+/* =========================================================
    FIREBASE INIT
-========================= */
+========================================================= */
 const firebaseConfig = {
   apiKey: "AIzaSyDHL0tVJ7tm4lK4r7gQrZ7McPJwFOaRulc",
   authDomain: "romatech-system.firebaseapp.com",
   projectId: "romatech-system",
   storageBucket: "romatech-system.firebasestorage.app",
   messagingSenderId: "368102739583",
-  appId: "1:368102739583:web:92baa7b3abf14e7653b94a",
-  measurementId: "G-7CWF4D2V3T"
+  appId: "1:368102739583:web:92baa7b3abf14e7653b94a"
 };
-firebase.initializeApp(firebaseConfig);
 
+firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-/* =========================
-   DOM
-========================= */
-const $ = (id) => document.getElementById(id);
+/* =========================================================
+   HELPERS
+========================================================= */
+const $ = id => document.getElementById(id);
+const clean = v => (v || "").trim();
+const nowISO = () => new Date().toISOString();
 
-const toast = $("toast");
-const toastText = $("toastText");
-function showToast(msg){
-  toastText.textContent = msg || "Done";
-  toast.classList.remove("hidden");
-  clearTimeout(showToast._t);
-  showToast._t = setTimeout(()=>toast.classList.add("hidden"), 1600);
+function escapeHtml(str){
+  return (str ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
 }
 
-const authModal = $("authModal");
-const wsInput = $("wsInput");
-const usernameInput = $("usernameInput");
-const passwordInput = $("passwordInput");
-const roleInput = $("roleInput");
-const loginBtn = $("loginBtn");
-const registerBtn = $("registerBtn");
-const authMsg = $("authMsg");
-
-const userBadge = $("userBadge");
-const wsBadge = $("wsBadge");
-const logoutBtn = $("logoutBtn");
-
-const searchInput = $("searchInput");
-const searchInputMobile = $("searchInputMobile");
-const filterSubaccount = $("filterSubaccount");
-const newTaskBtn = $("newTaskBtn");
-const addSubBtn = $("addSubBtn");
-
-const subList = $("subList");
-const board = $("board");
-
-const subModal = $("subModal");
-const subNameInput = $("subNameInput");
-const closeSubModalBtn = $("closeSubModalBtn");
-const cancelSubBtn = $("cancelSubBtn");
-const saveSubBtn = $("saveSubBtn");
-const subErr = $("subErr");
-
-const taskModal = $("taskModal");
-const closeTaskModal = $("closeTaskModal");
-const cancelTaskBtn = $("cancelTaskBtn");
-const createTaskBtn = $("createTaskBtn");
-const tTitle = $("tTitle");
-const tSub = $("tSub");
-const tAssignee = $("tAssignee");
-const tDetails = $("tDetails");
-const taskErr = $("taskErr");
-
-const detailsModal = $("detailsModal");
-const closeDetailsModal = $("closeDetailsModal");
-const dTitle = $("dTitle");
-const dMeta = $("dMeta");
-const dStatus = $("dStatus");
-const dSub = $("dSub");
-const dAssignee = $("dAssignee");
-const dDetails = $("dDetails");
-const saveTaskBtn = $("saveTaskBtn");
-
-const btnClarify = $("btnClarify");
-const btnProgress = $("btnProgress");
-const btnReview = $("btnReview");
-const btnDone = $("btnDone");
-const btnApprove = $("btnApprove");
-const btnChanges = $("btnChanges");
-const clientControls = $("clientControls");
-
-const thread = $("thread");
-const msgInput = $("msgInput");
-const sendMsgBtn = $("sendMsgBtn");
-
-const notifBtn = $("notifBtn");
-const notifPanel = $("notifPanel");
-const notifList = $("notifList");
-const notifCount = $("notifCount");
-const markAllReadBtn = $("markAllReadBtn");
-
-/* =========================
+/* =========================================================
    STATE
-========================= */
+========================================================= */
 let WS=null, USER=null, ROLE=null, UID=null;
 let subaccounts=[], tasks=[], notifications=[];
 let currentTaskId=null;
 
 const STATUS = [
-  { id:"requested", label:"Requested" },
-  { id:"clarify", label:"Clarification" },
-  { id:"progress", label:"In Progress" },
-  { id:"review", label:"Client Review" },
-  { id:"done", label:"Done" }
+  {id:"requested", label:"Requested"},
+  {id:"clarify", label:"Clarification"},
+  {id:"progress", label:"In Progress"},
+  {id:"review", label:"Client Review"},
+  {id:"done", label:"Done"}
 ];
 
-function isBuilder(){ return ROLE==="builder"; }
-function isExpert(){ return ROLE==="ghl_expert"; }
-function isClient(){ return ROLE==="client"; }
-function canCreate(){ return isBuilder(); }
-function canMove(){ return isBuilder() || isExpert(); }
-function canApprove(){ return isClient(); }
+const isBuilder = () => ROLE==="builder";
+const isExpert  = () => ROLE==="ghl_expert";
+const isClient  = () => ROLE==="client";
+const canCreate = () => isBuilder();
+const canMove   = () => isBuilder() || isExpert();
+const canApprove= () => isClient();
 
-function clean(str){ return (str||"").trim(); }
-function escapeHtml(str){
-  return (str??"").toString()
-    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
-}
+/* =========================================================
+   FIRESTORE REFS
+========================================================= */
+const wsDoc   = () => db.collection("workspaces").doc(WS);
+const usersRef= () => wsDoc().collection("users");
+const subRef  = () => wsDoc().collection("subaccounts");
+const taskRef = () => wsDoc().collection("tasks");
+const notifRef= () => wsDoc().collection("notifications");
 
-/* =========================
-   PERSIST SESSION (UPDATED)
-========================= */
-const SESSION_KEY = "sct_session_v1";
+/* =========================================================
+   SESSION
+========================================================= */
+const SESSION_KEY="sct_session_v1";
+
 function saveSession(){
-  try{
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ WS, USER, ROLE }));
-  }catch(e){}
+  localStorage.setItem(SESSION_KEY, JSON.stringify({WS,USER,ROLE}));
 }
 function loadSession(){
-  try{
-    const raw = localStorage.getItem(SESSION_KEY);
-    if(!raw) return null;
-    const v = JSON.parse(raw);
-    if(!v?.WS || !v?.USER || !v?.ROLE) return null;
-    return v;
-  }catch(e){ return null; }
+  try{ return JSON.parse(localStorage.getItem(SESSION_KEY)); }
+  catch{ return null; }
 }
 function clearSession(){
-  try{ localStorage.removeItem(SESSION_KEY); }catch(e){}
+  localStorage.removeItem(SESSION_KEY);
 }
 
-/* =========================
-   REFS
-========================= */
-function wsDoc(){ return db.collection("workspaces").doc(WS); }
-function usersRef(){ return wsDoc().collection("users"); }
-function subRef(){ return wsDoc().collection("subaccounts"); }
-function taskRef(){ return wsDoc().collection("tasks"); }
-function notifRef(){ return wsDoc().collection("notifications"); }
-
-/* =========================
+/* =========================================================
    AUTH
-========================= */
-function makeEmail(username, ws){ return `${username.toLowerCase()}@${ws.toLowerCase()}.local`; }
-function setAuthError(msg){
-  if(!msg){
-    authMsg.classList.add("hidden");
-    authMsg.textContent = "";
-    return;
-  }
-  authMsg.textContent = msg;
-  authMsg.classList.remove("hidden");
+========================================================= */
+const makeEmail=(u,w)=>`${u.toLowerCase()}@${w.toLowerCase()}.local`;
+
+async function doLogin(){
+  const ws=clean(wsInput.value);
+  const u =clean(usernameInput.value).toLowerCase();
+  const p =passwordInput.value;
+  if(!ws||!u||!p) return showAuthErr("All fields required");
+
+  try{
+    const cred=await auth.signInWithEmailAndPassword(makeEmail(u,ws),p);
+    await afterAuth(ws,u,roleInput.value,cred.user.uid);
+  }catch(e){ showAuthErr(e.message); }
 }
 
 async function doRegister(){
-  setAuthError("");
   const ws=clean(wsInput.value);
-  const username=clean(usernameInput.value).replace(/\s+/g,"");
-  const password=passwordInput.value;
-  const role=roleInput.value;
-
-  if(!ws || !username || !password) return setAuthError("Workspace, Username, Password required.");
-  if(password.length < 6) return setAuthError("Password must be at least 6 characters.");
-
-  const email = makeEmail(username, ws);
+  const u =clean(usernameInput.value).toLowerCase();
+  const p =passwordInput.value;
+  if(p.length<6) return showAuthErr("Min 6 chars");
 
   try{
-    const cred = await auth.createUserWithEmailAndPassword(email, password);
-    await afterAuth(ws, username, role, cred.user.uid);
-  }catch(e){
-    console.error(e);
-    setAuthError(e.message || "Register failed");
-  }
+    const cred=await auth.createUserWithEmailAndPassword(makeEmail(u,ws),p);
+    await afterAuth(ws,u,roleInput.value,cred.user.uid);
+  }catch(e){ showAuthErr(e.message); }
 }
 
-async function doLogin(){
-  setAuthError("");
-  const ws=clean(wsInput.value);
-  const username=clean(usernameInput.value).replace(/\s+/g,"");
-  const password=passwordInput.value;
-  const role=roleInput.value;
-
-  if(!ws || !username || !password) return setAuthError("Workspace, Username, Password required.");
-
-  const email = makeEmail(username, ws);
-
-  try{
-    const cred = await auth.signInWithEmailAndPassword(email, password);
-    await afterAuth(ws, username, role, cred.user.uid);
-  }catch(e){
-    console.error(e);
-    setAuthError(e.message || "Login failed");
-  }
-}
-
-async function afterAuth(ws, username, role, uid){
-  WS=ws;
-  USER=username.toLowerCase();
-  ROLE=role;
-  UID=uid;
-
-  await usersRef().doc(uid).set({
-    username: USER,
-    role: ROLE,
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  }, { merge:true });
-
+async function afterAuth(ws,u,r,uid){
+  WS=ws; USER=u; ROLE=r; UID=uid;
   saveSession();
 
+  await usersRef().doc(uid).set({
+    username:u, role:r,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true});
+
   authModal.classList.add("hidden");
-  userBadge.textContent = `${USER} (${ROLE})`;
-  wsBadge.textContent = ` • WS: ${WS}`;
+  userBadge.textContent=`${USER} (${ROLE})`;
+  wsBadge.textContent=` • ${WS}`;
 
-  addSubBtn.style.display = isBuilder() ? "inline-flex" : "none";
-  newTaskBtn.style.display = canCreate() ? "inline-flex" : "none";
+  addSubBtn.style.display= isBuilder()?"inline-flex":"none";
+  newTaskBtn.style.display= canCreate()?"inline-flex":"none";
 
-  dStatus.innerHTML = STATUS.map(s=>`<option value="${s.id}">${s.label}</option>`).join("");
-
+  dStatus.innerHTML=STATUS.map(s=>`<option value="${s.id}">${s.label}</option>`).join("");
   bindRealtime();
-  showToast("Welcome!");
+  showToast("Welcome");
 }
 
-/* =========================
+function showAuthErr(m){
+  authMsg.textContent=m;
+  authMsg.classList.remove("hidden");
+}
+
+/* =========================================================
    REALTIME
-========================= */
-let unsubSubs=null, unsubTasks=null, unsubNotifs=null;
-
-function unbindRealtime(){
-  if(unsubSubs) unsubSubs();
-  if(unsubTasks) unsubTasks();
-  if(unsubNotifs) unsubNotifs();
-  unsubSubs = unsubTasks = unsubNotifs = null;
-}
+========================================================= */
+let unsubA=null,unsubT=null,unsubN=null;
 
 function bindRealtime(){
-  unbindRealtime();
+  unsubA?.(); unsubT?.(); unsubN?.();
 
-  unsubSubs = subRef().orderBy("createdAt","desc").onSnapshot(snap=>{
-    subaccounts = snap.docs.map(d=>({id:d.id, ...d.data()}));
-    renderDropdowns();
-    renderSubaccounts();
-    renderBoard();
+  unsubA=subRef().onSnapshot(s=>{
+    subaccounts=s.docs.map(d=>({id:d.id,...d.data()}));
+    renderSubaccounts(); renderBoard();
   });
 
-  unsubTasks = taskRef().orderBy("createdAt","desc").onSnapshot(snap=>{
-    tasks = snap.docs.map(d=>({id:d.id, ...d.data()}));
-    renderSubaccounts();
-    renderBoard();
+  unsubT=taskRef().onSnapshot(s=>{
+    tasks=s.docs.map(d=>({id:d.id,...d.data()}));
+    renderSubaccounts(); renderBoard();
     if(currentTaskId){
-      const t = tasks.find(x=>x.id===currentTaskId);
+      const t=tasks.find(x=>x.id===currentTaskId);
       if(t) renderDetails(t);
     }
   });
 
-  // NOTE: where + orderBy requires composite index sometimes (Firestore will show link to create it if needed).
-  unsubNotifs = notifRef()
-    .where("toUsername","==", USER)
+  unsubN=notifRef()
+    .where("toUsername","==",USER)
     .orderBy("createdAt","desc")
-    .limit(50)
-    .onSnapshot(snap=>{
-      notifications = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    .onSnapshot(s=>{
+      notifications=s.docs.map(d=>({id:d.id,...d.data()}));
       renderNotifications();
     });
 }
 
-/* =========================
-   UI HELPERS
-========================= */
-function renderDropdowns(){
-  const cur = filterSubaccount.value;
-  filterSubaccount.innerHTML =
-    `<option value="">All</option>` +
-    subaccounts.map(sa=>`<option value="${sa.id}">${escapeHtml(sa.name||"—")}</option>`).join("");
-
-  if([...filterSubaccount.options].some(o=>o.value===cur)) filterSubaccount.value = cur;
-  else filterSubaccount.value = "";
-
-  tSub.innerHTML = subaccounts.map(sa=>`<option value="${sa.id}">${escapeHtml(sa.name||"—")}</option>`).join("");
-  dSub.innerHTML = subaccounts.map(sa=>`<option value="${sa.id}">${escapeHtml(sa.name||"—")}</option>`).join("");
-}
-
-function getSearchText(){
-  return (clean(searchInput?.value) || clean(searchInputMobile?.value)).toLowerCase();
-}
-
-function getFilteredTasks(){
-  const q = getSearchText();
-  const f = filterSubaccount.value;
-
-  return tasks.filter(t=>{
-    if(f && t.subaccountId !== f) return false;
-    if(!q) return true;
-
-    const saName = (subaccounts.find(s=>s.id===t.subaccountId)?.name || "").toLowerCase();
-    return (
-      (t.title||"").toLowerCase().includes(q) ||
-      (t.details||"").toLowerCase().includes(q) ||
-      (t.assigneeUsername||"").toLowerCase().includes(q) ||
-      (t.createdByUsername||"").toLowerCase().includes(q) ||
-      saName.includes(q)
-    );
+/* =========================================================
+   NOTIFICATIONS (CORE)
+========================================================= */
+async function createNotification(to,title,body,taskId=null){
+  if(!to||to===USER) return;
+  await notifRef().add({
+    toUsername:to,
+    title, body,
+    taskId,
+    read:false,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+    createdAtText:new Date().toLocaleString()
   });
 }
 
-/* =========================
-   RENDER: SUBACCOUNTS
-========================= */
-function renderSubaccounts(){
-  subList.innerHTML = "";
-  if(subaccounts.length===0){
-    subList.innerHTML = `<div class="text-sm text-slate-500 px-1 pb-2">No subaccounts yet.</div>`;
-    return;
-  }
-
-  subaccounts.forEach(sa=>{
-    const total = tasks.filter(t=>t.subaccountId===sa.id).length;
-    const done = tasks.filter(t=>t.subaccountId===sa.id && t.status==="done").length;
-    const open = total - done;
-    const pct = total===0 ? 0 : Math.round((done/total)*100);
-
-    const item = document.createElement("button");
-    item.className = "w-full text-left px-3 py-2 rounded-2xl hover:bg-slate-50 transition flex items-center justify-between gap-3";
-    item.innerHTML = `
-      <div class="min-w-0">
-        <div class="font-semibold truncate">${escapeHtml(sa.name||"—")}</div>
-        <div class="text-xs text-slate-500">${open} open • ${total} total</div>
-      </div>
-      <div class="shrink-0 flex items-center gap-2">
-        <div class="h-2 w-16 bg-slate-100 rounded-full overflow-hidden">
-          <div class="h-2 bg-gradient-to-r from-indigo-600 to-violet-600" style="width:${pct}%"></div>
-        </div>
-        <div class="text-xs font-semibold text-slate-500 w-10 text-right">${pct}%</div>
-      </div>
-    `;
-    item.onclick = ()=>{
-      filterSubaccount.value = sa.id;
-      renderBoard();
-    };
-    subList.appendChild(item);
-  });
-}
-
-/* =========================
-   RENDER: BOARD
-========================= */
-function renderBoard(){
-  board.innerHTML = "";
-  const list = getFilteredTasks();
-
-  STATUS.forEach(col=>{
-    const colTasks = list.filter(t=>t.status===col.id);
-
-    const dot =
-      col.id === "requested" ? "bg-sky-500" :
-      col.id === "clarify"   ? "bg-amber-500" :
-      col.id === "progress"  ? "bg-indigo-500" :
-      col.id === "review"    ? "bg-fuchsia-500" :
-      "bg-emerald-500";
-
-    const wrap = document.createElement("div");
-    wrap.className =
-      "snap-start min-w-[300px] w-[300px] md:min-w-[320px] md:w-[320px] " +
-      "rounded-3xl bg-white border border-slate-200 shadow-soft overflow-hidden flex flex-col";
-
-    wrap.innerHTML = `
-      <div class="px-4 pt-4 pb-3 border-b border-slate-200 bg-white">
-        <div class="flex items-center justify-between gap-3">
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="h-2.5 w-2.5 rounded-full ${dot}"></span>
-            <div class="font-extrabold tracking-tight text-slate-900 truncate">${col.label}</div>
-          </div>
-          <div class="shrink-0 text-xs font-bold px-2.5 py-1 rounded-full bg-slate-900 text-white">
-            ${colTasks.length}
-          </div>
-        </div>
-        <div class="mt-1 text-[11px] text-slate-500">Click a card to open</div>
-      </div>
-
-      <div class="p-3 bg-slate-50 flex-1 overflow-auto space-y-2 min-h-[520px]"></div>
-    `;
-
-    const zone = wrap.querySelector(".p-3.bg-slate-50");
-
-    if(colTasks.length === 0){
-      const empty = document.createElement("div");
-      empty.className = "mt-2 rounded-3xl border border-dashed border-slate-300 bg-white p-4";
-      empty.innerHTML = `
-        <div class="text-sm font-semibold text-slate-700">No tasks here</div>
-        <div class="mt-1 text-xs text-slate-500">Tasks in "${col.label}" will appear here.</div>
-      `;
-      zone.appendChild(empty);
-    }
-
-    colTasks.forEach(t=>{
-      const saName = subaccounts.find(s=>s.id===t.subaccountId)?.name || "—";
-      const msgCount = Array.isArray(t.messages) ? t.messages.length : 0;
-
-      const detailsPreview = (t.details || "").trim().slice(0, 90);
-      const hasPreview = detailsPreview.length > 0;
-
-      const assignee = (t.assigneeUsername || "—").toLowerCase();
-
-      const card = document.createElement("button");
-      card.className =
-        "group w-full text-left rounded-3xl bg-white border border-slate-200 " +
-        "hover:border-slate-300 hover:shadow-soft transition px-4 py-3 active:scale-[.99]";
-
-      card.innerHTML = `
-        <div class="flex items-start justify-between gap-3">
-          <div class="min-w-0">
-            <div class="font-extrabold text-[15px] leading-snug text-slate-900 line-clamp-2">
-              ${escapeHtml(t.title||"Untitled")}
-            </div>
-
-            ${hasPreview ? `
-              <div class="mt-1 text-[12px] leading-snug text-slate-600 line-clamp-2">
-                ${escapeHtml(detailsPreview)}${(t.details||"").length > 90 ? "…" : ""}
-              </div>
-            ` : `
-              <div class="mt-1 text-[12px] text-slate-400 italic">No details added</div>
-            `}
-          </div>
-
-          <div class="shrink-0">
-            <div class="text-[11px] font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-700">
-              ${escapeHtml(col.label)}
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-3 flex flex-wrap items-center gap-2">
-          <span class="text-[11px] font-semibold px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
-            ${escapeHtml(saName)}
-          </span>
-
-          <span class="text-[11px] font-semibold px-2 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-            @${escapeHtml(assignee)}
-          </span>
-
-          <span class="ml-auto text-[11px] font-semibold px-2 py-1 rounded-full bg-slate-900 text-white">
-            💬 ${msgCount}
-          </span>
-        </div>
-      `;
-
-      card.onclick = ()=>openDetails(t.id);
-      zone.appendChild(card);
-    });
-
-    board.appendChild(wrap);
-  });
-}
-
-/* =========================
-   NOTIFICATIONS
-========================= */
 function renderNotifications(){
-  notifList.innerHTML = "";
-  const unread = notifications.filter(n=>!n.read).length;
+  notifList.innerHTML="";
+  const unread=notifications.filter(n=>!n.read).length;
+  notifCount.textContent=unread;
+  notifCount.classList.toggle("hidden",unread===0);
 
-  if(unread > 0){
-    notifCount.textContent = unread;
-    notifCount.classList.remove("hidden");
-  }else{
-    notifCount.classList.add("hidden");
-  }
-
-  if (notifications.length === 0) {
-    notifList.innerHTML = `<div class="p-3 text-sm text-slate-500">No notifications yet.</div>`;
+  if(!notifications.length){
+    notifList.innerHTML=`<div class="p-3 text-sm text-slate-500">No notifications yet.</div>`;
     return;
   }
 
   notifications.forEach(n=>{
-    const item = document.createElement("button");
-    item.className = `w-full text-left rounded-3xl border p-3 transition hover:shadow-soft active:scale-[.99] ${n.read ? "border-slate-200 bg-white" : "border-indigo-200 bg-indigo-50"}`;
-    item.innerHTML = `
-      <div class="flex items-start justify-between gap-2">
-        <div class="min-w-0">
-          <div class="text-sm font-semibold ${n.read ? "text-slate-900" : "text-indigo-900"}">
-            ${escapeHtml(n.title || "Notification")}
-          </div>
-          <div class="mt-1 text-xs text-slate-600 whitespace-pre-wrap">${escapeHtml(n.body||"")}</div>
-          <div class="mt-2 text-xs text-slate-400">${escapeHtml(n.createdAtText||"")}</div>
-        </div>
-        ${n.read ? "" : `<div class="h-2 w-2 rounded-full bg-indigo-600 mt-1"></div>`}
-      </div>
+    const btn=document.createElement("button");
+    btn.className=`w-full text-left rounded-2xl p-3 border ${n.read?"bg-white":"bg-indigo-50 border-indigo-200"}`;
+    btn.innerHTML=`
+      <div class="font-semibold">${escapeHtml(n.title)}</div>
+      <div class="text-xs text-slate-600 mt-1">${escapeHtml(n.body)}</div>
+      <div class="text-[11px] text-slate-400 mt-1">${n.createdAtText}</div>
     `;
-    item.onclick = async ()=>{
-      if(!n.read) await notifRef().doc(n.id).update({ read:true });
+    btn.onclick=async()=>{
+      if(!n.read) await notifRef().doc(n.id).update({read:true});
       if(n.taskId) openDetails(n.taskId);
     };
-    notifList.appendChild(item);
+    notifList.appendChild(btn);
   });
 }
 
-async function createNotification(toUsername, title, body, taskId=null){
-  if(!toUsername) return;
-  const to = toUsername.toLowerCase();
-  if(to === USER) return;
+/* =========================================================
+   TASK CREATION
+========================================================= */
+async function createTask(){
+  const title=clean(tTitle.value);
+  const details=clean(tDetails.value);
+  const assignee=clean(tAssignee.value).toLowerCase();
+  const subId=tSub.value;
+  if(!title||!assignee) return;
 
-  const now = new Date();
-  await notifRef().add({
-    toUsername: to,
-    title,
-    body,
-    taskId: taskId || null,
-    read: false,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    createdAtText: now.toLocaleString()
-  });
-}
-
-async function markAllRead(){
-  const unread = notifications.filter(n=>!n.read);
-  if(unread.length===0) return;
-  const batch = db.batch();
-  unread.forEach(n=>batch.update(notifRef().doc(n.id), { read:true }));
-  await batch.commit();
-  showToast("Marked all read");
-}
-
-/* =========================
-   MODALS: SUB + TASK
-========================= */
-function openSubModal(){
-  if(!isBuilder()) return alert("Only Builder/Admin can add subaccounts.");
-  subErr.classList.add("hidden");
-  subErr.textContent = "";
-  subNameInput.value = "";
-  subModal.classList.remove("hidden");
-  subModal.classList.add("flex");
-  setTimeout(()=>subNameInput.focus(), 60);
-}
-function closeSubModal(){
-  subModal.classList.add("hidden");
-  subModal.classList.remove("flex");
-}
-closeSubModalBtn.onclick = closeSubModal;
-cancelSubBtn.onclick = closeSubModal;
-subModal.addEventListener("click",(e)=>{ if(e.target===subModal) closeSubModal(); });
-
-saveSubBtn.onclick = async ()=>{
-  if(!isBuilder()) return;
-
-  const name = clean(subNameInput.value);
-  if(!name){
-    subErr.textContent = "Please enter a subaccount name.";
-    subErr.classList.remove("hidden");
-    return;
-  }
-
-  try{
-    await subRef().add({ name, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-    closeSubModal();
-    showToast("Subaccount added");
-  }catch(e){
-    console.error(e);
-    subErr.textContent = e.message || "Failed (check Firestore rules)";
-    subErr.classList.remove("hidden");
-  }
-};
-subNameInput.addEventListener("keydown",(e)=>{ if(e.key==="Enter") saveSubBtn.click(); });
-
-function openTaskModal(){
-  if(!canCreate()) return alert("Only Builder/Admin can create tasks.");
-  if(subaccounts.length===0) return alert("Add at least 1 subaccount first.");
-
-  taskErr.classList.add("hidden");
-  taskErr.textContent = "";
-  tTitle.value = "";
-  tDetails.value = "";
-  tAssignee.value = USER;
-  tSub.value = subaccounts[0]?.id || "";
-
-  taskModal.classList.remove("hidden");
-  taskModal.classList.add("flex");
-  setTimeout(()=>tTitle.focus(), 60);
-}
-function closeTaskModalFn(){
-  taskModal.classList.add("hidden");
-  taskModal.classList.remove("flex");
-}
-closeTaskModal.onclick = closeTaskModalFn;
-cancelTaskBtn.onclick = closeTaskModalFn;
-taskModal.addEventListener("click",(e)=>{ if(e.target===taskModal) closeTaskModalFn(); });
-
-createTaskBtn.onclick = async ()=>{
-  if(!canCreate()) return;
-
-  const title = clean(tTitle.value);
-  const details = clean(tDetails.value);
-  const subId = tSub.value;
-  const assigneeUsername = clean(tAssignee.value).toLowerCase();
-
-  if(!title){
-    taskErr.textContent = "Title required.";
-    taskErr.classList.remove("hidden");
-    return;
-  }
-  if(!subId){
-    taskErr.textContent = "Select a subaccount.";
-    taskErr.classList.remove("hidden");
-    return;
-  }
-  if(!assigneeUsername){
-    taskErr.textContent = "Assignee username required.";
-    taskErr.classList.remove("hidden");
-    return;
-  }
-
-  const nowISO = new Date().toISOString();
-
-  try{
-    const docRef = await taskRef().add({
-      title,
-      details,
-      subaccountId: subId,
-      status: "requested",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      createdByUsername: USER,
-      createdByUid: UID,
-      assigneeUsername,
-      messages: [{ by: USER, role: ROLE, text: "Task created.", at: nowISO }]
-    });
-
-    await createNotification(
-      assigneeUsername,
-      "New task assigned",
-      `Task: "${title}"\nAssigned by: ${USER}\nStatus: Requested`,
-      docRef.id
-    );
-
-    closeTaskModalFn();
-    showToast("Task created");
-  }catch(e){
-    console.error(e);
-    taskErr.textContent = e.message || "Failed (check Firestore rules)";
-    taskErr.classList.remove("hidden");
-  }
-};
-
-/* =========================
-   DETAILS MODAL + THREAD
-========================= */
-function openDetails(taskId){
-  const t = tasks.find(x=>x.id===taskId);
-  if(!t) return;
-  currentTaskId = taskId;
-  detailsModal.classList.remove("hidden");
-  detailsModal.classList.add("flex");
-  renderDetails(t);
-
-  // mark notifications about this task as read (optional)
-  notifications.filter(n=>n.taskId===taskId && !n.read).forEach(n=>{
-    notifRef().doc(n.id).update({ read:true }).catch(()=>{});
-  });
-}
-
-function closeDetails(){
-  detailsModal.classList.add("hidden");
-  detailsModal.classList.remove("flex");
-  currentTaskId = null;
-  msgInput.value = "";
-}
-closeDetailsModal.onclick = closeDetails;
-detailsModal.addEventListener("click",(e)=>{ if(e.target===detailsModal) closeDetails(); });
-
-function formatRole(r){
-  if(r==="builder") return "Builder";
-  if(r==="ghl_expert") return "GHL Expert";
-  if(r==="client") return "Client";
-  return r || "";
-}
-
-function renderDetails(t){
-  const saName = subaccounts.find(s=>s.id===t.subaccountId)?.name || "—";
-  dTitle.textContent = t.title || "Task";
-  dMeta.textContent = `${saName} • Created by ${t.createdByUsername||"—"} • Assigned to ${t.assigneeUsername||"—"} • Status: ${t.status||"—"}`;
-
-  dStatus.value = t.status || "requested";
-  dSub.value = t.subaccountId || "";
-  dAssignee.value = t.assigneeUsername || "";
-  dDetails.value = t.details || "";
-
-  // Client buttons only in review
-  clientControls.classList.toggle("hidden", !(canApprove() && t.status==="review"));
-
-  // Disable moves for clients
-  dStatus.disabled = !canMove();
-  dSub.disabled = !canMove();
-  dAssignee.disabled = !canMove();
-  dDetails.disabled = !canMove();
-
-  btnClarify.disabled = !canMove();
-  btnProgress.disabled = !canMove();
-  btnReview.disabled = !canMove();
-  btnDone.disabled = !canMove();
-
-  // thread render
-  thread.innerHTML = "";
-  const msgs = Array.isArray(t.messages) ? t.messages.slice() : [];
-  msgs.sort((a,b)=> (a.at>b.at ? 1 : -1));
-
-  if(msgs.length===0){
-    thread.innerHTML = `<div class="text-sm text-slate-500">No updates yet.</div>`;
-    return;
-  }
-
-  msgs.forEach(m=>{
-    const mine = (m.by||"").toLowerCase() === USER;
-    const when = m.at ? new Date(m.at).toLocaleString() : "";
-    const bubble = document.createElement("div");
-    bubble.className = `rounded-3xl border px-4 py-3 ${mine ? "bg-white border-indigo-200" : "bg-white border-slate-200"}`;
-    bubble.innerHTML = `
-      <div class="flex items-center justify-between gap-3">
-        <div class="min-w-0">
-          <div class="text-sm font-semibold truncate">${escapeHtml(m.by||"—")} <span class="text-xs font-semibold text-slate-400">(${escapeHtml(formatRole(m.role))})</span></div>
-          <div class="mt-1 text-sm text-slate-700 whitespace-pre-wrap">${escapeHtml(m.text||"")}</div>
-        </div>
-        <div class="text-xs text-slate-400 shrink-0">${escapeHtml(when)}</div>
-      </div>
-    `;
-    thread.appendChild(bubble);
+  const ref=await taskRef().add({
+    title,details,
+    subaccountId:subId,
+    status:"requested",
+    createdByUsername:USER,
+    assigneeUsername:assignee,
+    messages:[{by:USER,role:ROLE,text:"Task created",at:nowISO()}],
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
   });
 
-  thread.scrollTop = thread.scrollHeight;
+  await createNotification(
+    assignee,
+    "New task assigned",
+    `Task: "${title}"\nAssigned by ${USER}`,
+    ref.id
+  );
+
+  showToast("Task created");
 }
 
-/* =========================
-   SAVE TASK + QUICK MOVES
-========================= */
-async function addSystemMessage(text){
-  if(!currentTaskId) return;
-  const nowISO = new Date().toISOString();
+/* =========================================================
+   COMMENTS / STATUS UPDATES
+========================================================= */
+async function sendMessage(){
+  const text=clean(msgInput.value);
+  if(!text||!currentTaskId) return;
+
+  msgInput.value="";
+  const t=tasks.find(x=>x.id===currentTaskId);
+
   await taskRef().doc(currentTaskId).update({
-    messages: firebase.firestore.FieldValue.arrayUnion({
-      by: USER, role: ROLE, text, at: nowISO
+    messages:firebase.firestore.FieldValue.arrayUnion({
+      by:USER,role:ROLE,text,at:nowISO()
     })
   });
+
+  if(t?.assigneeUsername)
+    await createNotification(t.assigneeUsername,"New comment",text,currentTaskId);
+  if(t?.createdByUsername)
+    await createNotification(t.createdByUsername,"New comment",text,currentTaskId);
 }
 
 async function saveTask(){
-  if(!currentTaskId) return;
-  const t = tasks.find(x=>x.id===currentTaskId);
+  const t=tasks.find(x=>x.id===currentTaskId);
   if(!t) return;
 
-  const newStatus = dStatus.value;
-  const newSub = dSub.value;
-  const newAssignee = clean(dAssignee.value).toLowerCase();
-  const newDetails = dDetails.value || "";
+  const newStatus=dStatus.value;
+  const newAssignee=dAssignee.value.toLowerCase();
 
-  // permission: clients can't edit
-  if(!canMove()){
-    showToast("Client cannot edit");
-    return;
-  }
-
-  const changes = [];
-  if(newStatus !== (t.status||"")) changes.push(`Status → ${newStatus}`);
-  if(newSub !== (t.subaccountId||"")) changes.push(`Subaccount changed`);
-  if(newAssignee !== (t.assigneeUsername||"")) changes.push(`Assignee → ${newAssignee}`);
-
-  try{
-    await taskRef().doc(currentTaskId).update({
-      status: newStatus,
-      subaccountId: newSub,
-      assigneeUsername: newAssignee,
-      details: newDetails,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    if(changes.length){
-      await addSystemMessage(`Updated: ${changes.join(" • ")}`);
-
-      // notify assignee if changed OR status changed
-      if(newAssignee && newAssignee !== (t.assigneeUsername||"")){
-        await createNotification(
-          newAssignee,
-          "Task assigned to you",
-          `Task: "${t.title||"Untitled"}"\nAssigned by: ${USER}\nStatus: ${newStatus}`,
-          currentTaskId
-        );
-      }
-
-      // notify creator about status updates (optional)
-      if(t.createdByUsername && t.createdByUsername !== USER){
-        await createNotification(
-          t.createdByUsername,
-          "Task updated",
-          `Task: "${t.title||"Untitled"}"\nUpdated by: ${USER}\n${changes.join(" • ")}`,
-          currentTaskId
-        );
-      }
-    }
-
-    showToast("Saved");
-  }catch(e){
-    console.error(e);
-    alert(e.message || "Save failed");
-  }
-}
-
-saveTaskBtn.onclick = saveTask;
-
-btnClarify.onclick = ()=>{ dStatus.value="clarify"; saveTask(); };
-btnProgress.onclick = ()=>{ dStatus.value="progress"; saveTask(); };
-btnReview.onclick = ()=>{ dStatus.value="review"; saveTask(); };
-btnDone.onclick = ()=>{ dStatus.value="done"; saveTask(); };
-
-btnApprove.onclick = async ()=>{
-  if(!currentTaskId) return;
-  const t = tasks.find(x=>x.id===currentTaskId);
-  if(!t) return;
-  if(!(canApprove() && t.status==="review")) return;
-
-  // client approves -> done
-  dStatus.value="done";
-  await addSystemMessage("Client approved ✅");
-  await saveTask();
-};
-
-btnChanges.onclick = async ()=>{
-  if(!currentTaskId) return;
-  const t = tasks.find(x=>x.id===currentTaskId);
-  if(!t) return;
-  if(!(canApprove() && t.status==="review")) return;
-
-  // back to progress
-  dStatus.value="progress";
-  await addSystemMessage("Client requested changes 🔁");
-  await saveTask();
-};
-
-/* =========================
-   MESSAGES
-========================= */
-async function sendMessage(){
-  if(!currentTaskId) return;
-  const text = clean(msgInput.value);
-  if(!text) return;
-
-  const nowISO = new Date().toISOString();
-  msgInput.value = "";
-
-  try{
-    await taskRef().doc(currentTaskId).update({
-      messages: firebase.firestore.FieldValue.arrayUnion({
-        by: USER, role: ROLE, text, at: nowISO
-      })
-    });
-
-    // notify the other party (assignee + creator) except self
-    const t = tasks.find(x=>x.id===currentTaskId);
-    if(t){
-      if(t.assigneeUsername) await createNotification(t.assigneeUsername, "New message on task", `Task: "${t.title||"Untitled"}"\nFrom: ${USER}\n\n${text}`, currentTaskId);
-      if(t.createdByUsername) await createNotification(t.createdByUsername, "New message on task", `Task: "${t.title||"Untitled"}"\nFrom: ${USER}\n\n${text}`, currentTaskId);
-    }
-
-    showToast("Message sent");
-  }catch(e){
-    console.error(e);
-    alert(e.message || "Send failed");
-  }
-}
-
-sendMsgBtn.onclick = sendMessage;
-msgInput.addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); sendMessage(); } });
-
-/* =========================
-   NAV / BUTTONS
-========================= */
-loginBtn.onclick = doLogin;
-registerBtn.onclick = doRegister;
-
-logoutBtn.onclick = async ()=>{
-  try{
-    await auth.signOut();
-  }catch(e){}
-
-  clearSession();
-  unbindRealtime();
-
-  // reset UI/state
-  WS=null; USER=null; ROLE=null; UID=null;
-  currentTaskId=null;
-  subaccounts=[]; tasks=[]; notifications=[];
-  board.innerHTML=""; subList.innerHTML="";
-  userBadge.textContent = "";
-  wsBadge.textContent = "";
-
-  authModal.classList.remove("hidden");
-  showToast("Logged out");
-};
-
-newTaskBtn.onclick = openTaskModal;
-addSubBtn.onclick = openSubModal;
-
-filterSubaccount.onchange = renderBoard;
-
-function syncSearch(){
-  if(searchInputMobile && searchInput && document.activeElement === searchInputMobile){
-    searchInput.value = searchInputMobile.value;
-  }
-  if(searchInput && searchInputMobile && document.activeElement === searchInput){
-    searchInputMobile.value = searchInput.value;
-  }
-  renderBoard();
-}
-searchInput?.addEventListener("input", syncSearch);
-searchInputMobile?.addEventListener("input", syncSearch);
-
-/* =========================
-   NOTIF PANEL
-========================= */
-notifBtn.onclick = ()=>{
-  notifPanel.classList.toggle("hidden");
-};
-markAllReadBtn.onclick = markAllRead;
-
-// close notif panel on outside click
-document.addEventListener("click",(e)=>{
-  const inside = notifPanel.contains(e.target) || notifBtn.contains(e.target);
-  if(!inside) notifPanel.classList.add("hidden");
-});
-
-// basic shortcut
-document.addEventListener("keydown",(e)=>{
-  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==="k"){
-    e.preventDefault();
-    (searchInput || searchInputMobile)?.focus();
-  }
-});
-
-/* =========================
-   START (AUTO-RESTORE SESSION)
-========================= */
-(function boot(){
-  showToast("Ready");
-
-  auth.onAuthStateChanged(async (user)=>{
-    // If already logged in and we have saved session info, restore WS/USER/ROLE
-    const sess = loadSession();
-
-    if(user && sess && (!WS || !USER || !ROLE)){
-      WS = sess.WS;
-      USER = (sess.USER||"").toLowerCase();
-      ROLE = sess.ROLE;
-      UID = user.uid;
-
-      authModal.classList.add("hidden");
-      userBadge.textContent = `${USER} (${ROLE})`;
-      wsBadge.textContent = ` • WS: ${WS}`;
-
-      addSubBtn.style.display = isBuilder() ? "inline-flex" : "none";
-      newTaskBtn.style.display = canCreate() ? "inline-flex" : "none";
-
-      dStatus.innerHTML = STATUS.map(s=>`<option value="${s.id}">${s.label}</option>`).join("");
-      bindRealtime();
-      return;
-    }
-
-    // If no user, show auth
-    if(!user){
-      authModal.classList.remove("hidden");
-      return;
-    }
+  await taskRef().doc(currentTaskId).update({
+    status:newStatus,
+    assigneeUsername:newAssignee
   });
-})();
-</script>
 
+  if(t.createdByUsername)
+    await createNotification(
+      t.createdByUsername,
+      "Task updated",
+      `Status → ${newStatus}\nBy ${USER}`,
+      currentTaskId
+    );
+
+  if(newAssignee!==t.assigneeUsername)
+    await createNotification(
+      newAssignee,
+      "Task assigned to you",
+      `Task: ${t.title}`,
+      currentTaskId
+    );
+
+  showToast("Saved");
+}
+
+/* =========================================================
+   EVENTS
+========================================================= */
+loginBtn.onclick=doLogin;
+registerBtn.onclick=doRegister;
+sendMsgBtn.onclick=sendMessage;
+saveTaskBtn.onclick=saveTask;
+
+logoutBtn.onclick=async()=>{
+  await auth.signOut();
+  clearSession();
+  location.reload();
+};
+
+/* =========================================================
+   BOOT
+========================================================= */
+auth.onAuthStateChanged(user=>{
+  const sess=loadSession();
+  if(user&&sess){
+    WS=sess.WS; USER=sess.USER; ROLE=sess.ROLE; UID=user.uid;
+    authModal.classList.add("hidden");
+    bindRealtime();
+  }
+});
+<script/>
 </body>
 </html>
 

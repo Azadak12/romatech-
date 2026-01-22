@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Subaccount Change Tracker</title>
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Firebase COMPAT -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+body { font-family: Inter, system-ui, sans-serif; }
+</style>
+</head>
+
+<body class="bg-slate-50 text-slate-900">
+
+<!-- ================= ROLE MODAL ================= -->
+<div id="roleModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+  <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+    <h2 class="text-lg font-semibold mb-4">Join Workspace</h2>
+
+    <label class="text-sm font-medium">Your Name</label>
+    <input id="rmName" class="w-full border rounded-xl px-3 py-2 mt-1 mb-3">
+
+    <label class="text-sm font-medium">Role</label>
+    <select id="rmRole" class="w-full border rounded-xl px-3 py-2 mt-1 mb-3">
+      <option value="builder">Builder (Admin)</option>
+      <option value="client">Client</option>
+    </select>
+
+    <label class="text-sm font-medium">Workspace ID</label>
+    <input id="rmWorkspace" class="w-full border rounded-xl px-3 py-2 mt-1 mb-4" placeholder="e.g. branham-board">
+
+    <button onclick="enterApp()" class="w-full bg-indigo-600 text-white rounded-xl py-2 font-semibold">
+      Enter
+    </button>
+  </div>
+</div>
+
+<!-- ================= HEADER ================= -->
+<header class="bg-white border-b sticky top-0 z-40">
+  <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+    <div>
+      <h1 class="font-semibold text-lg">Subaccount Change Tracker</h1>
+      <p class="text-sm text-slate-500">Requested → Clarification → In Progress → Client Review → Done</p>
+    </div>
+    <div class="text-sm text-slate-600">
+      <span id="userBadge"></span>
+    </div>
+  </div>
+</header>
+
+<!-- ================= MAIN ================= -->
+<main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+  <!-- SIDEBAR -->
+  <aside class="lg:col-span-3 bg-white rounded-2xl border p-4">
+    <div class="flex justify-between items-center mb-3">
+      <h2 class="font-semibold">Subaccounts</h2>
+      <button id="addSubBtn" onclick="addSubaccount()" class="text-sm border rounded-xl px-3 py-1">
+        + Add
+      </button>
+    </div>
+    <div id="subList" class="space-y-2"></div>
+  </aside>
+
+  <!-- BOARD -->
+  <section class="lg:col-span-9">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4" id="board"></div>
+  </section>
+
+</main>
+
+<!-- ================= NEW TASK MODAL ================= -->
+<div id="taskModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+  <div class="bg-white rounded-2xl p-5 w-full max-w-lg">
+    <h3 class="font-semibold mb-3">New Change Request</h3>
+
+    <input id="tTitle" placeholder="Title" class="w-full border rounded-xl px-3 py-2 mb-2">
+    <textarea id="tDetails" placeholder="Client request / details"
+      class="w-full border rounded-xl px-3 py-2 mb-2"></textarea>
+
+    <select id="tSub" class="w-full border rounded-xl px-3 py-2 mb-3"></select>
+
+    <div class="flex justify-end gap-2">
+      <button onclick="closeTaskModal()" class="px-4 py-2 border rounded-xl">Cancel</button>
+      <button onclick="createTask()" class="px-4 py-2 bg-indigo-600 text-white rounded-xl">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= DETAILS MODAL ================= -->
+<div id="detailsModal" class="fixed inset-0 bg-black/40 hidden z-50 flex items-center justify-center">
+  <div class="bg-white rounded-2xl w-full max-w-2xl p-4">
+
+    <div class="flex justify-between items-center mb-3">
+      <h3 id="dTitle" class="font-semibold"></h3>
+      <button onclick="closeDetails()" class="text-sm">✕</button>
+    </div>
+
+    <div id="thread" class="space-y-2 max-h-64 overflow-auto border rounded-xl p-2 mb-3"></div>
+
+    <div class="flex gap-2">
+      <input id="msgText" placeholder="Write update…" class="flex-1 border rounded-xl px-3 py-2">
+      <button onclick="addMessage()" class="bg-indigo-600 text-white px-3 rounded-xl">Send</button>
+    </div>
+
+    <div id="builderActions" class="mt-4 flex gap-2 hidden">
+      <button onclick="builderMove('clarify')" class="border px-3 py-2 rounded-xl">Need Clarification</button>
+      <button onclick="builderMove('review')" class="bg-slate-900 text-white px-3 py-2 rounded-xl">Send for Review</button>
+      <button onclick="builderMove('done')" class="bg-emerald-600 text-white px-3 py-2 rounded-xl">Mark Done</button>
+    </div>
+
+    <div id="clientActions" class="mt-4 flex gap-2 hidden">
+      <button onclick="clientApprove()" class="bg-emerald-600 text-white px-4 py-2 rounded-xl">
+        Approve Done
+      </button>
+      <button onclick="clientRequestChanges()" class="border px-4 py-2 rounded-xl">
+        Request Changes
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  /* =======================
+     FIREBASE v12 (MODULE)
+  ======================= */
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+  import {
+    getFirestore,
+    collection,
+    doc,
+    addDoc,
+    updateDoc,
+    onSnapshot,
+    query,
+    orderBy,
+    serverTimestamp,
+    arrayUnion
+  } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+
+  // ✅ Your config (as you shared)
+  const firebaseConfig = {
+    apiKey: "AIzaSyDHL0tVJ7tm4lK4r7gQrZ7McPJwFOaRulc",
+    authDomain: "romatech-system.firebaseapp.com",
+    projectId: "romatech-system",
+    storageBucket: "romatech-system.firebasestorage.app",
+    messagingSenderId: "368102739583",
+    appId: "1:368102739583:web:92baa7b3abf14e7653b94a",
+    measurementId: "G-7CWF4D2V3T"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // Anonymous auth
+  await signInAnonymously(auth);
+
+  /* =======================
+     DOM HELPERS
+  ======================= */
+  const $ = (id) => document.getElementById(id);
+
+  // Elements expected from your HTML
+  const roleModal = $("roleModal");
+  const rmName = $("rmName");
+  const rmRole = $("rmRole");
+  const rmWorkspace = $("rmWorkspace");
+  const userBadge = $("userBadge");
+
+  const addSubBtn = $("addSubBtn");
+  const subList = $("subList");
+  const board = $("board");
+
+  const taskModal = $("taskModal");
+  const tTitle = $("tTitle");
+  const tDetails = $("tDetails");
+  const tSub = $("tSub");
+
+  const detailsModal = $("detailsModal");
+  const dTitle = $("dTitle");
+  const thread = $("thread");
+  const msgText = $("msgText");
+  const builderActions = $("builderActions");
+  const clientActions = $("clientActions");
+
+  /* =======================
+     APP STATE
+  ======================= */
+  let ROLE = null;   // "builder" | "client"
+  let USER = null;   // display name
+  let WS = null;     // workspace id
+
+  let subaccounts = [];
+  let tasks = [];
+  let currentTask = null;
+
+  const STATUS = [
+    { id: "requested", label: "Requested" },
+    { id: "clarify", label: "Clarification" },
+    { id: "progress", label: "In Progress" },
+    { id: "review", label: "Client Review" },
+    { id: "done", label: "Done" }
+  ];
+
+  const isBuilder = () => ROLE === "builder";
+  const isClient = () => ROLE === "client";
+
+  /* =======================
+     FIRESTORE REFS
+  ======================= */
+  const subRef = () => collection(db, "workspaces", WS, "subaccounts");
+  const taskRef = () => collection(db, "workspaces", WS, "tasks");
+
+  /* =======================
+     ENTER APP (ROLE MODAL)
+  ======================= */
+  async function enterApp() {
+    USER = rmName.value.trim();
+    ROLE = rmRole.value;
+    WS = rmWorkspace.value.trim();
+
+    if (!USER || !WS) {
+      alert("Name + Workspace ID required");
+      return;
+    }
+
+    roleModal.classList.add("hidden");
+    userBadge.textContent = `${USER} (${ROLE}) • WS: ${WS}`;
+
+    // Lock UI for client
+    addSubBtn.style.display = isBuilder() ? "inline-flex" : "none";
+
+    listenRealtime();
+  }
+
+  // expose for onclick="enterApp()"
+  window.enterApp = enterApp;
+
+  /* =======================
+     REALTIME LISTENERS
+  ======================= */
+  function listenRealtime() {
+    // subaccounts realtime
+    onSnapshot(
+      query(subRef(), orderBy("createdAt", "desc")),
+      (snap) => {
+        subaccounts = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        renderSubaccounts();
+        renderSubSelect();
+      }
+    );
+
+    // tasks realtime
+    onSnapshot(
+      query(taskRef(), orderBy("createdAt", "desc")),
+      (snap) => {
+        tasks = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        renderBoard();
+        // keep details modal updated live
+        if (currentTask?.id) {
+          const updated = tasks.find(t => t.id === currentTask.id);
+          if (updated) {
+            currentTask = updated;
+            renderThread(updated);
+            updateActionPanels();
+          }
+        }
+      }
+    );
+  }
+
+  /* =======================
+     SUBACCOUNTS
+  ======================= */
+  async function addSubaccount() {
+    if (!isBuilder()) {
+      alert("Client cannot add subaccounts");
+      return;
+    }
+    const name = prompt("Subaccount name (e.g., VIP Tires - Ohio)");
+    if (!name) return;
+
+    await addDoc(subRef(), {
+      name: name.trim(),
+      createdAt: serverTimestamp()
+    });
+  }
+  window.addSubaccount = addSubaccount;
+
+  function renderSubaccounts() {
+    subList.innerHTML = "";
+    if (subaccounts.length === 0) {
+      subList.innerHTML = `<div class="text-sm text-slate-500">No subaccounts yet.</div>`;
+      return;
+    }
+
+    subaccounts.forEach(sa => {
+      const total = tasks.filter(t => t.subaccountId === sa.id).length;
+      const open = tasks.filter(t => t.subaccountId === sa.id && t.status !== "done").length;
+
+      const div = document.createElement("div");
+      div.className = "border rounded-xl px-3 py-2 text-sm bg-white";
+      div.innerHTML = `
+        <div class="font-medium">${escapeHtml(sa.name)}</div>
+        <div class="text-xs text-slate-500">${open} open • ${total} total</div>
+      `;
+      subList.appendChild(div);
+    });
+  }
+
+  function renderSubSelect() {
+    tSub.innerHTML = subaccounts.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
+  }
+
+  /* =======================
+     TASK MODAL
+  ======================= */
+  function openTaskModal() {
+    if (!isBuilder()) return;
+
+    if (subaccounts.length === 0) {
+      alert("Add a subaccount first.");
+      return;
+    }
+
+    tTitle.value = "";
+    tDetails.value = "";
+    tSub.value = subaccounts[0]?.id || "";
+
+    taskModal.classList.remove("hidden");
+  }
+  window.openTaskModal = openTaskModal;
+
+  function closeTaskModal() {
+    taskModal.classList.add("hidden");
+  }
+  window.closeTaskModal = closeTaskModal;
+
+  /* =======================
+     CREATE TASK
+  ======================= */
+  async function createTask() {
+    if (!isBuilder()) {
+      alert("Client cannot create tasks");
+      return;
+    }
+
+    const title = tTitle.value.trim();
+    const details = tDetails.value.trim();
+    const subaccountId = tSub.value;
+
+    if (!title) return alert("Title required");
+    if (!subaccountId) return alert("Subaccount required");
+
+    await addDoc(taskRef(), {
+      title,
+      details,
+      subaccountId,
+      status: "requested",
+      messages: [
+        {
+          type: "note",
+          text: "Task created.",
+          by: USER,
+          at: new Date().toISOString()
+        }
+      ],
+      createdAt: serverTimestamp()
+    });
+
+    closeTaskModal();
+  }
+  window.createTask = createTask;
+
+  /* =======================
+     BOARD RENDER
+  ======================= */
+  function renderBoard() {
+    board.innerHTML = "";
+
+    STATUS.forEach(col => {
+      const colWrap = document.createElement("div");
+      colWrap.className = "bg-white rounded-2xl border p-3 min-h-[320px]";
+
+      const colTasks = tasks.filter(t => t.status === col.id);
+
+      colWrap.innerHTML = `
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-semibold">${col.label}</h3>
+          <span class="text-xs px-2 py-0.5 rounded-full border bg-slate-50">${colTasks.length}</span>
+        </div>
+      `;
+
+      colTasks.forEach(t => {
+        const card = document.createElement("div");
+        card.className = "border rounded-xl p-2 mb-2 cursor-pointer hover:bg-slate-50";
+        const saName = subaccounts.find(s => s.id === t.subaccountId)?.name || "—";
+        card.innerHTML = `
+          <div class="font-medium">${escapeHtml(t.title || "Untitled")}</div>
+          <div class="text-xs text-slate-500 truncate">${escapeHtml(saName)}</div>
+        `;
+        card.onclick = () => openDetails(t.id);
+        colWrap.appendChild(card);
+      });
+
+      // builder add button under each column (optional)
+      if (isBuilder()) {
+        const btn = document.createElement("button");
+        btn.className = "mt-2 text-xs border rounded-xl px-2 py-1 hover:bg-slate-50";
+        btn.textContent = "+ New Request";
+        btn.onclick = openTaskModal;
+        colWrap.appendChild(btn);
+      }
+
+      board.appendChild(colWrap);
+    });
+  }
+
+  /* =======================
+     DETAILS MODAL
+  ======================= */
+  function openDetails(taskId) {
+    const t = tasks.find(x => x.id === taskId);
+    if (!t) return;
+
+    currentTask = t;
+    dTitle.textContent = t.title || "Task";
+
+    detailsModal.classList.remove("hidden");
+    renderThread(t);
+    updateActionPanels();
+  }
+
+  function closeDetails() {
+    detailsModal.classList.add("hidden");
+    currentTask = null;
+    msgText.value = "";
+  }
+  window.closeDetails = closeDetails;
+
+  function updateActionPanels() {
+    // builder sees builder actions always
+    builderActions.classList.toggle("hidden", !isBuilder());
+
+    // client actions only when in review
+    const showClient = isClient() && currentTask && currentTask.status === "review";
+    clientActions.classList.toggle("hidden", !showClient);
+  }
+
+  function renderThread(task) {
+    thread.innerHTML = "";
+
+    const msgs = Array.isArray(task.messages) ? task.messages : [];
+    if (msgs.length === 0) {
+      thread.innerHTML = `<div class="text-sm text-slate-500">No updates yet.</div>`;
+      return;
+    }
+
+    msgs
+      .slice()
+      .sort((a, b) => (a.at > b.at ? 1 : -1))
+      .forEach(m => {
+        const div = document.createElement("div");
+        div.className = "border rounded-xl p-2 text-sm bg-white";
+        div.innerHTML = `<b>${escapeHtml(m.by || "—")}</b>: ${escapeHtml(m.text || "")}`;
+        thread.appendChild(div);
+      });
+
+    // auto scroll down
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  /* =======================
+     ADD MESSAGE
+  ======================= */
+  async function addMessage() {
+    if (!currentTask) return;
+
+    const text = msgText.value.trim();
+    if (!text) return;
+
+    const taskDoc = doc(db, "workspaces", WS, "tasks", currentTask.id);
+
+    await updateDoc(taskDoc, {
+      messages: arrayUnion({
+        type: isClient() ? "client" : "note",
+        text,
+        by: USER,
+        at: new Date().toISOString()
+      })
+    });
+
+    msgText.value = "";
+  }
+  window.addMessage = addMessage;
+
+  /* =======================
+     BUILDER ACTIONS
+  ======================= */
+  async function builderMove(status) {
+    if (!isBuilder() || !currentTask) return;
+
+    const taskDoc = doc(db, "workspaces", WS, "tasks", currentTask.id);
+
+    await updateDoc(taskDoc, {
+      status,
+      messages: arrayUnion({
+        type: "note",
+        text: `Moved to ${status}`,
+        by: USER,
+        at: new Date().toISOString()
+      })
+    });
+  }
+  window.builderMove = builderMove;
+
+  /* =======================
+     CLIENT ACTIONS
+  ======================= */
+  async function clientApprove() {
+    if (!isClient() || !currentTask) return;
+
+    const taskDoc = doc(db, "workspaces", WS, "tasks", currentTask.id);
+
+    await updateDoc(taskDoc, {
+      status: "done",
+      messages: arrayUnion({
+        type: "client",
+        text: "Approved ✅",
+        by: USER,
+        at: new Date().toISOString()
+      })
+    });
+  }
+  window.clientApprove = clientApprove;
+
+  async function clientRequestChanges() {
+    if (!isClient() || !currentTask) return;
+
+    const taskDoc = doc(db, "workspaces", WS, "tasks", currentTask.id);
+
+    await updateDoc(taskDoc, {
+      status: "progress",
+      messages: arrayUnion({
+        type: "client",
+        text: "Requesting changes / revisions",
+        by: USER,
+        at: new Date().toISOString()
+      })
+    });
+  }
+  window.clientRequestChanges = clientRequestChanges;
+
+  /* =======================
+     SMALL UTILS
+  ======================= */
+  function escapeHtml(str) {
+    return (str ?? "").toString()
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  /* =======================
+     OPTIONAL: Close modals by clicking outside
+  ======================= */
+  detailsModal?.addEventListener("click", (e) => {
+    if (e.target === detailsModal) closeDetails();
+  });
+  taskModal?.addEventListener("click", (e) => {
+    if (e.target === taskModal) closeTaskModal();
+  });
+</script>
+
+
+</body>
+</html>

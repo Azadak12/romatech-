@@ -371,323 +371,1061 @@
 
   </div>
 </div>
+
 <script>
-/* =========================================================
+  /* =========================================================
+   Subaccount Change Tracker — FULL JS (single-file)
+   ✅ One Firebase init
+   ✅ Login/Register works
+   ✅ Subaccounts add (Builder only)
+   ✅ Tasks create (Builder only)
+   ✅ Task details open + edit (Builder/Expert)
+   ✅ Status move buttons (Builder/Expert)
+   ✅ Client approve/request changes (Client in Review)
+   ✅ Thread messages (all can message)
+   ✅ In-app notifications (task assigned, status moved, comments)
+   ✅ Chrome desktop notification popup (ONLY if permission granted)
+   ========================================================= */
+
+/* =========================
    FIREBASE INIT
-========================================================= */
+========================= */
 const firebaseConfig = {
   apiKey: "AIzaSyDHL0tVJ7tm4lK4r7gQrZ7McPJwFOaRulc",
   authDomain: "romatech-system.firebaseapp.com",
   projectId: "romatech-system",
   storageBucket: "romatech-system.firebasestorage.app",
   messagingSenderId: "368102739583",
-  appId: "1:368102739583:web:92baa7b3abf14e7653b94a"
+  appId: "1:368102739583:web:92baa7b3abf14e7653b94a",
+  measurementId: "G-7CWF4D2V3T"
 };
 
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps?.length) firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-/* =========================================================
-   HELPERS
-========================================================= */
-const $ = id => document.getElementById(id);
-const clean = v => (v || "").trim();
-const nowISO = () => new Date().toISOString();
+/* =========================
+   DOM
+========================= */
+const $ = (id) => document.getElementById(id);
 
-function escapeHtml(str){
-  return (str ?? "")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
+/* Toast */
+const toast = $("toast");
+const toastText = $("toastText");
+function showToast(msg) {
+  if (!toast || !toastText) return;
+  toastText.textContent = msg || "Done";
+  toast.classList.remove("hidden");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => toast.classList.add("hidden"), 1600);
 }
 
-/* =========================================================
+/* Auth modal */
+const authModal = $("authModal");
+const wsInput = $("wsInput");
+const usernameInput = $("usernameInput");
+const passwordInput = $("passwordInput");
+const roleInput = $("roleInput");
+const loginBtn = $("loginBtn");
+const registerBtn = $("registerBtn");
+const authMsg = $("authMsg");
+
+/* Header UI */
+const userBadge = $("userBadge");
+const wsBadge = $("wsBadge");
+const logoutBtn = $("logoutBtn");
+
+const searchInput = $("searchInput");
+const searchInputMobile = $("searchInputMobile");
+const filterSubaccount = $("filterSubaccount");
+const newTaskBtn = $("newTaskBtn");
+const addSubBtn = $("addSubBtn");
+
+const subList = $("subList");
+const board = $("board");
+
+/* Sub modal */
+const subModal = $("subModal");
+const subNameInput = $("subNameInput");
+const closeSubModalBtn = $("closeSubModalBtn");
+const cancelSubBtn = $("cancelSubBtn");
+const saveSubBtn = $("saveSubBtn");
+const subErr = $("subErr");
+
+/* Task modal */
+const taskModal = $("taskModal");
+const closeTaskModal = $("closeTaskModal");
+const cancelTaskBtn = $("cancelTaskBtn");
+const createTaskBtn = $("createTaskBtn");
+const tTitle = $("tTitle");
+const tSub = $("tSub");
+const tAssignee = $("tAssignee");
+const tDetails = $("tDetails");
+const taskErr = $("taskErr");
+
+/* Details modal */
+const detailsModal = $("detailsModal");
+const closeDetailsModal = $("closeDetailsModal");
+const dTitle = $("dTitle");
+const dMeta = $("dMeta");
+const dStatus = $("dStatus");
+const dSub = $("dSub");
+const dAssignee = $("dAssignee");
+const dDetails = $("dDetails");
+const saveTaskBtn = $("saveTaskBtn");
+
+const btnClarify = $("btnClarify");
+const btnProgress = $("btnProgress");
+const btnReview = $("btnReview");
+const btnDone = $("btnDone");
+const btnApprove = $("btnApprove");
+const btnChanges = $("btnChanges");
+const clientControls = $("clientControls");
+
+const thread = $("thread");
+const msgInput = $("msgInput");
+const sendMsgBtn = $("sendMsgBtn");
+
+/* Notifications panel */
+const notifBtn = $("notifBtn");
+const notifPanel = $("notifPanel");
+const notifList = $("notifList");
+const notifCount = $("notifCount");
+const markAllReadBtn = $("markAllReadBtn");
+
+/* =========================
    STATE
-========================================================= */
-let WS=null, USER=null, ROLE=null, UID=null;
-let subaccounts=[], tasks=[], notifications=[];
-let currentTaskId=null;
+========================= */
+let WS = null, USER = null, ROLE = null, UID = null;
+let subaccounts = [], tasks = [], notifications = [];
+let currentTaskId = null;
 
 const STATUS = [
-  {id:"requested", label:"Requested"},
-  {id:"clarify", label:"Clarification"},
-  {id:"progress", label:"In Progress"},
-  {id:"review", label:"Client Review"},
-  {id:"done", label:"Done"}
+  { id: "requested", label: "Requested" },
+  { id: "clarify", label: "Clarification" },
+  { id: "progress", label: "In Progress" },
+  { id: "review", label: "Client Review" },
+  { id: "done", label: "Done" }
 ];
 
-const isBuilder = () => ROLE==="builder";
-const isExpert  = () => ROLE==="ghl_expert";
-const isClient  = () => ROLE==="client";
-const canCreate = () => isBuilder();
-const canMove   = () => isBuilder() || isExpert();
-const canApprove= () => isClient();
+function isBuilder() { return ROLE === "builder"; }
+function isExpert() { return ROLE === "ghl_expert"; }
+function isClient() { return ROLE === "client"; }
 
-/* =========================================================
-   FIRESTORE REFS
-========================================================= */
-const wsDoc   = () => db.collection("workspaces").doc(WS);
-const usersRef= () => wsDoc().collection("users");
-const subRef  = () => wsDoc().collection("subaccounts");
-const taskRef = () => wsDoc().collection("tasks");
-const notifRef= () => wsDoc().collection("notifications");
+function canCreate() { return isBuilder(); }
+function canMove() { return isBuilder() || isExpert(); }
+function canApprove() { return isClient(); }
 
-/* =========================================================
+function clean(str) { return (str || "").trim(); }
+function nowISO() { return new Date().toISOString(); }
+
+function escapeHtml(str) {
+  return (str ?? "").toString()
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function formatRole(r) {
+  if (r === "builder") return "Builder";
+  if (r === "ghl_expert") return "GHL Expert";
+  if (r === "client") return "Client";
+  return r || "";
+}
+
+/* =========================
    SESSION
-========================================================= */
-const SESSION_KEY="sct_session_v1";
+========================= */
+const SESSION_KEY = "sct_session_v1";
+function saveSession() {
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify({ WS, USER, ROLE })); } catch (e) { }
+}
+function loadSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const v = JSON.parse(raw);
+    if (!v?.WS || !v?.USER || !v?.ROLE) return null;
+    return v;
+  } catch (e) { return null; }
+}
+function clearSession() {
+  try { localStorage.removeItem(SESSION_KEY); } catch (e) { }
+}
 
-function saveSession(){
-  localStorage.setItem(SESSION_KEY, JSON.stringify({WS,USER,ROLE}));
-}
-function loadSession(){
-  try{ return JSON.parse(localStorage.getItem(SESSION_KEY)); }
-  catch{ return null; }
-}
-function clearSession(){
-  localStorage.removeItem(SESSION_KEY);
+/* =========================
+   FIRESTORE PATHS
+========================= */
+function wsDoc() { return db.collection("workspaces").doc(WS); }
+function usersRef() { return wsDoc().collection("users"); }
+function subRef() { return wsDoc().collection("subaccounts"); }
+function taskRef() { return wsDoc().collection("tasks"); }
+function notifRef() { return wsDoc().collection("notifications"); }
+
+/* =========================
+   DESKTOP NOTIFICATIONS (Chrome only)
+   - Works when page/tab is open
+   - Not Push/FCM (no background)
+========================= */
+function isChromeDesktop() {
+  const ua = navigator.userAgent || "";
+  const isChrome = /Chrome\//.test(ua) && !/Edg\//.test(ua) && !/OPR\//.test(ua) && !/Brave\//.test(ua);
+  const isSafari = /Safari\//.test(ua) && !/Chrome\//.test(ua);
+  return isChrome && !isSafari && window.Notification;
 }
 
-/* =========================================================
+async function tryRequestNotifPermission() {
+  if (!isChromeDesktop()) return;
+  if (Notification.permission === "default") {
+    // Don't spam prompts. Only ask once per browser.
+    const key = "sct_asked_notif_perm_v1";
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, "1");
+    try { await Notification.requestPermission(); } catch (e) { }
+  }
+}
+
+function showDesktopNotification(title, body) {
+  if (!isChromeDesktop()) return;
+  if (Notification.permission !== "granted") return;
+  try {
+    const n = new Notification(title || "Subaccount Change Tracker", { body: body || "" });
+    setTimeout(() => n.close?.(), 5000);
+  } catch (e) { }
+}
+
+/* =========================
    AUTH
-========================================================= */
-const makeEmail=(u,w)=>`${u.toLowerCase()}@${w.toLowerCase()}.local`;
-
-async function doLogin(){
-  const ws=clean(wsInput.value);
-  const u =clean(usernameInput.value).toLowerCase();
-  const p =passwordInput.value;
-  if(!ws||!u||!p) return showAuthErr("All fields required");
-
-  try{
-    const cred=await auth.signInWithEmailAndPassword(makeEmail(u,ws),p);
-    await afterAuth(ws,u,roleInput.value,cred.user.uid);
-  }catch(e){ showAuthErr(e.message); }
+========================= */
+function makeEmail(username, ws) {
+  return `${username.toLowerCase()}@${ws.toLowerCase()}.local`;
 }
 
-async function doRegister(){
-  const ws=clean(wsInput.value);
-  const u =clean(usernameInput.value).toLowerCase();
-  const p =passwordInput.value;
-  if(p.length<6) return showAuthErr("Min 6 chars");
-
-  try{
-    const cred=await auth.createUserWithEmailAndPassword(makeEmail(u,ws),p);
-    await afterAuth(ws,u,roleInput.value,cred.user.uid);
-  }catch(e){ showAuthErr(e.message); }
-}
-
-async function afterAuth(ws,u,r,uid){
-  WS=ws; USER=u; ROLE=r; UID=uid;
-  saveSession();
-
-  await usersRef().doc(uid).set({
-    username:u, role:r,
-    createdAt:firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
-
-  authModal.classList.add("hidden");
-  userBadge.textContent=`${USER} (${ROLE})`;
-  wsBadge.textContent=` • ${WS}`;
-
-  addSubBtn.style.display= isBuilder()?"inline-flex":"none";
-  newTaskBtn.style.display= canCreate()?"inline-flex":"none";
-
-  dStatus.innerHTML=STATUS.map(s=>`<option value="${s.id}">${s.label}</option>`).join("");
-  bindRealtime();
-  showToast("Welcome");
-}
-
-function showAuthErr(m){
-  authMsg.textContent=m;
+function setAuthError(msg) {
+  if (!authMsg) return;
+  if (!msg) {
+    authMsg.classList.add("hidden");
+    authMsg.textContent = "";
+    return;
+  }
+  authMsg.textContent = msg;
   authMsg.classList.remove("hidden");
 }
 
-/* =========================================================
+async function doRegister() {
+  setAuthError("");
+  const ws = clean(wsInput?.value);
+  const username = clean(usernameInput?.value).replace(/\s+/g, "").toLowerCase();
+  const password = passwordInput?.value || "";
+
+  // ✅ Only register-time can use dropdown role (still enforce via Firestore rules later)
+  const selectedRole = roleInput?.value || "ghl_expert";
+
+  if (!ws || !username || !password) return setAuthError("Workspace, Username, Password required.");
+  if (password.length < 6) return setAuthError("Password must be at least 6 characters.");
+
+  const email = makeEmail(username, ws);
+
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, password);
+
+    // Save user profile once
+    await db.collection("workspaces").doc(ws).collection("users").doc(cred.user.uid).set({
+      username,
+      role: selectedRole,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    // ✅ Then login session loads role from Firestore
+    await afterAuthSecure(ws, username, cred.user.uid);
+  } catch (e) {
+    console.error(e);
+    setAuthError(e.message || "Register failed");
+  }
+}
+async function afterAuthSecure(ws, username, uid) {
+  WS = ws;
+  USER = (username || "").toLowerCase();
+  UID = uid;
+
+  // ✅ Fetch role from Firestore (source of truth)
+  const uSnap = await usersRef().doc(uid).get();
+  let firestoreRole = uSnap.exists ? (uSnap.data()?.role || "") : "";
+
+  // If user doc doesn't exist (edge-case), create it with safe default role
+  if (!firestoreRole) {
+    firestoreRole = "ghl_expert";
+    await usersRef().doc(uid).set({
+      username: USER,
+      role: firestoreRole,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+  }
+
+  ROLE = firestoreRole;
+
+  // Keep profile updated
+  await usersRef().doc(uid).set({
+    username: USER,
+    role: ROLE,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+
+  saveSession();
+
+  // UI
+  authModal?.classList.add("hidden");
+  if (userBadge) userBadge.textContent = `${USER} (${ROLE})`;
+  if (wsBadge) wsBadge.textContent = ` • WS: ${WS}`;
+
+  if (addSubBtn) addSubBtn.style.display = isBuilder() ? "inline-flex" : "none";
+  if (newTaskBtn) newTaskBtn.style.display = canCreate() ? "inline-flex" : "none";
+
+  // Always ensure status dropdown options exist
+  if (dStatus) dStatus.innerHTML = STATUS.map(s => `<option value="${s.id}">${s.label}</option>`).join("");
+
+  await tryRequestNotifPermission();
+  bindRealtime();
+  showToast("Welcome!");
+}
+searchInput?.addEventListener("input", () => renderBoard());
+searchInputMobile?.addEventListener("input", () => renderBoard());
+filterSubaccount?.addEventListener("change", () => renderBoard());
+
+async function doLogin() {
+  setAuthError("");
+  const ws = clean(wsInput?.value);
+  const username = clean(usernameInput?.value).replace(/\s+/g, "").toLowerCase();
+  const password = passwordInput?.value || "";
+
+  if (!ws || !username || !password) return setAuthError("Workspace, Username, Password required.");
+
+  const email = makeEmail(username, ws);
+
+  try {
+    const cred = await auth.signInWithEmailAndPassword(email, password);
+
+    // ✅ role comes from Firestore, not dropdown
+    await afterAuthSecure(ws, username, cred.user.uid);
+  } catch (e) {
+    console.error(e);
+    setAuthError(e.message || "Login failed");
+  }
+}
+
+
+/* =========================
    REALTIME
-========================================================= */
-let unsubA=null,unsubT=null,unsubN=null;
+========================= */
+let unsubSubs = null, unsubTasks = null, unsubNotifs = null;
 
-function bindRealtime(){
-  unsubA?.(); unsubT?.(); unsubN?.();
+function unbindRealtime() {
+  try { unsubSubs?.(); } catch { }
+  try { unsubTasks?.(); } catch { }
+  try { unsubNotifs?.(); } catch { }
+  unsubSubs = unsubTasks = unsubNotifs = null;
+}
 
-  unsubA=subRef().onSnapshot(s=>{
-    subaccounts=s.docs.map(d=>({id:d.id,...d.data()}));
-    renderSubaccounts(); renderBoard();
+function bindRealtime() {
+  if (!WS || !USER) return;
+  unbindRealtime();
+
+  unsubSubs = subRef().orderBy("createdAt", "desc").onSnapshot(snap => {
+    subaccounts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderDropdowns();
+    renderSubaccounts();
+    renderBoard();
   });
 
-  unsubT=taskRef().onSnapshot(s=>{
-    tasks=s.docs.map(d=>({id:d.id,...d.data()}));
-    renderSubaccounts(); renderBoard();
-    if(currentTaskId){
-      const t=tasks.find(x=>x.id===currentTaskId);
-      if(t) renderDetails(t);
+  unsubTasks = taskRef().orderBy("createdAt", "desc").onSnapshot(snap => {
+    tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderSubaccounts();
+    renderBoard();
+    if (currentTaskId) {
+      const t = tasks.find(x => x.id === currentTaskId);
+      if (t) renderDetails(t);
     }
   });
 
-  unsubN=notifRef()
-    .where("toUsername","==",USER)
-    .orderBy("createdAt","desc")
-    .onSnapshot(s=>{
-      notifications=s.docs.map(d=>({id:d.id,...d.data()}));
+  // NOTE: where + orderBy may ask for composite index (Firestore gives link).
+  unsubNotifs = notifRef()
+    .where("toUsername", "==", USER)
+    .orderBy("createdAt", "desc")
+    .limit(50)
+    .onSnapshot(snap => {
+      const prevIds = new Set(notifications.map(n => n.id));
+      const incoming = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Desktop popup for NEW unread notifications
+      incoming.forEach(n => {
+        const isNew = !prevIds.has(n.id);
+        if (isNew && n && n.read === false) {
+          showDesktopNotification(n.title || "Update", n.body || "");
+        }
+      });
+
+      notifications = incoming;
       renderNotifications();
     });
 }
 
-/* =========================================================
-   NOTIFICATIONS (CORE)
-========================================================= */
-async function createNotification(to,title,body,taskId=null){
-  if(!to||to===USER) return;
-  await notifRef().add({
-    toUsername:to,
-    title, body,
-    taskId,
-    read:false,
-    createdAt:firebase.firestore.FieldValue.serverTimestamp(),
-    createdAtText:new Date().toLocaleString()
+/* =========================
+   FILTER / SEARCH HELPERS
+========================= */
+function renderDropdowns() {
+  if (!filterSubaccount || !tSub || !dSub) return;
+
+  const cur = filterSubaccount.value;
+
+  filterSubaccount.innerHTML =
+    `<option value="">All</option>` +
+    subaccounts.map(sa => `<option value="${sa.id}">${escapeHtml(sa.name || "—")}</option>`).join("");
+
+  if ([...filterSubaccount.options].some(o => o.value === cur)) filterSubaccount.value = cur;
+  else filterSubaccount.value = "";
+
+  tSub.innerHTML = subaccounts.map(sa => `<option value="${sa.id}">${escapeHtml(sa.name || "—")}</option>`).join("");
+  dSub.innerHTML = subaccounts.map(sa => `<option value="${sa.id}">${escapeHtml(sa.name || "—")}</option>`).join("");
+}
+
+function getSearchText() {
+  return (clean(searchInput?.value) || clean(searchInputMobile?.value)).toLowerCase();
+}
+
+function getFilteredTasks() {
+  const q = getSearchText();
+  const f = filterSubaccount?.value || "";
+
+  return tasks.filter(t => {
+    if (f && t.subaccountId !== f) return false;
+    if (!q) return true;
+
+    const saName = (subaccounts.find(s => s.id === t.subaccountId)?.name || "").toLowerCase();
+    return (
+      (t.title || "").toLowerCase().includes(q) ||
+      (t.details || "").toLowerCase().includes(q) ||
+      (t.assigneeUsername || "").toLowerCase().includes(q) ||
+      (t.createdByUsername || "").toLowerCase().includes(q) ||
+      saName.includes(q)
+    );
   });
 }
 
-function renderNotifications(){
-  notifList.innerHTML="";
-  const unread=notifications.filter(n=>!n.read).length;
-  notifCount.textContent=unread;
-  notifCount.classList.toggle("hidden",unread===0);
+/* =========================
+   RENDER: SUBACCOUNTS
+========================= */
+function renderSubaccounts() {
+  if (!subList) return;
+  subList.innerHTML = "";
 
-  if(!notifications.length){
-    notifList.innerHTML=`<div class="p-3 text-sm text-slate-500">No notifications yet.</div>`;
+  if (subaccounts.length === 0) {
+    subList.innerHTML = `<div class="text-sm text-slate-500 px-1 pb-2">No subaccounts yet.</div>`;
     return;
   }
 
-  notifications.forEach(n=>{
-    const btn=document.createElement("button");
-    btn.className=`w-full text-left rounded-2xl p-3 border ${n.read?"bg-white":"bg-indigo-50 border-indigo-200"}`;
-    btn.innerHTML=`
-      <div class="font-semibold">${escapeHtml(n.title)}</div>
-      <div class="text-xs text-slate-600 mt-1">${escapeHtml(n.body)}</div>
-      <div class="text-[11px] text-slate-400 mt-1">${n.createdAtText}</div>
+  subaccounts.forEach(sa => {
+    const total = tasks.filter(t => t.subaccountId === sa.id).length;
+    const done = tasks.filter(t => t.subaccountId === sa.id && t.status === "done").length;
+    const open = total - done;
+    const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+
+    const item = document.createElement("button");
+    item.className = "w-full text-left px-3 py-2 rounded-2xl hover:bg-slate-50 transition flex items-center justify-between gap-3";
+    item.innerHTML = `
+      <div class="min-w-0">
+        <div class="font-semibold truncate">${escapeHtml(sa.name || "—")}</div>
+        <div class="text-xs text-slate-500">${open} open • ${total} total</div>
+      </div>
+      <div class="shrink-0 flex items-center gap-2">
+        <div class="h-2 w-16 bg-slate-100 rounded-full overflow-hidden">
+          <div class="h-2 bg-gradient-to-r from-indigo-600 to-violet-600" style="width:${pct}%"></div>
+        </div>
+        <div class="text-xs font-semibold text-slate-500 w-10 text-right">${pct}%</div>
+      </div>
     `;
-    btn.onclick=async()=>{
-      if(!n.read) await notifRef().doc(n.id).update({read:true});
-      if(n.taskId) openDetails(n.taskId);
+    item.onclick = () => {
+      filterSubaccount.value = sa.id;
+      renderBoard();
     };
-    notifList.appendChild(btn);
+    subList.appendChild(item);
   });
 }
 
-/* =========================================================
-   TASK CREATION
-========================================================= */
-async function createTask(){
-  const title=clean(tTitle.value);
-  const details=clean(tDetails.value);
-  const assignee=clean(tAssignee.value).toLowerCase();
-  const subId=tSub.value;
-  if(!title||!assignee) return;
+/* =========================
+   RENDER: BOARD
+========================= */
+function renderBoard() {
+  if (!board) return;
+  board.innerHTML = "";
+  const list = getFilteredTasks();
 
-  const ref=await taskRef().add({
-    title,details,
-    subaccountId:subId,
-    status:"requested",
-    createdByUsername:USER,
-    assigneeUsername:assignee,
-    messages:[{by:USER,role:ROLE,text:"Task created",at:nowISO()}],
-    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  STATUS.forEach(col => {
+    const colTasks = list.filter(t => (t.status || "requested") === col.id);
+
+    const dot =
+      col.id === "requested" ? "bg-sky-500" :
+      col.id === "clarify" ? "bg-amber-500" :
+      col.id === "progress" ? "bg-indigo-500" :
+      col.id === "review" ? "bg-fuchsia-500" :
+        "bg-emerald-500";
+
+    const wrap = document.createElement("div");
+    wrap.className =
+      "snap-start min-w-[300px] w-[300px] md:min-w-[320px] md:w-[320px] " +
+      "rounded-3xl bg-white border border-slate-200 shadow-soft overflow-hidden flex flex-col";
+
+    wrap.innerHTML = `
+      <div class="px-4 pt-4 pb-3 border-b border-slate-200 bg-white">
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="h-2.5 w-2.5 rounded-full ${dot}"></span>
+            <div class="font-extrabold tracking-tight text-slate-900 truncate">${col.label}</div>
+          </div>
+          <div class="shrink-0 text-xs font-bold px-2.5 py-1 rounded-full bg-slate-900 text-white">
+            ${colTasks.length}
+          </div>
+        </div>
+        <div class="mt-1 text-[11px] text-slate-500">Click a card to open</div>
+      </div>
+
+      <div class="p-3 bg-slate-50 flex-1 overflow-auto space-y-2 min-h-[520px]"></div>
+    `;
+
+    const zone = wrap.querySelector(".p-3.bg-slate-50");
+
+    if (colTasks.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "mt-2 rounded-3xl border border-dashed border-slate-300 bg-white p-4";
+      empty.innerHTML = `
+        <div class="text-sm font-semibold text-slate-700">No tasks here</div>
+        <div class="mt-1 text-xs text-slate-500">Tasks in "${col.label}" will appear here.</div>
+      `;
+      zone.appendChild(empty);
+    }
+
+    colTasks.forEach(t => {
+      const saName = subaccounts.find(s => s.id === t.subaccountId)?.name || "—";
+      const msgCount = Array.isArray(t.messages) ? t.messages.length : 0;
+
+      const detailsPreview = (t.details || "").trim().slice(0, 90);
+      const hasPreview = detailsPreview.length > 0;
+
+      const assignee = (t.assigneeUsername || "—").toLowerCase();
+
+      const card = document.createElement("button");
+      card.className =
+        "group w-full text-left rounded-3xl bg-white border border-slate-200 " +
+        "hover:border-slate-300 hover:shadow-soft transition px-4 py-3 active:scale-[.99]";
+
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <div class="font-extrabold text-[15px] leading-snug text-slate-900 line-clamp-2">
+              ${escapeHtml(t.title || "Untitled")}
+            </div>
+
+            ${hasPreview ? `
+              <div class="mt-1 text-[12px] leading-snug text-slate-600 line-clamp-2">
+                ${escapeHtml(detailsPreview)}${(t.details || "").length > 90 ? "…" : ""}
+              </div>
+            ` : `
+              <div class="mt-1 text-[12px] text-slate-400 italic">No details added</div>
+            `}
+          </div>
+
+          <div class="shrink-0">
+            <div class="text-[11px] font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-700">
+              ${escapeHtml(col.label)}
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+          <span class="text-[11px] font-semibold px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+            ${escapeHtml(saName)}
+          </span>
+
+          <span class="text-[11px] font-semibold px-2 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+            @${escapeHtml(assignee)}
+          </span>
+
+          <span class="ml-auto text-[11px] font-semibold px-2 py-1 rounded-full bg-slate-900 text-white">
+            💬 ${msgCount}
+          </span>
+        </div>
+      `;
+
+      card.onclick = () => openDetails(t.id);
+      zone.appendChild(card);
+    });
+
+    board.appendChild(wrap);
   });
-
-  await createNotification(
-    assignee,
-    "New task assigned",
-    `Task: "${title}"\nAssigned by ${USER}`,
-    ref.id
-  );
-
-  showToast("Task created");
 }
 
-/* =========================================================
-   COMMENTS / STATUS UPDATES
-========================================================= */
-async function sendMessage(){
-  const text=clean(msgInput.value);
-  if(!text||!currentTaskId) return;
+/* =========================
+   NOTIFICATIONS (In-app + desktop popup)
+========================= */
+function renderNotifications() {
+  if (!notifList || !notifCount) return;
 
-  msgInput.value="";
-  const t=tasks.find(x=>x.id===currentTaskId);
+  notifList.innerHTML = "";
+  const unread = notifications.filter(n => !n.read).length;
+
+  if (unread > 0) {
+    notifCount.textContent = unread;
+    notifCount.classList.remove("hidden");
+  } else {
+    notifCount.classList.add("hidden");
+  }
+
+  if (notifications.length === 0) {
+    notifList.innerHTML = `<div class="p-3 text-sm text-slate-500">No notifications yet.</div>`;
+    return;
+  }
+
+  notifications.forEach(n => {
+    const item = document.createElement("button");
+    item.className =
+      `w-full text-left rounded-3xl border p-3 transition hover:shadow-soft active:scale-[.99] ` +
+      (n.read ? "border-slate-200 bg-white" : "border-indigo-200 bg-indigo-50");
+
+    item.innerHTML = `
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <div class="text-sm font-semibold ${n.read ? "text-slate-900" : "text-indigo-900"}">
+            ${escapeHtml(n.title || "Notification")}
+          </div>
+          <div class="mt-1 text-xs text-slate-600 whitespace-pre-wrap">${escapeHtml(n.body || "")}</div>
+          <div class="mt-2 text-xs text-slate-400">${escapeHtml(n.createdAtText || "")}</div>
+        </div>
+        ${n.read ? "" : `<div class="h-2 w-2 rounded-full bg-indigo-600 mt-1"></div>`}
+      </div>
+    `;
+
+    item.onclick = async () => {
+      try {
+        if (!n.read) await notifRef().doc(n.id).update({ read: true });
+      } catch { }
+      if (n.taskId) openDetails(n.taskId);
+    };
+
+    notifList.appendChild(item);
+  });
+}
+
+async function createNotification(toUsername, title, body, taskId = null) {
+  if (!toUsername) return;
+  const to = toUsername.toLowerCase();
+  if (to === USER) return;
+
+  const now = new Date();
+  await notifRef().add({
+    toUsername: to,
+    title: title || "Update",
+    body: body || "",
+    taskId: taskId || null,
+    read: false,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    createdAtText: now.toLocaleString()
+  });
+}
+
+async function notifyRelevantUsers(task, title, body) {
+  if (!task) return;
+
+  const targets = new Set();
+  if (task.assigneeUsername) targets.add(task.assigneeUsername.toLowerCase());
+  if (task.createdByUsername) targets.add(task.createdByUsername.toLowerCase());
+
+  // (Optional) also notify any mentioned users later if you add mentions.
+  targets.delete((USER || "").toLowerCase());
+
+  for (const u of targets) {
+    await createNotification(u, title, body, task.id);
+  }
+}
+
+async function markAllRead() {
+  const unread = notifications.filter(n => !n.read);
+  if (unread.length === 0) return;
+
+  const batch = db.batch();
+  unread.forEach(n => batch.update(notifRef().doc(n.id), { read: true }));
+  await batch.commit();
+  showToast("Marked all read");
+}
+
+/* =========================
+   MODALS: SUBACCOUNT
+========================= */
+function openSubModal() {
+  if (!isBuilder()) return alert("Only Builder/Admin can add subaccounts.");
+  if (subErr) { subErr.classList.add("hidden"); subErr.textContent = ""; }
+  if (subNameInput) subNameInput.value = "";
+  subModal?.classList.remove("hidden");
+  subModal?.classList.add("flex");
+  setTimeout(() => subNameInput?.focus(), 60);
+}
+function closeSubModal() {
+  subModal?.classList.add("hidden");
+  subModal?.classList.remove("flex");
+}
+if (closeSubModalBtn) closeSubModalBtn.onclick = closeSubModal;
+if (cancelSubBtn) cancelSubBtn.onclick = closeSubModal;
+subModal?.addEventListener("click", (e) => { if (e.target === subModal) closeSubModal(); });
+
+if (saveSubBtn) {
+  saveSubBtn.onclick = async () => {
+    if (!isBuilder()) return;
+
+    const name = clean(subNameInput?.value);
+    if (!name) {
+      if (subErr) {
+        subErr.textContent = "Please enter a subaccount name.";
+        subErr.classList.remove("hidden");
+      }
+      return;
+    }
+
+    try {
+      await subRef().add({ name, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+      closeSubModal();
+      showToast("Subaccount added");
+    } catch (e) {
+      console.error(e);
+      if (subErr) {
+        subErr.textContent = e.message || "Failed (check Firestore rules)";
+        subErr.classList.remove("hidden");
+      }
+    }
+  };
+}
+subNameInput?.addEventListener("keydown", (e) => { if (e.key === "Enter") saveSubBtn?.click(); });
+
+/* =========================
+   MODALS: TASK CREATE
+========================= */
+function openTaskModal() {
+  if (!canCreate()) return alert("Only Builder/Admin can create tasks.");
+  if (subaccounts.length === 0) return alert("Add at least 1 subaccount first.");
+
+  if (taskErr) { taskErr.classList.add("hidden"); taskErr.textContent = ""; }
+  if (tTitle) tTitle.value = "";
+  if (tDetails) tDetails.value = "";
+  if (tAssignee) tAssignee.value = USER || "";
+  if (tSub) tSub.value = subaccounts[0]?.id || "";
+
+  taskModal?.classList.remove("hidden");
+  taskModal?.classList.add("flex");
+  setTimeout(() => tTitle?.focus(), 60);
+}
+function closeTaskModalFn() {
+  taskModal?.classList.add("hidden");
+  taskModal?.classList.remove("flex");
+}
+if (closeTaskModal) closeTaskModal.onclick = closeTaskModalFn;
+if (cancelTaskBtn) cancelTaskBtn.onclick = closeTaskModalFn;
+taskModal?.addEventListener("click", (e) => { if (e.target === taskModal) closeTaskModalFn(); });
+
+if (createTaskBtn) {
+  createTaskBtn.onclick = async () => {
+    if (!canCreate()) return;
+
+    const title = clean(tTitle?.value);
+    const details = clean(tDetails?.value);
+    const subId = tSub?.value;
+    const assigneeUsername = clean(tAssignee?.value).toLowerCase();
+
+    if (!title) { if (taskErr) { taskErr.textContent = "Title required."; taskErr.classList.remove("hidden"); } return; }
+    if (!subId) { if (taskErr) { taskErr.textContent = "Select a subaccount."; taskErr.classList.remove("hidden"); } return; }
+    if (!assigneeUsername) { if (taskErr) { taskErr.textContent = "Assignee username required."; taskErr.classList.remove("hidden"); } return; }
+
+    const iso = nowISO();
+
+    try {
+      const docRef = await taskRef().add({
+        title,
+        details,
+        subaccountId: subId,
+        status: "requested",
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdByUsername: USER,
+        createdByUid: UID,
+        assigneeUsername,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        messages: [{ by: USER, role: ROLE, text: "Task created.", at: iso }]
+      });
+
+      // Notify assignee (and creator if different)
+      await createNotification(
+        assigneeUsername,
+        "New task assigned",
+        `Task: "${title}"\nAssigned by: ${USER}\nStatus: Requested`,
+        docRef.id
+      );
+
+      closeTaskModalFn();
+      showToast("Task created");
+    } catch (e) {
+      console.error(e);
+      if (taskErr) { taskErr.textContent = e.message || "Failed (check Firestore rules)"; taskErr.classList.remove("hidden"); }
+    }
+  };
+}
+
+/* =========================
+   DETAILS MODAL
+========================= */
+function openDetails(taskId) {
+  const t = tasks.find(x => x.id === taskId);
+  if (!t) return;
+
+  currentTaskId = taskId;
+
+  detailsModal?.classList.remove("hidden");
+  detailsModal?.classList.add("flex");
+
+  renderDetails(t);
+
+  // Close notifications panel if open (optional nice UX)
+  try { notifPanel?.classList.add("hidden"); } catch {}
+
+  // Mark notifications for this task as read (nice UX)
+  notifications
+    .filter(n => n.taskId === taskId && !n.read)
+    .forEach(n => {
+      notifRef()
+        .doc(n.id)
+        .update({ read: true })
+        .catch(() => {});
+    });
+
+  // Scroll thread to bottom (optional)
+  try {
+    setTimeout(() => {
+      if (thread) thread.scrollTop = thread.scrollHeight;
+    }, 80);
+  } catch {}
+}
+
+
+
+
+
+
+      /* =========================
+   DETAILS: RENDER + ACTIONS
+========================= */
+function renderDetails(t){
+  dTitle.textContent = t.title || "Task";
+  dMeta.textContent = `@${t.assigneeUsername} • ${t.status}`;
+  dStatus.value = t.status;
+  dSub.value = t.subaccountId;
+  dAssignee.value = t.assigneeUsername;
+  dDetails.value = t.details || "";
+
+  // Client controls visibility
+  if (isClient() && t.status === "review") {
+    clientControls.classList.remove("hidden");
+  } else {
+    clientControls.classList.add("hidden");
+  }
+
+  renderThread(t);
+}
+
+function closeDetails(){
+  detailsModal.classList.add("hidden");
+  detailsModal.classList.remove("flex");
+  currentTaskId = null;
+}
+closeDetailsModal.onclick = closeDetails;
+
+/* =========================
+   THREAD (COMMENTS)
+========================= */
+function renderThread(t){
+  thread.innerHTML = "";
+  (t.messages || []).forEach(m=>{
+    const div = document.createElement("div");
+    div.className = "rounded-2xl bg-white border p-3";
+    div.innerHTML = `
+      <div class="text-xs font-semibold text-slate-600">
+        ${escapeHtml(m.by)} (${formatRole(m.role)})
+      </div>
+      <div class="mt-1 text-sm">${escapeHtml(m.text)}</div>
+      <div class="mt-1 text-xs text-slate-400">${m.at}</div>
+    `;
+    thread.appendChild(div);
+  });
+}
+
+sendMsgBtn.onclick = async ()=>{
+  if(!currentTaskId) return;
+  const text = clean(msgInput.value);
+  if(!text) return;
+
+  msgInput.value = "";
+  const iso = nowISO();
+
+  const t = tasks.find(x=>x.id===currentTaskId);
+  const updated = [
+    ...(t.messages || []),
+    { by: USER, role: ROLE, text, at: iso }
+  ];
 
   await taskRef().doc(currentTaskId).update({
-    messages:firebase.firestore.FieldValue.arrayUnion({
-      by:USER,role:ROLE,text,at:nowISO()
-    })
+    messages: updated,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   });
 
-  if(t?.assigneeUsername)
-    await createNotification(t.assigneeUsername,"New comment",text,currentTaskId);
-  if(t?.createdByUsername)
-    await createNotification(t.createdByUsername,"New comment",text,currentTaskId);
-}
+  await notifyRelevantUsers(
+    t,
+    "New comment",
+    `${USER} commented on "${t.title}"`
+  );
+};
 
-async function saveTask(){
-  const t=tasks.find(x=>x.id===currentTaskId);
+/* =========================
+   STATUS CHANGES
+========================= */
+async function updateStatus(newStatus){
+  if(!currentTaskId || !canMove()) return;
+  const t = tasks.find(x=>x.id===currentTaskId);
   if(!t) return;
 
-  const newStatus=dStatus.value;
-  const newAssignee=dAssignee.value.toLowerCase();
-
   await taskRef().doc(currentTaskId).update({
-    status:newStatus,
-    assigneeUsername:newAssignee
+    status: newStatus,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   });
 
-  if(t.createdByUsername)
-    await createNotification(
-      t.createdByUsername,
-      "Task updated",
-      `Status → ${newStatus}\nBy ${USER}`,
-      currentTaskId
-    );
+  await notifyRelevantUsers(
+    t,
+    "Task updated",
+    `"${t.title}" moved to ${newStatus}`
+  );
 
-  if(newAssignee!==t.assigneeUsername)
-    await createNotification(
-      newAssignee,
-      "Task assigned to you",
-      `Task: ${t.title}`,
-      currentTaskId
-    );
-
-  showToast("Saved");
+  showToast("Status updated");
 }
 
-/* =========================================================
-   EVENTS
-========================================================= */
-loginBtn.onclick=doLogin;
-registerBtn.onclick=doRegister;
-sendMsgBtn.onclick=sendMessage;
-saveTaskBtn.onclick=saveTask;
+btnClarify.onclick  = ()=>updateStatus("clarify");
+btnProgress.onclick = ()=>updateStatus("progress");
+btnReview.onclick   = ()=>updateStatus("review");
+btnDone.onclick     = ()=>updateStatus("done");
 
-logoutBtn.onclick=async()=>{
-  await auth.signOut();
+/* =========================
+   CLIENT ACTIONS
+========================= */
+btnApprove.onclick = async ()=>{
+  if(!currentTaskId || !isClient()) return;
+  const t = tasks.find(x=>x.id===currentTaskId);
+
+  await taskRef().doc(currentTaskId).update({
+    status: "done",
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  await notifyRelevantUsers(
+    t,
+    "Client approved",
+    `Client approved "${t.title}"`
+  );
+
+  showToast("Approved");
+};
+
+btnChanges.onclick = async ()=>{
+  if(!currentTaskId || !isClient()) return;
+  const t = tasks.find(x=>x.id===currentTaskId);
+
+  await taskRef().doc(currentTaskId).update({
+    status: "clarify",
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  await notifyRelevantUsers(
+    t,
+    "Client requested changes",
+    `Client requested changes on "${t.title}"`
+  );
+
+  showToast("Changes requested");
+};
+
+/* =========================
+   SAVE DETAILS
+========================= */
+saveTaskBtn.onclick = async ()=>{
+  if(!currentTaskId || !canMove()) return;
+  const t = tasks.find(x=>x.id===currentTaskId);
+
+  await taskRef().doc(currentTaskId).update({
+    details: clean(dDetails.value),
+    assigneeUsername: clean(dAssignee.value),
+    subaccountId: dSub.value,
+    status: dStatus.value,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  await notifyRelevantUsers(
+    t,
+    "Task edited",
+    `"${t.title}" details updated`
+  );
+
+  showToast("Saved");
+};
+
+/* =========================
+   HEADER / GLOBAL EVENTS
+========================= */
+loginBtn.onclick = doLogin;
+registerBtn.onclick = doRegister;
+
+logoutBtn.onclick = async ()=>{
   clearSession();
+  await auth.signOut();
   location.reload();
 };
 
-/* =========================================================
+notifBtn.onclick = ()=>notifPanel.classList.toggle("hidden");
+markAllReadBtn.onclick = markAllRead;
+
+addSubBtn.onclick = openSubModal;
+newTaskBtn.onclick = openTaskModal;
+
+/* =========================
    BOOT
-========================================================= */
-auth.onAuthStateChanged(user=>{
-  const sess=loadSession();
-  if(user&&sess){
-    WS=sess.WS; USER=sess.USER; ROLE=sess.ROLE; UID=user.uid;
-    authModal.classList.add("hidden");
-    bindRealtime();
+========================= */
+auth.onAuthStateChanged(async (u) => {
+  if (!u) {
+    authModal.classList.remove("hidden");
+    return;
   }
+
+  // User is logged in: restore workspace + username from localStorage
+  const s = loadSession();
+  if (!s?.WS || !s?.USER) {
+    // no saved session -> show auth modal (or force logout)
+    authModal.classList.remove("hidden");
+    return;
+  }
+
+  // restore inputs (optional)
+  WS = s.WS;
+  USER = s.USER.toLowerCase();
+
+  // secure load role from Firestore + start realtime
+  await afterAuthSecure(WS, USER, u.uid);
 });
-<script/>
+
+</script>
+
 </body>
 </html>
 

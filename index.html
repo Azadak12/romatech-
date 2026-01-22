@@ -130,9 +130,6 @@ body { font-family: Inter, system-ui, sans-serif; }
 </div>
 
 <script type="module">
-  /* =======================
-     FIREBASE v12 (MODULE)
-  ======================= */
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
   import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
   import {
@@ -148,7 +145,7 @@ body { font-family: Inter, system-ui, sans-serif; }
     arrayUnion
   } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-  // ✅ Your config (as you shared)
+  // ✅ Your config
   const firebaseConfig = {
     apiKey: "AIzaSyDHL0tVJ7tm4lK4r7gQrZ7McPJwFOaRulc",
     authDomain: "romatech-system.firebaseapp.com",
@@ -159,23 +156,21 @@ body { font-family: Inter, system-ui, sans-serif; }
     measurementId: "G-7CWF4D2V3T"
   };
 
+  // Firebase init
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // Anonymous auth
-  await signInAnonymously(auth);
-
-  /* =======================
-     DOM HELPERS
-  ======================= */
+  // DOM helpers
   const $ = (id) => document.getElementById(id);
 
-  // Elements expected from your HTML
+  // Elements
   const roleModal = $("roleModal");
   const rmName = $("rmName");
   const rmRole = $("rmRole");
   const rmWorkspace = $("rmWorkspace");
+  const enterBtn = $("enterBtn");
+
   const userBadge = $("userBadge");
 
   const addSubBtn = $("addSubBtn");
@@ -194,12 +189,10 @@ body { font-family: Inter, system-ui, sans-serif; }
   const builderActions = $("builderActions");
   const clientActions = $("clientActions");
 
-  /* =======================
-     APP STATE
-  ======================= */
-  let ROLE = null;   // "builder" | "client"
-  let USER = null;   // display name
-  let WS = null;     // workspace id
+  // App state
+  let ROLE = null;
+  let USER = null;
+  let WS = null;
 
   let subaccounts = [];
   let tasks = [];
@@ -216,15 +209,12 @@ body { font-family: Inter, system-ui, sans-serif; }
   const isBuilder = () => ROLE === "builder";
   const isClient = () => ROLE === "client";
 
-  /* =======================
-     FIRESTORE REFS
-  ======================= */
   const subRef = () => collection(db, "workspaces", WS, "subaccounts");
   const taskRef = () => collection(db, "workspaces", WS, "tasks");
 
-  /* =======================
-     ENTER APP (ROLE MODAL)
-  ======================= */
+  // ✅ IMPORTANT: bind click AFTER DOM ready (module safe)
+  enterBtn.addEventListener("click", enterApp);
+
   async function enterApp() {
     USER = rmName.value.trim();
     ROLE = rmRole.value;
@@ -235,68 +225,57 @@ body { font-family: Inter, system-ui, sans-serif; }
       return;
     }
 
+    // ✅ Auth safe (if already signed in, this won't break)
+    try {
+      await signInAnonymously(auth);
+    } catch (e) {
+      console.error("Auth error:", e);
+      alert("Firebase Auth error. Open console (F12) for details.");
+      return;
+    }
+
     roleModal.classList.add("hidden");
     userBadge.textContent = `${USER} (${ROLE}) • WS: ${WS}`;
 
-    // Lock UI for client
-    addSubBtn.style.display = isBuilder() ? "inline-flex" : "none";
+    // Role lock
+    if (addSubBtn) addSubBtn.style.display = isBuilder() ? "inline-flex" : "none";
 
     listenRealtime();
   }
 
-  // expose for onclick="enterApp()"
-  window.enterApp = enterApp;
-
-  /* =======================
-     REALTIME LISTENERS
-  ======================= */
   function listenRealtime() {
-    // subaccounts realtime
-    onSnapshot(
-      query(subRef(), orderBy("createdAt", "desc")),
-      (snap) => {
-        subaccounts = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        renderSubaccounts();
-        renderSubSelect();
-      }
-    );
+    // Subaccounts
+    onSnapshot(query(subRef(), orderBy("createdAt", "desc")), (snap) => {
+      subaccounts = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      renderSubaccounts();
+      renderSubSelect();
+    });
 
-    // tasks realtime
-    onSnapshot(
-      query(taskRef(), orderBy("createdAt", "desc")),
-      (snap) => {
-        tasks = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        renderBoard();
-        // keep details modal updated live
-        if (currentTask?.id) {
-          const updated = tasks.find(t => t.id === currentTask.id);
-          if (updated) {
-            currentTask = updated;
-            renderThread(updated);
-            updateActionPanels();
-          }
+    // Tasks
+    onSnapshot(query(taskRef(), orderBy("createdAt", "desc")), (snap) => {
+      tasks = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      renderBoard();
+
+      // keep modal in sync
+      if (currentTask?.id) {
+        const updated = tasks.find(t => t.id === currentTask.id);
+        if (updated) {
+          currentTask = updated;
+          renderThread(updated);
+          updateActionPanels();
         }
       }
-    );
-  }
-
-  /* =======================
-     SUBACCOUNTS
-  ======================= */
-  async function addSubaccount() {
-    if (!isBuilder()) {
-      alert("Client cannot add subaccounts");
-      return;
-    }
-    const name = prompt("Subaccount name (e.g., VIP Tires - Ohio)");
-    if (!name) return;
-
-    await addDoc(subRef(), {
-      name: name.trim(),
-      createdAt: serverTimestamp()
     });
   }
-  window.addSubaccount = addSubaccount;
+
+  // ---- Subaccounts ----
+  window.addSubaccount = async function addSubaccount() {
+    if (!isBuilder()) return alert("Client cannot add subaccounts");
+    const name = prompt("Subaccount name:");
+    if (!name) return;
+
+    await addDoc(subRef(), { name: name.trim(), createdAt: serverTimestamp() });
+  };
 
   function renderSubaccounts() {
     subList.innerHTML = "";
@@ -320,79 +299,16 @@ body { font-family: Inter, system-ui, sans-serif; }
   }
 
   function renderSubSelect() {
+    if (!tSub) return;
     tSub.innerHTML = subaccounts.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
   }
 
-  /* =======================
-     TASK MODAL
-  ======================= */
-  function openTaskModal() {
-    if (!isBuilder()) return;
-
-    if (subaccounts.length === 0) {
-      alert("Add a subaccount first.");
-      return;
-    }
-
-    tTitle.value = "";
-    tDetails.value = "";
-    tSub.value = subaccounts[0]?.id || "";
-
-    taskModal.classList.remove("hidden");
-  }
-  window.openTaskModal = openTaskModal;
-
-  function closeTaskModal() {
-    taskModal.classList.add("hidden");
-  }
-  window.closeTaskModal = closeTaskModal;
-
-  /* =======================
-     CREATE TASK
-  ======================= */
-  async function createTask() {
-    if (!isBuilder()) {
-      alert("Client cannot create tasks");
-      return;
-    }
-
-    const title = tTitle.value.trim();
-    const details = tDetails.value.trim();
-    const subaccountId = tSub.value;
-
-    if (!title) return alert("Title required");
-    if (!subaccountId) return alert("Subaccount required");
-
-    await addDoc(taskRef(), {
-      title,
-      details,
-      subaccountId,
-      status: "requested",
-      messages: [
-        {
-          type: "note",
-          text: "Task created.",
-          by: USER,
-          at: new Date().toISOString()
-        }
-      ],
-      createdAt: serverTimestamp()
-    });
-
-    closeTaskModal();
-  }
-  window.createTask = createTask;
-
-  /* =======================
-     BOARD RENDER
-  ======================= */
+  // ---- Board ----
   function renderBoard() {
     board.innerHTML = "";
-
     STATUS.forEach(col => {
       const colWrap = document.createElement("div");
       colWrap.className = "bg-white rounded-2xl border p-3 min-h-[320px]";
-
       const colTasks = tasks.filter(t => t.status === col.id);
 
       colWrap.innerHTML = `
@@ -414,157 +330,50 @@ body { font-family: Inter, system-ui, sans-serif; }
         colWrap.appendChild(card);
       });
 
-      // builder add button under each column (optional)
-      if (isBuilder()) {
-        const btn = document.createElement("button");
-        btn.className = "mt-2 text-xs border rounded-xl px-2 py-1 hover:bg-slate-50";
-        btn.textContent = "+ New Request";
-        btn.onclick = openTaskModal;
-        colWrap.appendChild(btn);
-      }
-
       board.appendChild(colWrap);
     });
   }
 
-  /* =======================
-     DETAILS MODAL
-  ======================= */
+  // ---- Details modal (keep your existing functions if already added) ----
   function openDetails(taskId) {
     const t = tasks.find(x => x.id === taskId);
     if (!t) return;
-
     currentTask = t;
-    dTitle.textContent = t.title || "Task";
-
     detailsModal.classList.remove("hidden");
+    dTitle.textContent = t.title || "Task";
     renderThread(t);
     updateActionPanels();
   }
 
-  function closeDetails() {
+  window.closeDetails = function closeDetails() {
     detailsModal.classList.add("hidden");
     currentTask = null;
-    msgText.value = "";
-  }
-  window.closeDetails = closeDetails;
+    if (msgText) msgText.value = "";
+  };
 
   function updateActionPanels() {
-    // builder sees builder actions always
-    builderActions.classList.toggle("hidden", !isBuilder());
-
-    // client actions only when in review
+    if (builderActions) builderActions.classList.toggle("hidden", !isBuilder());
     const showClient = isClient() && currentTask && currentTask.status === "review";
-    clientActions.classList.toggle("hidden", !showClient);
+    if (clientActions) clientActions.classList.toggle("hidden", !showClient);
   }
 
   function renderThread(task) {
+    if (!thread) return;
     thread.innerHTML = "";
-
     const msgs = Array.isArray(task.messages) ? task.messages : [];
     if (msgs.length === 0) {
       thread.innerHTML = `<div class="text-sm text-slate-500">No updates yet.</div>`;
       return;
     }
-
-    msgs
-      .slice()
-      .sort((a, b) => (a.at > b.at ? 1 : -1))
-      .forEach(m => {
-        const div = document.createElement("div");
-        div.className = "border rounded-xl p-2 text-sm bg-white";
-        div.innerHTML = `<b>${escapeHtml(m.by || "—")}</b>: ${escapeHtml(m.text || "")}`;
-        thread.appendChild(div);
-      });
-
-    // auto scroll down
+    msgs.slice().sort((a,b)=> (a.at>b.at?1:-1)).forEach(m=>{
+      const div = document.createElement("div");
+      div.className = "border rounded-xl p-2 text-sm bg-white";
+      div.innerHTML = `<b>${escapeHtml(m.by || "—")}</b>: ${escapeHtml(m.text || "")}`;
+      thread.appendChild(div);
+    });
     thread.scrollTop = thread.scrollHeight;
   }
 
-  /* =======================
-     ADD MESSAGE
-  ======================= */
-  async function addMessage() {
-    if (!currentTask) return;
-
-    const text = msgText.value.trim();
-    if (!text) return;
-
-    const taskDoc = doc(db, "workspaces", WS, "tasks", currentTask.id);
-
-    await updateDoc(taskDoc, {
-      messages: arrayUnion({
-        type: isClient() ? "client" : "note",
-        text,
-        by: USER,
-        at: new Date().toISOString()
-      })
-    });
-
-    msgText.value = "";
-  }
-  window.addMessage = addMessage;
-
-  /* =======================
-     BUILDER ACTIONS
-  ======================= */
-  async function builderMove(status) {
-    if (!isBuilder() || !currentTask) return;
-
-    const taskDoc = doc(db, "workspaces", WS, "tasks", currentTask.id);
-
-    await updateDoc(taskDoc, {
-      status,
-      messages: arrayUnion({
-        type: "note",
-        text: `Moved to ${status}`,
-        by: USER,
-        at: new Date().toISOString()
-      })
-    });
-  }
-  window.builderMove = builderMove;
-
-  /* =======================
-     CLIENT ACTIONS
-  ======================= */
-  async function clientApprove() {
-    if (!isClient() || !currentTask) return;
-
-    const taskDoc = doc(db, "workspaces", WS, "tasks", currentTask.id);
-
-    await updateDoc(taskDoc, {
-      status: "done",
-      messages: arrayUnion({
-        type: "client",
-        text: "Approved ✅",
-        by: USER,
-        at: new Date().toISOString()
-      })
-    });
-  }
-  window.clientApprove = clientApprove;
-
-  async function clientRequestChanges() {
-    if (!isClient() || !currentTask) return;
-
-    const taskDoc = doc(db, "workspaces", WS, "tasks", currentTask.id);
-
-    await updateDoc(taskDoc, {
-      status: "progress",
-      messages: arrayUnion({
-        type: "client",
-        text: "Requesting changes / revisions",
-        by: USER,
-        at: new Date().toISOString()
-      })
-    });
-  }
-  window.clientRequestChanges = clientRequestChanges;
-
-  /* =======================
-     SMALL UTILS
-  ======================= */
   function escapeHtml(str) {
     return (str ?? "").toString()
       .replaceAll("&", "&amp;")
@@ -574,16 +383,9 @@ body { font-family: Inter, system-ui, sans-serif; }
       .replaceAll("'", "&#039;");
   }
 
-  /* =======================
-     OPTIONAL: Close modals by clicking outside
-  ======================= */
-  detailsModal?.addEventListener("click", (e) => {
-    if (e.target === detailsModal) closeDetails();
-  });
-  taskModal?.addEventListener("click", (e) => {
-    if (e.target === taskModal) closeTaskModal();
-  });
+  console.log("✅ App script loaded (module)");
 </script>
+
 
 
 </body>

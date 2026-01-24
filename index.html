@@ -313,11 +313,7 @@
    ⚡️ CONFIGURATION
    ================================================================= */
 const EMAIL_WEBHOOK_URL = "https://hooks.zapier.com/hooks/catch/23603752/uqaboo7/"; // n8n or Zapier URL
-
-const EXPERT_EMAILS = {
-    "kalam": "kalamshar786@gmail.com",
-    "yashfa": "missperfect.mine@gmail.com"
-};
+const RECIPIENT_EMAIL = "kalamshar786@gmail.com";
 
 /* =========================
    FIREBASE INIT
@@ -358,19 +354,14 @@ function showToast(msg) {
   window.toastTimer = setTimeout(() => t.classList.add("hidden"), 2500);
 }
 
-// ⚡️ DYNAMIC EMAIL ROUTING
-async function notifyWebhook(actionType, taskTitle, details, targetUser) {
+async function notifyWebhook(actionType, taskTitle, details) {
     if(!EMAIL_WEBHOOK_URL) return;
-
-    // Resolve email (default to Kalam if unknown)
-    const recipient = EXPERT_EMAILS[targetUser] || "kalamshar786@gmail.com";
-
     try {
         await fetch(EMAIL_WEBHOOK_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                recipient: recipient,
+                recipient: RECIPIENT_EMAIL,
                 subject: `[Tracker] ${actionType}: ${taskTitle}`,
                 message: `Action by: ${USER} (${ROLE})\n\nDetails:\n${details}`,
                 sentAt: new Date().toLocaleString()
@@ -595,11 +586,7 @@ function renderBoard() {
             if (newStatus !== evt.from.getAttribute('data-status')) {
                 const t = tasks.find(x => x.id === taskId);
                 db.collection("workspaces").doc(WS).collection("tasks").doc(taskId).update({status: newStatus});
-                
-                // Notify logic
-                const target = t.assigneeUsername || "kalam";
-                notifyWebhook("Status Change", t?.title || "Task", `Moved to ${newStatus}`, target);
-                
+                notifyWebhook("Status Change", t?.title || "Task", `Moved to ${newStatus}`);
                 showToast(`Moved to ${newStatus}`);
             }
         }
@@ -681,7 +668,7 @@ $("createTaskBtn").onclick = async () => {
         toUsername: assignee, title: "New Task", body: title, taskId: ref.id, read: false, createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    notifyWebhook("New Task", title, details, assignee);
+    notifyWebhook("New Task", title, details);
     $("taskModal").classList.add("hidden");
     $("tTitle").value = ""; $("tDetails").value = ""; $("tAttach").value = "";
     showToast("Task Created");
@@ -736,10 +723,7 @@ $("sendMsgBtn").onclick = async () => {
     await db.collection("workspaces").doc(WS).collection("tasks").doc(currentTaskId).update({messages: msgs});
     $("msgInput").value = "";
     
-    // Notify target
-    const target = t.assigneeUsername || "kalam";
-    notifyWebhook("New Comment", t.title, `${USER}: ${txt}`, target);
-
+    notifyWebhook("New Comment", t.title, `${USER}: ${txt}`);
     if(t.assigneeUsername !== USER) {
         await db.collection("workspaces").doc(WS).collection("notifications").add({
            toUsername: t.assigneeUsername, title: "New Comment", body: `${USER} commented on ${t.title}`, taskId: t.id, read: false, createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -751,10 +735,7 @@ async function updateStatus(st) {
     if(!currentTaskId) return;
     const t = tasks.find(x => x.id === currentTaskId);
     await db.collection("workspaces").doc(WS).collection("tasks").doc(currentTaskId).update({status: st});
-    
-    const target = t.assigneeUsername || "kalam";
-    notifyWebhook("Status Change", t.title, `Moved to ${st}`, target);
-    
+    notifyWebhook("Status Change", t.title, `Moved to ${st}`);
     showToast("Status Updated");
     if(st === 'done') $("detailsModal").classList.add("hidden");
 }

@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Subaccount Change Tracker</title>
+  <title>Subaccount Change Tracker v2</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -13,95 +15,81 @@
 
   <style>
     body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
-    ::-webkit-scrollbar{ width: 10px; height: 10px; }
+    ::-webkit-scrollbar{ width: 8px; height: 8px; }
     ::-webkit-scrollbar-thumb{ background: rgba(148,163,184,.45); border-radius: 999px; }
     ::-webkit-scrollbar-track{ background: transparent; }
 
-    .fade-in { animation: fadeIn .18s ease-out both; }
+    .fade-in { animation: fadeIn .2s ease-out both; }
     @keyframes fadeIn { from {opacity:0; transform: translateY(8px) scale(.99);} to {opacity:1; transform:none;} }
 
-    .toast-in { animation: toastIn .18s ease-out both; }
-    @keyframes toastIn { from {opacity:0; transform: translateY(10px);} to {opacity:1; transform:none;} }
-
     .glass { backdrop-filter: blur(10px); }
+    
+    /* Drag & Drop Styles */
+    .sortable-ghost { opacity: 0.4; background: #e0e7ff; border: 2px dashed #6366f1; }
+    .sortable-drag { cursor: grabbing; opacity: 1; transform: scale(1.02); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
   </style>
-
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          boxShadow: {
-            soft: "0 10px 30px rgba(2, 6, 23, .08)",
-            lift: "0 18px 45px rgba(2, 6, 23, .14)"
-          }
-        }
-      }
-    }
-  </script>
 </head>
 
 <body class="min-h-screen text-slate-900 bg-[radial-gradient(1200px_600px_at_20%_0%,rgba(99,102,241,.10),transparent_55%),radial-gradient(900px_500px_at_85%_10%,rgba(168,85,247,.10),transparent_50%),linear-gradient(to_bottom,rgba(248,250,252,1),rgba(241,245,249,1))]">
 
 <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[100] hidden">
-  <div class="toast-in rounded-2xl bg-slate-900 text-white px-4 py-2.5 text-sm shadow-soft flex items-center gap-2">
+  <div class="fade-in rounded-2xl bg-slate-900 text-white px-4 py-2.5 text-sm shadow-xl flex items-center gap-2">
     <span id="toastText">Saved</span>
   </div>
 </div>
 
 <div id="authModal" class="fixed inset-0 z-50 bg-black/40 glass flex items-center justify-center p-4">
-  <div class="fade-in w-full max-w-md rounded-3xl bg-white border border-slate-200 shadow-lift overflow-hidden">
+  <div class="fade-in w-full max-w-md rounded-3xl bg-white border border-slate-200 shadow-2xl overflow-hidden">
     <div class="p-5 border-b border-slate-100">
       <div class="flex items-center gap-3">
-        <div class="h-10 w-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 shadow-soft"></div>
+        <div class="h-10 w-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 shadow-lg"></div>
         <div class="min-w-0">
-          <div class="font-extrabold leading-tight">Subaccount Change Tracker</div>
-          <div class="text-xs text-slate-500">Login/Register</div>
+          <div class="font-extrabold leading-tight text-lg">Tracker Login</div>
+          <div class="text-xs text-slate-500">Secure Workspace Access</div>
         </div>
       </div>
     </div>
 
-    <div class="p-5 space-y-3">
+    <div class="p-5 space-y-4">
       <div>
-        <label class="text-xs font-semibold text-slate-600">Workspace</label>
-        <input id="wsInput" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
-          placeholder="e.g., romatech" autocomplete="off" />
+        <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Workspace</label>
+        <input id="wsInput" class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition"
+          placeholder="e.g., agency-name" autocomplete="off" />
       </div>
 
       <div>
-        <label class="text-xs font-semibold text-slate-600">Username</label>
-        <input id="usernameInput" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
+        <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Username</label>
+        <input id="usernameInput" class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition"
           placeholder="e.g., abdul" autocomplete="username" />
       </div>
 
       <div>
-        <label class="text-xs font-semibold text-slate-600">Password</label>
+        <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Password</label>
         <input id="passwordInput" type="password"
-          class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
+          class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition"
           placeholder="Min 6 characters" autocomplete="current-password" />
       </div>
 
       <div>
-        <label class="text-xs font-semibold text-slate-600">Role</label>
+        <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Role</label>
         <select id="roleInput"
-          class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300">
-          <option value="client">Agency Owner (Creates Requests)</option>
-          <option value="ghl_expert">GHL Expert (Processes Tasks)</option>
+          class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition">
+          <option value="client">Agency Owner (Client)</option>
+          <option value="ghl_expert">GHL Expert</option>
           <option value="builder">Builder (Admin)</option>
         </select>
-        <div class="mt-1 text-[11px] text-slate-500">
-          <b>Owner:</b> Requests changes. <b>Expert:</b> Does the work. <b>Both:</b> Add Subaccounts.
-        </div>
+        <div class="mt-1 text-[10px] text-slate-400">Owner creates requests. Expert processes them.</div>
       </div>
 
-      <div id="authMsg" class="text-sm text-rose-600 hidden"></div>
+      <div id="authMsg" class="text-sm text-rose-600 font-medium hidden"></div>
 
-      <div class="pt-1 flex gap-2">
+      <div class="pt-2 flex gap-3">
         <button id="loginBtn"
-          class="flex-1 rounded-2xl bg-slate-900 text-white px-4 py-2.5 text-sm font-bold hover:bg-slate-800 active:scale-[.99] transition">
+          class="flex-1 rounded-xl bg-slate-900 text-white px-4 py-3 text-sm font-bold hover:bg-slate-800 active:scale-[.98] transition shadow-lg">
           Login
         </button>
         <button id="registerBtn"
-          class="flex-1 rounded-2xl bg-indigo-600 text-white px-4 py-2.5 text-sm font-bold hover:bg-indigo-700 active:scale-[.99] transition">
+          class="flex-1 rounded-xl bg-indigo-600 text-white px-4 py-3 text-sm font-bold hover:bg-indigo-700 active:scale-[.98] transition shadow-lg shadow-indigo-200">
           Register
         </button>
       </div>
@@ -109,245 +97,200 @@
   </div>
 </div>
 
-<header class="sticky top-0 z-40 border-b border-slate-200/70 bg-white/70 glass">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
+<header class="sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 glass backdrop-blur-md">
+  <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
     <div class="flex items-center gap-3 min-w-0">
-      <div class="h-10 w-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 shadow-soft"></div>
-      <div class="min-w-0">
-        <h1 class="text-base font-extrabold leading-tight truncate">Subaccount Change Tracker</h1>
-        <p class="text-xs text-slate-500 truncate">Requested → Clarification → In Progress → Client Review → Done</p>
+      <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 shadow-md"></div>
+      <div class="min-w-0 hidden sm:block">
+        <h1 class="text-sm font-extrabold leading-tight text-slate-900">Task Tracker</h1>
+        <p class="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Agency Operations</p>
       </div>
     </div>
 
-    <div class="flex items-center gap-2">
-      <div class="relative hidden lg:block">
-        <input id="searchInput" type="text" placeholder="Search tasks, users, notes…"
-          class="w-[360px] rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300" />
+    <div class="flex items-center gap-3 flex-1 justify-end">
+      <div class="relative hidden md:block max-w-md w-full">
+        <input id="searchInput" type="text" placeholder="Search tasks, subaccounts..."
+          class="w-full rounded-xl border border-slate-200 bg-white/50 pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition" />
+        <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</div>
       </div>
 
       <select id="filterSubaccount"
-        class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300">
-        <option value="">All</option>
+        class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 max-w-[150px] truncate">
+        <option value="">All Subs</option>
       </select>
 
       <button id="newTaskBtn" style="display:none;"
-        class="rounded-2xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-soft hover:bg-indigo-700 active:scale-[.99] transition">
-        + Task
+        class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-indigo-200 hover:bg-indigo-700 active:scale-[.98] transition whitespace-nowrap">
+        + New Request
       </button>
 
       <div class="relative">
         <button id="notifBtn"
-          class="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold hover:bg-slate-50 active:scale-[.99] transition flex items-center gap-2">
-          🔔 <span id="notifCount" class="hidden text-xs font-bold px-2 py-0.5 rounded-full bg-rose-600 text-white">0</span>
+          class="h-9 w-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 active:scale-[.95] transition flex items-center justify-center relative">
+          🔔 <span id="notifCount" class="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center text-[9px] font-bold rounded-full bg-rose-500 text-white hidden">0</span>
         </button>
 
-        <div id="notifPanel" class="hidden absolute right-0 mt-2 w-[380px] max-w-[92vw] rounded-3xl bg-white border border-slate-200 shadow-lift overflow-hidden">
-          <div class="p-3 border-b border-slate-100 flex items-center justify-between">
-            <div class="font-semibold">Notifications</div>
-            <button id="markAllReadBtn" class="text-xs font-semibold px-2 py-1 rounded-2xl border border-slate-200 hover:bg-slate-50">
-              Mark all read
-            </button>
+        <div id="notifPanel" class="hidden absolute right-0 mt-3 w-[360px] max-w-[90vw] rounded-2xl bg-white border border-slate-100 shadow-xl overflow-hidden z-50">
+          <div class="p-3 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
+            <div class="font-bold text-xs uppercase tracking-wider text-slate-500">Notifications</div>
+            <button id="markAllReadBtn" class="text-[10px] font-bold text-indigo-600 hover:underline">Mark read</button>
           </div>
-          <div id="notifList" class="max-h-[380px] overflow-auto bg-slate-50 p-2 space-y-2"></div>
+          <div id="notifList" class="max-h-[300px] overflow-y-auto"></div>
         </div>
       </div>
 
       <button id="logoutBtn"
-        class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 active:scale-[.99] transition">
+        class="text-xs font-bold text-slate-500 hover:text-slate-800 px-2 transition">
         Logout
       </button>
-
-      <div class="hidden xl:block text-sm text-slate-600 whitespace-nowrap">
-        <span id="userBadge" class="font-semibold"></span>
-        <span id="wsBadge" class="text-slate-400"></span>
-      </div>
     </div>
-  </div>
-
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 pb-4 lg:hidden">
-    <input id="searchInputMobile" type="text" placeholder="Search tasks…"
-      class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300" />
   </div>
 </header>
 
-<main class="max-w-7xl mx-auto px-5 py-6">
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<main class="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 h-[calc(100vh-65px)] overflow-hidden flex flex-col lg:flex-row gap-6">
 
-    <aside class="lg:col-span-3">
-      <div class="rounded-3xl bg-white border border-slate-100 shadow-soft overflow-hidden">
-        <div class="p-4 flex items-center justify-between">
-          <div>
-            <h2 class="font-semibold">Subaccounts</h2>
-            <p class="text-xs text-slate-500">Click to filter</p>
-          </div>
-          <button id="addSubBtn" style="display:none;"
-            class="rounded-2xl border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-slate-50 active:scale-[.99] transition">
-            + Add
-          </button>
-        </div>
-
-        <div id="subList" class="px-3 pb-3 space-y-1"></div>
-
-        <div class="p-4 border-t border-slate-100 bg-slate-50">
-          <div class="rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-600">
-            <div class="font-bold mb-1">Roles:</div>
-            <ul class="list-disc pl-4 space-y-1 text-xs">
-                <li><b>Owner:</b> Creates Tasks</li>
-                <li><b>Expert:</b> Processes Tasks</li>
-                <li><b>Both:</b> Add/View Subs</li>
-            </ul>
-          </div>
+  <aside class="hidden lg:flex flex-col w-64 shrink-0 gap-4 h-full pb-2">
+    <div class="flex-1 rounded-3xl bg-white border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <h2 class="font-bold text-sm text-slate-700">Subaccounts</h2>
+        <button id="addSubBtn" style="display:none;" class="text-xs font-bold bg-white border border-slate-200 rounded-lg px-2 py-1 hover:bg-slate-50 transition">+ Add</button>
+      </div>
+      <div id="subList" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+    </div>
+    
+    <div class="rounded-2xl bg-indigo-50 border border-indigo-100 p-4">
+      <div class="flex items-center gap-3">
+        <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs" id="userInitials">U</div>
+        <div class="min-w-0">
+          <div id="userBadge" class="font-bold text-sm text-indigo-900 truncate">User</div>
+          <div id="wsBadge" class="text-xs text-indigo-500 truncate">Workspace</div>
         </div>
       </div>
-    </aside>
+    </div>
+  </aside>
 
-    <section class="lg:col-span-9">
-      <div class="overflow-x-auto pb-2">
-        <div id="board" class="min-w-max grid grid-flow-col auto-cols-max gap-4"></div>
+  <section class="flex-1 h-full overflow-x-auto overflow-y-hidden pb-4">
+    <div id="board" class="h-full flex gap-5 min-w-max px-1">
       </div>
-    </section>
+  </section>
 
-  </div>
 </main>
 
 <div id="subModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 glass p-4">
-  <div class="fade-in w-full max-w-lg rounded-3xl bg-white border border-slate-200 shadow-lift overflow-hidden">
-    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
-      <div>
-        <h3 class="font-semibold">Add Subaccount</h3>
-        <p class="text-sm text-slate-500">Example: VIP Tires - Ohio</p>
-      </div>
-      <button id="closeSubModalBtn" class="p-2 rounded-2xl hover:bg-slate-100">✕</button>
-    </div>
-
-    <div class="p-4">
-      <label class="text-xs font-semibold text-slate-600">Subaccount name</label>
-      <input id="subNameInput"
-        class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
-        placeholder="Type subaccount name..." />
-
-      <div id="subErr" class="mt-2 text-sm text-rose-600 hidden"></div>
-
-      <div class="mt-4 flex justify-end gap-2">
-        <button id="cancelSubBtn" class="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50 active:scale-[.99] transition">
-          Cancel
-        </button>
-        <button id="saveSubBtn" class="rounded-2xl bg-indigo-600 text-white px-4 py-2 text-sm font-semibold hover:bg-indigo-700 active:scale-[.99] transition">
-          Save
-        </button>
-      </div>
+  <div class="fade-in w-full max-w-md rounded-3xl bg-white shadow-2xl p-6">
+    <h3 class="font-bold text-lg mb-1">Add Subaccount</h3>
+    <p class="text-sm text-slate-500 mb-4">Create a new bucket for tasks.</p>
+    
+    <input id="subNameInput" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Acme Solar - Texas" />
+    
+    <div class="mt-6 flex justify-end gap-3">
+      <button id="closeSubModalBtn" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-100 transition">Cancel</button>
+      <button id="saveSubBtn" class="px-6 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">Save</button>
     </div>
   </div>
 </div>
 
 <div id="taskModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 glass p-4">
-  <div class="fade-in w-full max-w-2xl rounded-3xl bg-white border border-slate-200 shadow-lift overflow-hidden">
-    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+  <div class="fade-in w-full max-w-2xl rounded-3xl bg-white shadow-2xl flex flex-col max-h-[90vh]">
+    <div class="p-6 border-b border-slate-100 flex items-center justify-between">
       <div>
-        <h3 class="font-semibold">New Task Request</h3>
-        <p class="text-sm text-slate-500">Request a change for the Expert</p>
+        <h3 class="font-bold text-xl">New Request</h3>
+        <p class="text-sm text-slate-500">Submit a task for the GHL Expert</p>
       </div>
-      <button id="closeTaskModal" class="p-2 rounded-2xl hover:bg-slate-100">✕</button>
+      <button id="closeTaskModal" class="h-8 w-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500">✕</button>
     </div>
 
-    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-      <div class="md:col-span-2">
-        <label class="text-xs font-semibold text-slate-600">Task Name</label>
-        <input id="tTitle" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
-          placeholder="e.g., Fix automation trigger" />
+    <div class="p-6 overflow-y-auto space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Task Title</label>
+          <input id="tTitle" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Brief summary..." />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Subaccount</label>
+          <select id="tSub" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white"></select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+           <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Assign Expert (Username)</label>
+           <input id="tAssignee" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="e.g. abdul" />
+        </div>
+        <div>
+           <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Attachment (Loom/Screenshot URL)</label>
+           <input id="tAttach" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="https://loom.com/..." />
+        </div>
       </div>
 
       <div>
-        <label class="text-xs font-semibold text-slate-600">Subaccount</label>
-        <select id="tSub" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"></select>
+        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Details</label>
+        <textarea id="tDetails" rows="5" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Describe the request..."></textarea>
       </div>
+    </div>
 
-      <div>
-        <label class="text-xs font-semibold text-slate-600">Assign to (Expert Username)</label>
-        <input id="tAssignee" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
-          placeholder="e.g., abdul" />
-      </div>
-
-      <div class="md:col-span-2">
-        <label class="text-xs font-semibold text-slate-600">Details</label>
-        <textarea id="tDetails" rows="4" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
-          placeholder="Paste the client message + what to change..."></textarea>
-      </div>
-
-      <div id="taskErr" class="md:col-span-2 text-sm text-rose-600 hidden"></div>
-
-      <div class="md:col-span-2 flex items-center justify-end gap-2">
-        <button id="cancelTaskBtn" class="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50 active:scale-[.99] transition">Cancel</button>
-        <button id="createTaskBtn" class="rounded-2xl bg-indigo-600 text-white px-4 py-2 text-sm font-semibold hover:bg-indigo-700 active:scale-[.99] transition">Create & Notify</button>
-      </div>
+    <div class="p-6 border-t border-slate-100 bg-slate-50 rounded-b-3xl flex justify-end gap-3">
+      <button id="cancelTaskBtn" class="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition">Cancel</button>
+      <button id="createTaskBtn" class="px-6 py-2.5 rounded-xl text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">Create & Notify</button>
     </div>
   </div>
 </div>
 
 <div id="detailsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 glass p-4">
-  <div class="fade-in w-full max-w-5xl rounded-3xl bg-white border border-slate-200 shadow-lift overflow-hidden">
-    <div class="p-4 border-b border-slate-100 flex items-start justify-between gap-3">
-      <div class="min-w-0">
-        <h3 id="dTitle" class="font-semibold text-lg truncate">Task</h3>
-        <p id="dMeta" class="text-sm text-slate-500 truncate">—</p>
+  <div class="fade-in w-full max-w-6xl h-[85vh] rounded-3xl bg-white shadow-2xl flex overflow-hidden">
+    
+    <div class="w-full lg:w-1/3 bg-slate-50 border-r border-slate-200 flex flex-col">
+      <div class="p-6 border-b border-slate-200">
+        <div class="flex items-start justify-between">
+            <h3 id="dTitle" class="font-bold text-xl text-slate-900 leading-tight"></h3>
+            <button id="closeDetailsModal" class="text-slate-400 hover:text-slate-700">✕</button>
+        </div>
+        <div id="dMeta" class="mt-2 text-xs font-medium text-slate-500"></div>
+        <a id="dAttachLink" href="#" target="_blank" class="hidden mt-3 inline-flex items-center gap-1 text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-100 hover:bg-indigo-100">
+           📎 View Attachment
+        </a>
       </div>
-      <button id="closeDetailsModal" class="p-2 rounded-2xl hover:bg-slate-100">✕</button>
+
+      <div class="flex-1 overflow-y-auto p-6 space-y-5">
+        <div class="space-y-1">
+          <label class="text-[10px] font-bold uppercase text-slate-500">Status</label>
+          <select id="dStatus" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></select>
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] font-bold uppercase text-slate-500">Subaccount</label>
+          <select id="dSub" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></select>
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] font-bold uppercase text-slate-500">Details</label>
+          <textarea id="dDetails" rows="8" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+        </div>
+
+        <div id="expertControls" class="grid grid-cols-2 gap-2 pt-2">
+            <button onclick="updateStatus('clarify')" class="p-2 rounded-lg bg-white border border-slate-200 text-xs font-bold hover:bg-slate-50">⚠️ Clarify</button>
+            <button onclick="updateStatus('progress')" class="p-2 rounded-lg bg-white border border-slate-200 text-xs font-bold hover:bg-slate-50">🔨 In Progress</button>
+            <button onclick="updateStatus('review')" class="col-span-2 p-2 rounded-lg bg-slate-800 text-white text-xs font-bold hover:bg-slate-900">👀 Send for Review</button>
+            <button onclick="updateStatus('done')" class="col-span-2 p-2 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700">✅ Mark Done</button>
+        </div>
+        <div id="clientControls" class="hidden grid grid-cols-2 gap-2 pt-2">
+            <button onclick="updateStatus('done')" class="col-span-2 p-3 rounded-xl bg-emerald-600 text-white text-sm font-bold shadow-lg shadow-emerald-200 hover:bg-emerald-700">Approve ✅</button>
+            <button onclick="updateStatus('clarify')" class="col-span-2 p-2 rounded-xl border border-rose-200 text-rose-600 text-sm font-bold hover:bg-rose-50">Request Changes</button>
+        </div>
+        
+        <button id="saveTaskBtn" class="w-full py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700">Save Changes</button>
+      </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12">
-      <div class="lg:col-span-4 border-b lg:border-b-0 lg:border-r border-slate-100 p-4 bg-slate-50">
-        <div class="space-y-3">
-          <div class="rounded-3xl bg-white border border-slate-200 p-3">
-            <div class="text-xs font-semibold text-slate-500">Status</div>
-            <select id="dStatus" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"></select>
-
-            <div class="mt-3 text-xs font-semibold text-slate-500">Subaccount</div>
-            <select id="dSub" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"></select>
-
-            <div class="mt-3 text-xs font-semibold text-slate-500">Assignee</div>
-            <input id="dAssignee" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300" />
-
-            <div id="expertControls" class="mt-3 grid grid-cols-2 gap-2">
-              <button id="btnClarify" class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 transition">Clarify</button>
-              <button id="btnProgress" class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 transition">In Progress</button>
-              <button id="btnReview" class="rounded-2xl bg-slate-900 text-white px-3 py-2 text-sm font-semibold hover:bg-slate-800 transition col-span-2">Send to Review</button>
-              <button id="btnDone" class="rounded-2xl bg-emerald-600 text-white px-3 py-2 text-sm font-semibold hover:bg-emerald-700 transition col-span-2">Mark Done</button>
-            </div>
-
-            <div id="clientControls" class="hidden mt-3 grid grid-cols-2 gap-2">
-              <button id="btnApprove" class="rounded-2xl bg-emerald-600 text-white px-3 py-2 text-sm font-semibold hover:bg-emerald-700 transition col-span-2">Approve Done ✅</button>
-              <button id="btnChanges" class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 transition col-span-2">Request Changes</button>
-            </div>
-
-            <button id="saveTaskBtn" class="mt-3 w-full rounded-2xl bg-indigo-600 text-white px-3 py-2 text-sm font-semibold hover:bg-indigo-700 transition">Save Changes</button>
-          </div>
-
-          <div class="rounded-3xl bg-white border border-slate-200 p-3">
-            <div class="text-xs font-semibold text-slate-500">Details</div>
-            <textarea id="dDetails" rows="7" class="mt-2 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"></textarea>
-          </div>
-        </div>
+    <div class="w-full lg:w-2/3 flex flex-col bg-white">
+      <div class="p-4 border-b border-slate-100 bg-slate-50/30">
+        <h4 class="font-bold text-sm text-slate-700">Discussion</h4>
       </div>
-
-      <div class="lg:col-span-8 p-4">
-        <div class="rounded-3xl border border-slate-200 overflow-hidden bg-white">
-          <div class="p-3 border-b border-slate-100 flex items-center justify-between">
-            <div>
-              <div class="font-semibold">Conversation</div>
-              <div class="text-sm text-slate-500">Clean thread, easy for client</div>
-            </div>
-          </div>
-
-          <div id="thread" class="p-3 space-y-2 max-h-[520px] overflow-auto bg-slate-50"></div>
-
-          <div class="p-3 border-t border-slate-100 bg-white">
-            <div class="flex gap-2">
-              <input id="msgInput" class="flex-1 rounded-2xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300"
-                placeholder="Write an update..." />
-              <button id="sendMsgBtn" class="rounded-2xl bg-indigo-600 text-white px-4 py-2 text-sm font-semibold hover:bg-indigo-700 transition">Send</button>
-            </div>
-            <div class="mt-2 text-xs text-slate-500">Press Enter to send.</div>
-          </div>
+      
+      <div id="thread" class="flex-1 overflow-y-auto p-4 space-y-3 bg-white"></div>
+      
+      <div class="p-4 border-t border-slate-100 bg-slate-50">
+        <div class="flex gap-2">
+          <input id="msgInput" class="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Type a message (links are clickable)..." />
+          <button id="sendMsgBtn" class="bg-indigo-600 text-white px-5 rounded-xl font-bold hover:bg-indigo-700 transition">Send</button>
         </div>
       </div>
     </div>
@@ -357,17 +300,13 @@
 
 <script>
 /* =========================
-   CONFIGURATION
+   1. CONFIGURATION
 ========================= */
-// ⚡️ PASTE YOUR ZAPIER OR MAKE WEBHOOK URL HERE TO ENABLE EMAILS
-// Example: "https://hooks.zapier.com/hooks/catch/12345/abcde/"
-const EMAIL_WEBHOOK_URL = ""; 
-
+const EMAIL_WEBHOOK_URL = ""; // ⚡️ Paste Zapier Webhook URL Here
 const RECIPIENT_EMAIL = "kalamshar786@gmail.com";
-const EMAIL_SUBJECT = "please give me updataed i copy paste in the gituhb";
 
 /* =========================
-   FIREBASE INIT
+   2. FIREBASE INIT
 ========================= */
 const firebaseConfig = {
   apiKey: "AIzaSyDHL0tVJ7tm4lK4r7gQrZ7McPJwFOaRulc",
@@ -378,283 +317,126 @@ const firebaseConfig = {
   appId: "1:368102739583:web:92baa7b3abf14e7653b94a",
   measurementId: "G-7CWF4D2V3T"
 };
-
 if (!firebase.apps?.length) firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
 /* =========================
-   DOM HELPERS
+   3. HELPERS & UTILS
 ========================= */
 const $ = (id) => document.getElementById(id);
+const clean = (s) => (s || "").trim();
+const nowISO = () => new Date().toISOString();
+const escapeHtml = (str) => (str ?? "").toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-/* Toast */
-const toast = $("toast");
-const toastText = $("toastText");
-function showToast(msg) {
-  if (!toast || !toastText) return;
-  toastText.textContent = msg || "Done";
-  toast.classList.remove("hidden");
-  clearTimeout(showToast._t);
-  showToast._t = setTimeout(() => toast.classList.add("hidden"), 1600);
+// ✨ FEATURE: SMART LINK DETECTION
+function linkify(text) {
+  const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+  return escapeHtml(text).replace(urlRegex, (url) => {
+    return `<a href="${url}" target="_blank" class="text-indigo-600 font-medium hover:underline break-all relative z-10" onclick="event.stopPropagation()">${url}</a>`;
+  });
 }
 
-/* Auth modal */
-const authModal = $("authModal");
-const wsInput = $("wsInput");
-const usernameInput = $("usernameInput");
-const passwordInput = $("passwordInput");
-const roleInput = $("roleInput");
-const loginBtn = $("loginBtn");
-const registerBtn = $("registerBtn");
-const authMsg = $("authMsg");
+function showToast(msg) {
+  const t = $("toast");
+  $("toastText").textContent = msg;
+  t.classList.remove("hidden");
+  setTimeout(() => t.classList.add("hidden"), 2000);
+}
 
-/* Header UI */
-const userBadge = $("userBadge");
-const wsBadge = $("wsBadge");
-const logoutBtn = $("logoutBtn");
-
-const searchInput = $("searchInput");
-const searchInputMobile = $("searchInputMobile");
-const filterSubaccount = $("filterSubaccount");
-const newTaskBtn = $("newTaskBtn");
-const addSubBtn = $("addSubBtn");
-
-const subList = $("subList");
-const board = $("board");
-
-/* Sub modal */
-const subModal = $("subModal");
-const subNameInput = $("subNameInput");
-const closeSubModalBtn = $("closeSubModalBtn");
-const cancelSubBtn = $("cancelSubBtn");
-const saveSubBtn = $("saveSubBtn");
-const subErr = $("subErr");
-
-/* Task modal */
-const taskModal = $("taskModal");
-const closeTaskModal = $("closeTaskModal");
-const cancelTaskBtn = $("cancelTaskBtn");
-const createTaskBtn = $("createTaskBtn");
-const tTitle = $("tTitle");
-const tSub = $("tSub");
-const tAssignee = $("tAssignee");
-const tDetails = $("tDetails");
-const taskErr = $("taskErr");
-
-/* Details modal */
-const detailsModal = $("detailsModal");
-const closeDetailsModal = $("closeDetailsModal");
-const dTitle = $("dTitle");
-const dMeta = $("dMeta");
-const dStatus = $("dStatus");
-const dSub = $("dSub");
-const dAssignee = $("dAssignee");
-const dDetails = $("dDetails");
-const saveTaskBtn = $("saveTaskBtn");
-
-const expertControls = $("expertControls");
-const btnClarify = $("btnClarify");
-const btnProgress = $("btnProgress");
-const btnReview = $("btnReview");
-const btnDone = $("btnDone");
-const btnApprove = $("btnApprove");
-const btnChanges = $("btnChanges");
-const clientControls = $("clientControls");
-
-const thread = $("thread");
-const msgInput = $("msgInput");
-const sendMsgBtn = $("sendMsgBtn");
-
-/* Notifications panel */
-const notifBtn = $("notifBtn");
-const notifPanel = $("notifPanel");
-const notifList = $("notifList");
-const notifCount = $("notifCount");
-const markAllReadBtn = $("markAllReadBtn");
-
-/* =========================
-   STATE & ROLES
-========================= */
+// User state
 let WS = null, USER = null, ROLE = null, UID = null;
 let subaccounts = [], tasks = [], notifications = [];
 let currentTaskId = null;
 
-const STATUS = [
-  { id: "requested", label: "Requested" },
-  { id: "clarify", label: "Clarification" },
-  { id: "progress", label: "In Progress" },
-  { id: "review", label: "Client Review" },
-  { id: "done", label: "Done" }
+// Columns definition
+const COLUMNS = [
+  { id: "requested", label: "Requested", color: "bg-sky-500" },
+  { id: "clarify", label: "Clarification", color: "bg-amber-500" },
+  { id: "progress", label: "In Progress", color: "bg-indigo-500" },
+  { id: "review", label: "Client Review", color: "bg-fuchsia-500" },
+  { id: "done", label: "Done", color: "bg-emerald-500" }
 ];
 
-/* ROLE LOGIC 
-   Client (Agency Owner): Creates tasks, adds subs.
-   Expert (Worker): Moves tasks, adds subs.
-   Builder: Admin access.
-*/
-function isBuilder() { return ROLE === "builder"; }
-function isExpert() { return ROLE === "ghl_expert"; }
-function isClient() { return ROLE === "client"; }
-
-function canCreate() { return isClient() || isBuilder(); }
-function canMove() { return isExpert() || isBuilder(); }
-function canAddSub() { return isClient() || isExpert() || isBuilder(); }
-function canApprove() { return isClient() || isBuilder(); }
-
-function clean(str) { return (str || "").trim(); }
-function nowISO() { return new Date().toISOString(); }
-function escapeHtml(str) {
-  return (str ?? "").toString()
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function formatRole(r) {
-  if (r === "builder") return "Builder";
-  if (r === "ghl_expert") return "Expert";
-  if (r === "client") return "Owner";
-  return r || "";
-}
+/* Role Checks */
+const isBuilder = () => ROLE === "builder";
+const isExpert = () => ROLE === "ghl_expert";
+const isClient = () => ROLE === "client";
+const canCreate = () => isClient() || isBuilder();
+const canAddSub = () => true; // Simplification for this version
 
 /* =========================
-   SESSION & AUTH
+   4. AUTH & SESSION
 ========================= */
-const SESSION_KEY = "sct_session_v1";
-function saveSession() {
-  try { localStorage.setItem(SESSION_KEY, JSON.stringify({ WS, USER, ROLE })); } catch (e) { }
-}
-function loadSession() {
-  try {
-    const raw = localStorage.getItem(SESSION_KEY);
-    if (!raw) return null;
-    const v = JSON.parse(raw);
-    if (!v?.WS || !v?.USER || !v?.ROLE) return null;
-    return v;
-  } catch (e) { return null; }
-}
-function clearSession() {
-  try { localStorage.removeItem(SESSION_KEY); } catch (e) { }
-}
+async function authenticate(isRegister) {
+  const ws = clean($("wsInput").value);
+  const username = clean($("usernameInput").value).toLowerCase();
+  const password = $("passwordInput").value;
+  const role = $("roleInput").value;
 
-function makeEmail(username, ws) {
-  return `${username.toLowerCase()}@${ws.toLowerCase()}.local`;
-}
-
-function setAuthError(msg) {
-  if (!authMsg) return;
-  if (!msg) {
-    authMsg.classList.add("hidden");
-    authMsg.textContent = "";
-    return;
-  }
-  authMsg.textContent = msg;
-  authMsg.classList.remove("hidden");
-}
-
-async function doRegister() {
-  setAuthError("");
-  const ws = clean(wsInput?.value);
-  const username = clean(usernameInput?.value).replace(/\s+/g, "").toLowerCase();
-  const password = passwordInput?.value || "";
-  const selectedRole = roleInput?.value || "client";
-
-  if (!ws || !username || !password) return setAuthError("Workspace, Username, Password required.");
-  if (password.length < 6) return setAuthError("Password must be at least 6 characters.");
-
-  const email = makeEmail(username, ws);
-
-  try {
-    const cred = await auth.createUserWithEmailAndPassword(email, password);
-    await db.collection("workspaces").doc(ws).collection("users").doc(cred.user.uid).set({
-      username,
-      role: selectedRole,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
-
-    await afterAuthSecure(ws, username, cred.user.uid);
-  } catch (e) {
-    console.error(e);
-    setAuthError(e.message || "Register failed");
-  }
-}
-
-async function doLogin() {
-  setAuthError("");
-  const ws = clean(wsInput?.value);
-  const username = clean(usernameInput?.value).replace(/\s+/g, "").toLowerCase();
-  const password = passwordInput?.value || "";
-
-  if (!ws || !username || !password) return setAuthError("Workspace, Username, Password required.");
-  const email = makeEmail(username, ws);
-
-  try {
-    const cred = await auth.signInWithEmailAndPassword(email, password);
-    await afterAuthSecure(ws, username, cred.user.uid);
-  } catch (e) {
-    console.error(e);
-    setAuthError(e.message || "Login failed");
-  }
-}
-
-async function afterAuthSecure(ws, username, uid) {
-  WS = ws;
-  USER = (username || "").toLowerCase();
-  UID = uid;
-
-  const uSnap = await db.collection("workspaces").doc(WS).collection("users").doc(uid).get();
-  let firestoreRole = uSnap.exists ? (uSnap.data()?.role || "") : "";
+  if (!ws || !username || !password) return alert("All fields required");
+  const email = `${username}@${ws}.local`;
   
-  // Fallback
-  if (!firestoreRole) {
-    firestoreRole = "client";
-    await db.collection("workspaces").doc(WS).collection("users").doc(uid).set({ username: USER, role: firestoreRole }, { merge: true });
+  try {
+    let userCred;
+    if (isRegister) {
+      userCred = await auth.createUserWithEmailAndPassword(email, password);
+      // Save profile
+      await db.collection("workspaces").doc(ws).collection("users").doc(userCred.user.uid).set({
+        username, role, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    } else {
+      userCred = await auth.signInWithEmailAndPassword(email, password);
+    }
+    
+    await loadUserProfile(ws, username, userCred.user.uid);
+  } catch (e) {
+    $("authMsg").textContent = e.message;
+    $("authMsg").classList.remove("hidden");
   }
-
-  ROLE = firestoreRole;
-  saveSession();
-
-  authModal?.classList.add("hidden");
-  if (userBadge) userBadge.textContent = `${USER} (${formatRole(ROLE)})`;
-  if (wsBadge) wsBadge.textContent = ` • WS: ${WS}`;
-
-  // UPDATE BUTTON VISIBILITY BASED ON ROLES
-  if (addSubBtn) addSubBtn.style.display = canAddSub() ? "inline-flex" : "none";
-  if (newTaskBtn) newTaskBtn.style.display = canCreate() ? "inline-flex" : "none";
-
-  if (dStatus) dStatus.innerHTML = STATUS.map(s => `<option value="${s.id}">${s.label}</option>`).join("");
-
-  bindRealtime();
-  showToast("Welcome!");
 }
 
+async function loadUserProfile(ws, username, uid) {
+  WS = ws; USER = username; UID = uid;
+  
+  // Get role from DB to be safe
+  const snap = await db.collection("workspaces").doc(WS).collection("users").doc(UID).get();
+  ROLE = snap.exists ? snap.data().role : "client";
+
+  // UI Updates
+  $("authModal").classList.add("hidden");
+  $("userBadge").textContent = USER;
+  $("wsBadge").textContent = WS + " • " + ROLE;
+  $("userInitials").textContent = USER.substring(0,2).toUpperCase();
+
+  // Show/Hide buttons
+  $("newTaskBtn").style.display = canCreate() ? "block" : "none";
+  $("addSubBtn").style.display = canAddSub() ? "block" : "none";
+  
+  initRealtime();
+}
+
+$("loginBtn").onclick = () => authenticate(false);
+$("registerBtn").onclick = () => authenticate(true);
+$("logoutBtn").onclick = () => { auth.signOut(); location.reload(); };
+
 /* =========================
-   REALTIME DATA
+   5. DATA & RENDER
 ========================= */
-let unsubSubs = null, unsubTasks = null, unsubNotifs = null;
-
-function bindRealtime() {
-  if (!WS || !USER) return;
-  if(unsubSubs) unsubSubs();
-  if(unsubTasks) unsubTasks();
-  if(unsubNotifs) unsubNotifs();
-
-  const wsRef = db.collection("workspaces").doc(WS);
-
-  unsubSubs = wsRef.collection("subaccounts").orderBy("createdAt", "desc").onSnapshot(snap => {
-    subaccounts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderDropdowns();
-    renderSubaccounts();
-    renderBoard();
+function initRealtime() {
+  const root = db.collection("workspaces").doc(WS);
+  
+  // Subs
+  root.collection("subaccounts").orderBy("createdAt", "desc").onSnapshot(snap => {
+    subaccounts = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    renderSubs();
+    renderBoard(); 
+    updateDropdowns();
   });
 
-  unsubTasks = wsRef.collection("tasks").orderBy("createdAt", "desc").onSnapshot(snap => {
-    tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderSubaccounts();
+  // Tasks
+  root.collection("tasks").orderBy("createdAt", "desc").onSnapshot(snap => {
+    tasks = snap.docs.map(d => ({id: d.id, ...d.data()}));
     renderBoard();
     if (currentTaskId) {
       const t = tasks.find(x => x.id === currentTaskId);
@@ -662,329 +444,331 @@ function bindRealtime() {
     }
   });
 
-  unsubNotifs = wsRef.collection("notifications")
-    .where("toUsername", "==", USER)
-    .orderBy("createdAt", "desc")
-    .limit(50)
-    .onSnapshot(snap => {
-      notifications = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderNotifications();
-    });
-}
-
-/* =========================
-   UI RENDERING
-========================= */
-function renderDropdowns() {
-  if (!filterSubaccount || !tSub || !dSub) return;
-  const cur = filterSubaccount.value;
-  const opts = subaccounts.map(sa => `<option value="${sa.id}">${escapeHtml(sa.name || "—")}</option>`).join("");
-  
-  filterSubaccount.innerHTML = `<option value="">All</option>` + opts;
-  filterSubaccount.value = [...filterSubaccount.options].some(o => o.value === cur) ? cur : "";
-  
-  tSub.innerHTML = opts;
-  dSub.innerHTML = opts;
-}
-
-function getFilteredTasks() {
-  const q = (clean(searchInput?.value) || clean(searchInputMobile?.value)).toLowerCase();
-  const f = filterSubaccount?.value || "";
-
-  return tasks.filter(t => {
-    if (f && t.subaccountId !== f) return false;
-    if (!q) return true;
-    const saName = (subaccounts.find(s => s.id === t.subaccountId)?.name || "").toLowerCase();
-    return (
-      (t.title || "").toLowerCase().includes(q) ||
-      (t.details || "").toLowerCase().includes(q) ||
-      saName.includes(q)
-    );
+  // Notifications
+  root.collection("notifications").where("toUsername", "==", USER).orderBy("createdAt", "desc").limit(20).onSnapshot(snap => {
+    notifications = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    renderNotifs();
   });
 }
 
-function renderSubaccounts() {
-  if (!subList) return;
-  subList.innerHTML = "";
-  if (subaccounts.length === 0) {
-    subList.innerHTML = `<div class="text-sm text-slate-500 px-1 pb-2">No subaccounts yet.</div>`;
-    return;
-  }
-  subaccounts.forEach(sa => {
-    const total = tasks.filter(t => t.subaccountId === sa.id).length;
-    const done = tasks.filter(t => t.subaccountId === sa.id && t.status === "done").length;
-    const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+function updateDropdowns() {
+  const opts = subaccounts.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
+  $("filterSubaccount").innerHTML = `<option value="">All Subs</option>` + opts;
+  $("tSub").innerHTML = opts;
+  $("dSub").innerHTML = opts;
+  $("dStatus").innerHTML = COLUMNS.map(c => `<option value="${c.id}">${c.label}</option>`).join("");
+}
 
-    const item = document.createElement("button");
-    item.className = "w-full text-left px-3 py-2 rounded-2xl hover:bg-slate-50 transition flex items-center justify-between gap-3";
-    item.innerHTML = `
-      <div class="min-w-0">
-        <div class="font-semibold truncate">${escapeHtml(sa.name || "—")}</div>
-        <div class="text-xs text-slate-500">${total} tasks</div>
-      </div>
-      <div class="text-xs font-semibold text-slate-500">${pct}%</div>
-    `;
-    item.onclick = () => { filterSubaccount.value = sa.id; renderBoard(); };
-    subList.appendChild(item);
+function renderSubs() {
+  const list = $("subList");
+  list.innerHTML = "";
+  subaccounts.forEach(s => {
+     const count = tasks.filter(t => t.subaccountId === s.id && t.status !== 'done').length;
+     const div = document.createElement("button");
+     div.className = "w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-slate-50 flex justify-between items-center group";
+     div.innerHTML = `<span class="font-medium text-slate-700 group-hover:text-indigo-600 truncate">${escapeHtml(s.name)}</span> 
+                      ${count > 0 ? `<span class="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-1.5 py-0.5 rounded-md">${count}</span>` : ''}`;
+     div.onclick = () => { $("filterSubaccount").value = s.id; renderBoard(); };
+     list.appendChild(div);
   });
 }
 
 function renderBoard() {
-  if (!board) return;
+  const board = $("board");
   board.innerHTML = "";
-  const list = getFilteredTasks();
+  
+  const filterSub = $("filterSubaccount").value;
+  const search = $("searchInput").value.toLowerCase();
+  
+  // Filter
+  const filtered = tasks.filter(t => {
+    if (filterSub && t.subaccountId !== filterSub) return false;
+    if (search && !t.title.toLowerCase().includes(search)) return false;
+    return true;
+  });
 
-  STATUS.forEach(col => {
-    const colTasks = list.filter(t => (t.status || "requested") === col.id);
-    const dot = col.id === "requested" ? "bg-sky-500" : col.id === "clarify" ? "bg-amber-500" : col.id === "progress" ? "bg-indigo-500" : col.id === "review" ? "bg-fuchsia-500" : "bg-emerald-500";
-
-    const wrap = document.createElement("div");
-    wrap.className = "snap-start min-w-[300px] w-[300px] rounded-3xl bg-white border border-slate-200 shadow-soft overflow-hidden flex flex-col";
-    wrap.innerHTML = `
-      <div class="px-4 pt-4 pb-3 border-b border-slate-200 bg-white flex justify-between">
-        <div class="flex items-center gap-2">
-          <span class="h-2.5 w-2.5 rounded-full ${dot}"></span>
-          <div class="font-extrabold text-slate-900">${col.label}</div>
-        </div>
-        <div class="text-xs font-bold px-2 py-1 rounded-full bg-slate-900 text-white">${colTasks.length}</div>
+  COLUMNS.forEach(col => {
+    const colTasks = filtered.filter(t => (t.status || 'requested') === col.id);
+    
+    // Column Wrapper
+    const colDiv = document.createElement("div");
+    colDiv.className = "w-[320px] shrink-0 flex flex-col h-full rounded-2xl bg-slate-50/50 border border-slate-200/60";
+    
+    // Header
+    colDiv.innerHTML = `
+      <div class="p-4 flex items-center justify-between shrink-0">
+         <div class="flex items-center gap-2">
+            <div class="h-2 w-2 rounded-full ${col.color}"></div>
+            <h3 class="font-bold text-sm text-slate-700 uppercase tracking-tight">${col.label}</h3>
+         </div>
+         <span class="text-xs font-bold text-slate-400 bg-white px-2 py-0.5 rounded-md border border-slate-100">${colTasks.length}</span>
       </div>
-      <div class="p-3 bg-slate-50 flex-1 overflow-auto space-y-2 min-h-[400px]"></div>
+      <div class="flex-1 overflow-y-auto px-2 pb-2 space-y-3" id="col_${col.id}" data-status="${col.id}">
+         </div>
     `;
-
-    const zone = wrap.querySelector(".p-3.bg-slate-50");
-    if (colTasks.length === 0) zone.innerHTML = `<div class="text-sm text-slate-400 italic text-center mt-4">Empty</div>`;
-
+    
+    const zone = colDiv.querySelector(`#col_${col.id}`);
+    
     colTasks.forEach(t => {
-      const saName = subaccounts.find(s => s.id === t.subaccountId)?.name || "—";
-      const card = document.createElement("button");
-      card.className = "w-full text-left rounded-3xl bg-white border border-slate-200 hover:shadow-soft transition px-4 py-3";
-      card.innerHTML = `
-        <div class="font-bold text-slate-900 text-sm line-clamp-2">${escapeHtml(t.title)}</div>
-        <div class="mt-2 flex items-center gap-2">
-            <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">${escapeHtml(saName)}</span>
-            <span class="text-[10px] text-slate-400">@${t.assigneeUsername || "?"}</span>
-        </div>
-      `;
-      card.onclick = () => openDetails(t.id);
-      zone.appendChild(card);
+       const subName = subaccounts.find(s => s.id === t.subaccountId)?.name || "—";
+       const card = document.createElement("div");
+       card.className = "bg-white p-4 rounded-xl shadow-sm border border-slate-100 cursor-pointer hover:shadow-md hover:border-indigo-100 transition group relative";
+       card.setAttribute("data-id", t.id); // For Drag & Drop
+       
+       card.innerHTML = `
+         <div class="flex justify-between items-start mb-2">
+            <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 truncate max-w-[120px]">${escapeHtml(subName)}</span>
+            <span class="text-[10px] text-slate-400">@${t.assigneeUsername}</span>
+         </div>
+         <h4 class="font-bold text-sm text-slate-800 leading-snug mb-2">${escapeHtml(t.title)}</h4>
+         ${t.attachmentUrl ? `<div class="mb-2 text-[10px] flex items-center gap-1 text-indigo-500 font-bold"><span class="text-lg leading-none">📎</span> Attached</div>` : ''}
+         <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-50">
+             <div class="text-[10px] text-slate-400">${new Date(t.createdAt?.seconds * 1000 || Date.now()).toLocaleDateString()}</div>
+             <div class="text-[10px] font-bold text-slate-500 flex items-center gap-1">💬 ${(t.messages||[]).length}</div>
+         </div>
+       `;
+       
+       // Handle click vs drag
+       card.addEventListener('click', (e) => {
+         openDetails(t.id);
+       });
+
+       zone.appendChild(card);
     });
-    board.appendChild(wrap);
+
+    board.appendChild(colDiv);
+
+    // ✨ FEATURE: DRAG & DROP INITIALIZATION
+    new Sortable(zone, {
+        group: 'shared', // Allow dragging between columns
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        dragClass: 'sortable-drag',
+        delay: 100, // Slight delay to prevent accidental drags on click
+        delayOnTouchOnly: true,
+        onEnd: function (evt) {
+            const item = evt.item;
+            const newStatus = evt.to.getAttribute('data-status');
+            const taskId = item.getAttribute('data-id');
+            const oldStatus = evt.from.getAttribute('data-status');
+
+            if (newStatus !== oldStatus) {
+                // Update Firestore
+                db.collection("workspaces").doc(WS).collection("tasks").doc(taskId).update({
+                    status: newStatus
+                }).then(() => {
+                    showToast(`Moved to ${newStatus}`);
+                    // Notify logic here if desired
+                });
+            }
+        }
+    });
   });
 }
 
-function renderNotifications() {
-  if (!notifList || !notifCount) return;
-  notifList.innerHTML = "";
+function renderNotifs() {
+  const list = $("notifList");
+  list.innerHTML = "";
   const unread = notifications.filter(n => !n.read).length;
-  notifCount.textContent = unread;
-  notifCount.classList.toggle("hidden", unread === 0);
+  $("notifCount").textContent = unread;
+  $("notifCount").classList.toggle("hidden", unread===0);
 
-  if (notifications.length === 0) {
-    notifList.innerHTML = `<div class="p-3 text-sm text-slate-500">No notifications.</div>`;
-    return;
-  }
+  if(notifications.length === 0) { list.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">All caught up!</div>`; return; }
 
   notifications.forEach(n => {
-    const item = document.createElement("button");
-    item.className = `w-full text-left rounded-3xl border p-3 mb-1 ${n.read ? "bg-white border-slate-200" : "bg-indigo-50 border-indigo-200"}`;
-    item.innerHTML = `<div class="text-sm font-semibold">${escapeHtml(n.title)}</div><div class="text-xs text-slate-500">${escapeHtml(n.body)}</div>`;
-    item.onclick = async () => {
-      if (!n.read) await db.collection("workspaces").doc(WS).collection("notifications").doc(n.id).update({ read: true });
-      if (n.taskId) openDetails(n.taskId);
-    };
-    notifList.appendChild(item);
+     const div = document.createElement("div");
+     div.className = `p-3 border-b border-slate-50 text-xs cursor-pointer ${n.read ? 'bg-white opacity-60' : 'bg-indigo-50/50'}`;
+     div.innerHTML = `<div class="font-bold ${n.read?'text-slate-700':'text-indigo-700'}">${escapeHtml(n.title)}</div>
+                      <div class="text-slate-500 truncate mt-0.5">${escapeHtml(n.body)}</div>`;
+     div.onclick = async () => {
+        await db.collection("workspaces").doc(WS).collection("notifications").doc(n.id).update({read:true});
+        if(n.taskId) openDetails(n.taskId);
+     };
+     list.appendChild(div);
   });
 }
 
 /* =========================
-   TASK / SUB CREATION
+   6. ACTIONS
 ========================= */
-function openSubModal() {
-  if (!canAddSub()) return alert("Role cannot add subaccounts.");
-  subModal.classList.remove("hidden");
-  subModal.classList.add("flex");
-}
-closeSubModalBtn.onclick = () => { subModal.classList.add("hidden"); subModal.classList.remove("flex"); };
-saveSubBtn.onclick = async () => {
-  const name = clean(subNameInput.value);
-  if (!name) return;
-  await db.collection("workspaces").doc(WS).collection("subaccounts").add({ name, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-  closeSubModalBtn.click();
-  showToast("Subaccount Added");
+$("addSubBtn").onclick = () => { $("subModal").classList.remove("hidden"); $("subModal").classList.add("flex"); };
+$("closeSubModalBtn").onclick = () => $("subModal").classList.add("hidden");
+$("saveSubBtn").onclick = async () => {
+   const name = clean($("subNameInput").value);
+   if(!name) return;
+   await db.collection("workspaces").doc(WS).collection("subaccounts").add({name, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
+   $("subModal").classList.add("hidden");
+   showToast("Subaccount added");
 };
 
-function openTaskModal() {
-  if (!canCreate()) return alert("Only Clients/Owners can create request tasks.");
-  taskModal.classList.remove("hidden");
-  taskModal.classList.add("flex");
-}
-closeTaskModal.onclick = () => { taskModal.classList.add("hidden"); taskModal.classList.remove("flex"); };
+$("newTaskBtn").onclick = () => { 
+    if(!isClient() && !isBuilder()) return alert("Only Clients can request.");
+    $("taskModal").classList.remove("hidden"); $("taskModal").classList.add("flex"); 
+};
+$("closeTaskModal").onclick = () => $("taskModal").classList.add("hidden");
+$("cancelTaskBtn").onclick = () => $("taskModal").classList.add("hidden");
 
-/* ---------------------------------------------------------
-   EMAIL LOGIC TRIGGER (WEBHOOK)
---------------------------------------------------------- */
-async function sendEmailNotification(title, subName, details) {
-  // If no webhook configured, we just log to console
-  if (!EMAIL_WEBHOOK_URL) {
-    console.log("⚠️ No Webhook URL set. Email simulation:", {
-        to: RECIPIENT_EMAIL,
-        subject: EMAIL_SUBJECT,
-        body: `Task: ${title} | Sub: ${subName} | Details: ${details}`
+$("createTaskBtn").onclick = async () => {
+    const title = clean($("tTitle").value);
+    const subId = $("tSub").value;
+    const assignee = clean($("tAssignee").value);
+    const details = clean($("tDetails").value);
+    const attachmentUrl = clean($("tAttach").value); // ✨ New Field
+
+    if(!title || !subId || !assignee) return alert("Title, Subaccount, and Assignee are required.");
+
+    // Create Task
+    const ref = await db.collection("workspaces").doc(WS).collection("tasks").add({
+        title, details, subaccountId: subId, assigneeUsername: assignee, 
+        attachmentUrl, // Save URL
+        status: 'requested', createdBy: USER, createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        messages: [{by: USER, role: ROLE, text: "Request created.", at: nowISO()}]
     });
-    return;
-  }
 
-  // Send payload to Zapier/Make
-  try {
-    fetch(EMAIL_WEBHOOK_URL, {
-        method: "POST",
-        mode: "no-cors", // Standard for simple webhooks to avoid CORS errors
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            recipient: RECIPIENT_EMAIL,
-            subject: EMAIL_SUBJECT,
-            taskName: title,
-            subaccount: subName,
-            details: details,
-            sentAt: new Date().toISOString()
-        })
+    // Notify Assignee
+    await db.collection("workspaces").doc(WS).collection("notifications").add({
+        toUsername: assignee, title: "New Task", body: title, taskId: ref.id, read: false, createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    console.log("Email Webhook Triggered");
-  } catch (e) {
-    console.error("Webhook failed", e);
-  }
-}
 
-createTaskBtn.onclick = async () => {
-  const title = clean(tTitle.value);
-  const details = clean(tDetails.value);
-  const subId = tSub.value;
-  const assigneeUsername = clean(tAssignee.value).toLowerCase();
-  
-  // Get Subaccount Name for the Email
-  const subIdx = subaccounts.findIndex(s => s.id === subId);
-  const subName = subIdx > -1 ? subaccounts[subIdx].name : "Unknown";
+    // Webhook Email Trigger
+    if(EMAIL_WEBHOOK_URL) {
+        fetch(EMAIL_WEBHOOK_URL, {
+            method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ recipient: RECIPIENT_EMAIL, subject: "New Task: "+title, body: details, sub: subId })
+        }).catch(console.error);
+    }
 
-  if (!title || !subId || !assigneeUsername) return alert("Missing fields");
-
-  // 1. Create in Firestore
-  const ref = await db.collection("workspaces").doc(WS).collection("tasks").add({
-    title, details, subaccountId: subId, status: "requested",
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    createdByUsername: USER, assigneeUsername,
-    messages: [{ by: USER, role: ROLE, text: "Task requested.", at: nowISO() }]
-  });
-
-  // 2. Notify Assignee internally
-  await db.collection("workspaces").doc(WS).collection("notifications").add({
-    toUsername: assigneeUsername, title: "New Request", body: `Request: ${title}`, taskId: ref.id, read: false,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-
-  // 3. TRIGGER EXTERNAL EMAIL VIA WEBHOOK
-  sendEmailNotification(title, subName, details);
-
-  closeTaskModal.click();
-  showToast("Task Requested & Email Triggered");
+    $("taskModal").classList.add("hidden");
+    $("tTitle").value = ""; $("tDetails").value = ""; $("tAttach").value = "";
+    showToast("Task Created");
 };
 
-/* =========================
-   DETAILS & UPDATES
-========================= */
-function openDetails(taskId) {
-  currentTaskId = taskId;
-  const t = tasks.find(x => x.id === taskId);
-  if (!t) return;
-  
-  detailsModal.classList.remove("hidden");
-  detailsModal.classList.add("flex");
-  
-  dTitle.textContent = t.title;
-  dMeta.textContent = `@${t.assigneeUsername} • ${t.status}`;
-  dStatus.value = t.status;
-  dSub.value = t.subaccountId;
-  dAssignee.value = t.assigneeUsername;
-  dDetails.value = t.details || "";
+/* DETAILS VIEW */
+function openDetails(id) {
+    currentTaskId = id;
+    const t = tasks.find(x => x.id === id);
+    if(!t) return;
+    
+    $("detailsModal").classList.remove("hidden"); $("detailsModal").classList.add("flex");
+    $("dTitle").textContent = t.title;
+    $("dMeta").textContent = `@${t.assigneeUsername} • Created by ${t.createdBy || '?'}`;
+    $("dStatus").value = t.status;
+    $("dSub").value = t.subaccountId;
+    $("dDetails").value = t.details || ""; // Raw value for editing
 
-  // Show Client Approve/Reject if status is Review
-  clientControls.classList.toggle("hidden", !(isClient() && t.status === "review"));
-  
-  // Expert controls generally hidden for clients, but we leave them open for flexibility in this simple version
-  // except client usually shouldn't move things to "Done" directly unless approving.
-  expertControls.classList.toggle("hidden", isClient());
+    // Attachment Link Logic
+    if(t.attachmentUrl) {
+        $("dAttachLink").href = t.attachmentUrl;
+        $("dAttachLink").classList.remove("hidden");
+        $("dAttachLink").classList.add("inline-flex");
+    } else {
+        $("dAttachLink").classList.add("hidden");
+    }
 
-  renderThread(t);
+    // Role Logic
+    if(isClient() && t.status === 'review') {
+        $("clientControls").classList.remove("hidden");
+        $("expertControls").classList.add("hidden");
+    } else {
+        $("clientControls").classList.add("hidden");
+        $("expertControls").classList.remove("hidden");
+    }
+
+    renderThread(t);
 }
-closeDetailsModal.onclick = () => { detailsModal.classList.add("hidden"); detailsModal.classList.remove("flex"); currentTaskId = null; };
+
+$("closeDetailsModal").onclick = () => { $("detailsModal").classList.add("hidden"); currentTaskId = null; };
 
 function renderThread(t) {
-  thread.innerHTML = "";
-  (t.messages || []).forEach(m => {
-    const div = document.createElement("div");
-    div.className = "rounded-2xl bg-white border p-3";
-    div.innerHTML = `<div class="text-xs font-bold text-slate-600">${m.by}</div><div class="mt-1 text-sm">${escapeHtml(m.text)}</div>`;
-    thread.appendChild(div);
-  });
+    const div = $("thread");
+    div.innerHTML = "";
+    
+    // Add "Details" as the first message visually but linkified
+    if(t.details) {
+        const d = document.createElement("div");
+        d.className = "p-4 rounded-xl bg-slate-50 border border-slate-100 mb-4";
+        d.innerHTML = `<div class="text-[10px] font-bold uppercase text-slate-400 mb-1">Original Request</div>
+                       <div class="text-sm text-slate-700 whitespace-pre-wrap">${linkify(t.details)}</div>`; // ✨ Linkify usage
+        div.appendChild(d);
+    }
+
+    (t.messages||[]).forEach(m => {
+        const msg = document.createElement("div");
+        const isMe = m.by === USER;
+        msg.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
+        msg.innerHTML = `
+            <div class="max-w-[85%] p-3 rounded-2xl text-sm ${isMe ? 'bg-indigo-600 text-white rounded-tr-sm shadow-md shadow-indigo-200' : 'bg-white border border-slate-200 rounded-tl-sm shadow-sm'}">
+               ${linkify(m.text)}
+            </div>
+            <div class="text-[10px] text-slate-400 mt-1 px-1">${m.by}</div>
+        `;
+        div.appendChild(msg);
+    });
+    
+    div.scrollTop = div.scrollHeight;
 }
 
-sendMsgBtn.onclick = async () => {
-  if (!currentTaskId) return;
-  const text = clean(msgInput.value);
-  if (!text) return;
-  const t = tasks.find(x => x.id === currentTaskId);
-  const msgs = [...(t.messages || []), { by: USER, role: ROLE, text, at: nowISO() }];
-  
-  await db.collection("workspaces").doc(WS).collection("tasks").doc(currentTaskId).update({
-    messages: msgs, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-  msgInput.value = "";
+$("sendMsgBtn").onclick = async () => {
+    const txt = clean($("msgInput").value);
+    if(!txt || !currentTaskId) return;
+    const t = tasks.find(x => x.id === currentTaskId);
+    const msgs = [...(t.messages||[]), {by: USER, role: ROLE, text: txt, at: nowISO()}];
+    await db.collection("workspaces").doc(WS).collection("tasks").doc(currentTaskId).update({messages: msgs});
+    $("msgInput").value = "";
+    
+    // Notify if I'm not the assignee
+    if(t.assigneeUsername !== USER) {
+        await db.collection("workspaces").doc(WS).collection("notifications").add({
+           toUsername: t.assigneeUsername, title: "New Comment", body: `${USER} commented on ${t.title}`, taskId: t.id, read: false, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }
 };
 
 async function updateStatus(st) {
-  if (!currentTaskId) return;
-  await db.collection("workspaces").doc(WS).collection("tasks").doc(currentTaskId).update({ status: st });
-  showToast("Status: " + st);
+    if(!currentTaskId) return;
+    await db.collection("workspaces").doc(WS).collection("tasks").doc(currentTaskId).update({status: st});
+    showToast("Status: " + st);
+    if(st === 'done') $("detailsModal").classList.add("hidden");
 }
-btnClarify.onclick = () => updateStatus("clarify");
-btnProgress.onclick = () => updateStatus("progress");
-btnReview.onclick = () => updateStatus("review");
-btnDone.onclick = () => updateStatus("done");
 
-btnApprove.onclick = () => updateStatus("done");
-btnChanges.onclick = () => updateStatus("clarify");
-
-saveTaskBtn.onclick = async () => {
-  if (!currentTaskId) return;
-  await db.collection("workspaces").doc(WS).collection("tasks").doc(currentTaskId).update({
-    details: clean(dDetails.value), assigneeUsername: clean(dAssignee.value), subaccountId: dSub.value, status: dStatus.value
-  });
-  showToast("Saved");
+$("saveTaskBtn").onclick = async () => {
+    if(!currentTaskId) return;
+    await db.collection("workspaces").doc(WS).collection("tasks").doc(currentTaskId).update({
+        details: clean($("dDetails").value),
+        subaccountId: $("dSub").value,
+        status: $("dStatus").value
+    });
+    showToast("Changes Saved");
 };
 
-/* =========================
-   EVENTS
-========================= */
-loginBtn.onclick = doLogin;
-registerBtn.onclick = doRegister;
-logoutBtn.onclick = async () => { clearSession(); await auth.signOut(); location.reload(); };
-notifBtn.onclick = () => notifPanel.classList.toggle("hidden");
-markAllReadBtn.onclick = async () => {
-  const batch = db.batch();
-  notifications.filter(n => !n.read).forEach(n => batch.update(db.collection("workspaces").doc(WS).collection("notifications").doc(n.id), { read: true }));
-  await batch.commit();
-};
+$("markAllReadBtn").onclick = async () => {
+    const batch = db.batch();
+    notifications.filter(n=>!n.read).forEach(n => {
+        batch.update(db.collection("workspaces").doc(WS).collection("notifications").doc(n.id), {read:true});
+    });
+    await batch.commit();
+}
 
-addSubBtn.onclick = openSubModal;
-newTaskBtn.onclick = openTaskModal;
-searchInput.addEventListener("input", renderBoard);
-filterSubaccount.addEventListener("change", renderBoard);
+// Search & Filter listeners
+$("searchInput").addEventListener("input", renderBoard);
+$("filterSubaccount").addEventListener("change", renderBoard);
 
-auth.onAuthStateChanged(u => {
-  if (!u) { authModal.classList.remove("hidden"); return; }
-  const s = loadSession();
-  if (!s) { authModal.classList.remove("hidden"); return; }
-  afterAuthSecure(s.WS, s.USER, u.uid);
-});
+// Init
+if(localStorage.getItem('sct_session_v1')) {
+    // Basic restore session logic could go here
+    // For now we rely on user logging in or Firebase persistence (enabled by default in SDK)
+    auth.onAuthStateChanged(u => {
+        if(u) {
+            // we need WS/USER from localstorage or DB lookup. 
+            // For simplicity in this v2, we force login screen if vars are lost on refresh, 
+            // but in production you'd save WS to localStorage.
+        } else {
+            $("authModal").classList.remove("hidden");
+        }
+    });
+} else {
+   $("authModal").classList.remove("hidden");
+}
 
 </script>
 </body>

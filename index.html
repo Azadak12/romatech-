@@ -66,6 +66,18 @@
       border-color: #a5b4fc;
     }
 
+    /* --- Sidebar Item Active State --- */
+    .sub-item.active {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+        border: none;
+    }
+    .sub-item:not(.active):hover {
+        background: rgba(255,255,255,0.8);
+        transform: translateX(4px);
+    }
+
     /* --- Drag & Drop --- */
     .sortable-ghost { opacity: 0.4; background: #e0e7ff; border: 2px dashed #6366f1; transform: scale(0.95); }
     .sortable-drag { cursor: grabbing; opacity: 1; transform: scale(1.05) rotate(2deg); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); z-index: 50; }
@@ -81,7 +93,14 @@
   </div>
 </div>
 
-<div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 backdrop-blur-md p-4">
+<div id="loadingScreen" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-50">
+    <div class="flex flex-col items-center gap-4 animate-pulse">
+        <div class="h-16 w-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-xl flex items-center justify-center text-white text-3xl">⚡</div>
+        <div class="text-sm font-bold text-slate-400 uppercase tracking-widest">Loading TaskFlow...</div>
+    </div>
+</div>
+
+<div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 backdrop-blur-md p-4 hidden">
   <div class="fade-in-up w-full max-w-md bg-white rounded-[2rem] shadow-2xl border border-white/10 overflow-hidden relative">
     
     <div class="absolute top-0 right-0 -mt-10 -mr-10 w-32 h-32 bg-indigo-500 rounded-full blur-3xl opacity-20"></div>
@@ -464,7 +483,7 @@ async function notifyWebhook(actionType, taskTitle, details, targetUser, attachm
 let WS = null, USER = null, ROLE = null, UID = null;
 let subaccounts = [], tasks = [], notifications = [];
 let currentTaskId = null;
-let currentSubId = null; // For Sub Details Modal
+let currentSubId = null;
 
 const COLUMNS = [
   { id: "requested", label: "Requested", color: "bg-sky-500" },
@@ -493,29 +512,45 @@ async function authenticate(isRegister) {
   const email = `${username}@${ws}.local`;
   
   try {
-    let userCred;
     if (isRegister) {
-      userCred = await auth.createUserWithEmailAndPassword(email, password);
+      const userCred = await auth.createUserWithEmailAndPassword(email, password);
       await db.collection("workspaces").doc(ws).collection("users").doc(userCred.user.uid).set({
         username, role, createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
     } else {
-      userCred = await auth.signInWithEmailAndPassword(email, password);
+      await auth.signInWithEmailAndPassword(email, password);
     }
-    await loadUserProfile(ws, username, userCred.user.uid);
+    // Auth Listener handles the rest
   } catch (e) {
     $("authMsg").textContent = e.message;
     $("authMsg").classList.remove("hidden");
   }
 }
 
-async function loadUserProfile(ws, username, uid) {
-  WS = ws; USER = username; UID = uid;
+// 🟢 Correct Load User Profile
+async function loadUserProfile(uid) {
+  // Find WS name from email
+  const user = auth.currentUser;
+  if (!user || !user.email) return;
+  const ws = user.email.split('@')[1].split('.')[0]; 
+  
+  WS = ws; UID = uid;
   const snap = await db.collection("workspaces").doc(WS).collection("users").doc(UID).get();
-  ROLE = snap.exists ? snap.data().role : "client";
+  
+  if (snap.exists) {
+      const data = snap.data();
+      USER = data.username;
+      ROLE = data.role;
+  } else {
+      // Fallback
+      USER = user.email.split('@')[0];
+      ROLE = "client";
+  }
 
+  // Hide Loaders & Show App
+  $("loadingScreen").classList.add("hidden");
   $("authModal").classList.add("hidden");
-  $("appContent").classList.remove("hidden"); // Show main app
+  $("appContent").classList.remove("hidden");
   
   $("userBadge").textContent = USER;
   $("wsBadge").textContent = WS;
@@ -550,7 +585,11 @@ function initRealtime() {
     renderSubs(); 
     if (currentTaskId) {
       const t = tasks.find(x => x.id === currentTaskId);
-      if (t) renderDetails(t); else { $("detailsModal").classList.add("hidden"); currentTaskId = null; }
+      if (t) renderDetails(t);
+      else {
+          $("detailsModal").classList.add("hidden");
+          currentTaskId = null;
+      }
     }
   });
 
@@ -595,7 +634,6 @@ function renderSubs() {
         </div>
      `;
      
-     // Handle Click logic: Main body = filter, Gear icon = settings
      btn.onclick = (e) => { 
          if(e.target.classList.contains('settings-icon')) {
              e.stopPropagation();
@@ -645,20 +683,15 @@ $("closeSubDetailsBtn").onclick = () => { $("subDetailsModal").classList.add("hi
 $("btnDeleteSub").onclick = async () => {
     if(!currentSubId) return;
     if(confirm("DANGER: Delete this subaccount and ALL its tasks? This cannot be undone.")) {
-        // 1. Delete all tasks
         const batch = db.batch();
         const subTasks = tasks.filter(t => t.subaccountId === currentSubId);
         subTasks.forEach(t => {
             batch.delete(db.collection("workspaces").doc(WS).collection("tasks").doc(t.id));
         });
         await batch.commit();
-
-        // 2. Delete subaccount
         await db.collection("workspaces").doc(WS).collection("subaccounts").doc(currentSubId).delete();
-        
         showToast("Subaccount Deleted");
         $("subDetailsModal").classList.add("hidden");
-        // Reset filter
         $("filterSubaccount").value = "";
         renderBoard();
     }
@@ -806,7 +839,7 @@ $("createTaskBtn").onclick = async () => {
     const title = clean($("tTitle").value);
     const subId = $("tSub").value;
     const assignee = clean($("tAssignee").value);
-    const category = $("tCategory").value; // Pipeline Category
+    const category = $("tCategory").value; 
     const details = clean($("tDetails").value);
     const file = $("tFile").files[0];
     let attachmentUrl = "";
@@ -910,7 +943,6 @@ $("sendMsgBtn").onclick = async () => {
     await db.collection("workspaces").doc(WS).collection("tasks").doc(currentTaskId).update({messages: msgs});
     $("msgInput").value = "";
     
-    // Notify target
     const target = t.assigneeUsername || "kalam";
     notifyWebhook("New Comment", t.title, `${USER}: ${txt}`, target, "");
 
@@ -953,10 +985,12 @@ $("notifBtn").onclick = () => $("notifPanel").classList.toggle("hidden");
 
 auth.onAuthStateChanged(u => {
     if(!u) {
+        $("loadingScreen").classList.add("hidden");
         $("authModal").classList.remove("hidden");
         $("appContent").classList.add("hidden");
+    } else {
+        loadUserProfile(u.uid);
     }
-    // Session restore logic is inside loadUserProfile called by Auth if needed
 });
 </script>
 </body>

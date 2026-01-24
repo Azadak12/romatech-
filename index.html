@@ -66,18 +66,6 @@
       border-color: #a5b4fc;
     }
 
-    /* --- Sidebar Item Active State --- */
-    .sub-item.active {
-        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-        color: white;
-        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
-        border: none;
-    }
-    .sub-item:not(.active):hover {
-        background: rgba(255,255,255,0.8);
-        transform: translateX(4px);
-    }
-
     /* --- Drag & Drop --- */
     .sortable-ghost { opacity: 0.4; background: #e0e7ff; border: 2px dashed #6366f1; transform: scale(0.95); }
     .sortable-drag { cursor: grabbing; opacity: 1; transform: scale(1.05) rotate(2deg); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); z-index: 50; }
@@ -93,19 +81,23 @@
   </div>
 </div>
 
-<div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 hidden">
-  <div class="fade-in-up w-full max-w-md bg-white/90 rounded-[2rem] shadow-2xl border border-white overflow-hidden">
-    <div class="p-8 pb-6 border-b border-slate-100 bg-slate-50/50">
-      <div class="flex items-center gap-4">
-        <div class="h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-lg shadow-indigo-200 flex items-center justify-center text-white text-2xl">🚀</div>
+<div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 backdrop-blur-md p-4">
+  <div class="fade-in-up w-full max-w-md bg-white rounded-[2rem] shadow-2xl border border-white/10 overflow-hidden relative">
+    
+    <div class="absolute top-0 right-0 -mt-10 -mr-10 w-32 h-32 bg-indigo-500 rounded-full blur-3xl opacity-20"></div>
+    <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-32 h-32 bg-purple-500 rounded-full blur-3xl opacity-20"></div>
+
+    <div class="p-8 pb-6 border-b border-slate-100 bg-white relative z-10">
+      <div class="flex flex-col items-center gap-3 text-center">
+        <div class="h-16 w-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-xl shadow-indigo-200 flex items-center justify-center text-white text-3xl">⚡</div>
         <div>
           <h2 class="font-bold text-2xl text-slate-900 tracking-tight">TaskFlow</h2>
-          <p class="text-sm text-slate-500 font-medium">Agency Operations System</p>
+          <p class="text-sm text-slate-500 font-medium">Agency Operations Pipeline</p>
         </div>
       </div>
     </div>
     
-    <div class="p-8 space-y-5">
+    <div class="p-8 space-y-5 relative z-10 bg-white/80 backdrop-blur-sm">
       <div>
         <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Workspace</label>
         <input id="wsInput" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent block p-3.5 outline-none transition-all" placeholder="e.g. BranhamCo" autocomplete="off">
@@ -137,91 +129,123 @@
   </div>
 </div>
 
-<header class="glass-panel sticky top-0 z-40">
-  <div class="max-w-[1920px] mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-4 h-16">
-    
-    <div class="flex items-center gap-3 pl-2">
-      <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 shadow-md shadow-indigo-200 flex items-center justify-center text-white font-bold text-lg">⚡</div>
-      <div class="hidden md:block">
-        <h1 class="text-sm font-extrabold text-slate-900 leading-none tracking-tight">TaskFlow</h1>
-        <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-0.5">Branham & Co</p>
+<div id="appContent" class="hidden">
+
+  <header class="glass-panel sticky top-0 z-40">
+    <div class="max-w-[1920px] mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-4 h-16">
+      
+      <div class="flex items-center gap-3 pl-2">
+        <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 shadow-md shadow-indigo-200 flex items-center justify-center text-white font-bold text-lg">⚡</div>
+        <div class="hidden md:block">
+          <h1 class="text-sm font-extrabold text-slate-900 leading-none tracking-tight">TaskFlow</h1>
+          <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-0.5">Branham & Co</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4 flex-1 justify-end">
+        
+        <div class="relative hidden md:block w-72 group">
+          <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+          <input id="searchInput" type="text" class="block w-full p-2.5 pl-10 text-sm text-slate-700 border border-slate-200 rounded-xl bg-white/50 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all placeholder-slate-400 shadow-sm" placeholder="Search tasks...">
+        </div>
+
+        <button id="newTaskBtn" style="display:none;" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-5 rounded-xl text-xs shadow-lg shadow-slate-200 transition-all hover:-translate-y-0.5 active:scale-95 flex items-center gap-2">
+          <span class="bg-white/20 rounded-full p-0.5"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg></span>
+          New Request
+        </button>
+
+        <div class="relative">
+          <button id="notifBtn" class="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm relative active:scale-95">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+            <span id="notifCount" class="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-rose-500 border border-white hidden"></span>
+          </button>
+          <div id="notifPanel" class="hidden absolute right-0 mt-4 w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50 fade-in-up origin-top-right ring-1 ring-black/5">
+            <div class="px-4 py-3 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+              <h3 class="text-xs font-bold uppercase text-slate-500 tracking-wider">Notifications</h3>
+              <button id="markAllReadBtn" class="text-[10px] text-indigo-600 font-bold hover:underline">Clear all</button>
+            </div>
+            <div id="notifList" class="max-h-80 overflow-y-auto"></div>
+          </div>
+        </div>
+
+        <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 border border-white shadow-sm flex items-center justify-center text-xs font-bold text-slate-600 cursor-pointer hover:ring-2 hover:ring-indigo-500 hover:ring-offset-2 transition-all" id="logoutBtn" title="Logout">
+          <span id="userInitials">?</span>
+        </div>
       </div>
     </div>
+  </header>
 
-    <div class="flex items-center gap-4 flex-1 justify-end">
-      
-      <div class="relative hidden md:block w-72 group">
-        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-        </div>
-        <input id="searchInput" type="text" class="block w-full p-2.5 pl-10 text-sm text-slate-700 border border-slate-200 rounded-xl bg-white/50 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all placeholder-slate-400 shadow-sm" placeholder="Search tasks, details...">
-      </div>
-
-      <select id="filterSubaccount" class="md:hidden bg-white border border-slate-200 text-slate-700 text-xs rounded-xl focus:ring-indigo-500 block p-2 outline-none max-w-[120px] shadow-sm">
-        <option value="">All Subs</option>
-      </select>
-
-      <button id="newTaskBtn" style="display:none;" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-5 rounded-xl text-xs shadow-lg shadow-slate-200 transition-all hover:-translate-y-0.5 active:scale-95 flex items-center gap-2">
-        <span class="bg-white/20 rounded-full p-0.5"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg></span>
-        New Request
-      </button>
-
-      <div class="relative">
-        <button id="notifBtn" class="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm relative active:scale-95">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-          <span id="notifCount" class="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-rose-500 border border-white hidden"></span>
-        </button>
-        <div id="notifPanel" class="hidden absolute right-0 mt-4 w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50 fade-in-up origin-top-right ring-1 ring-black/5">
-          <div class="px-4 py-3 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-            <h3 class="text-xs font-bold uppercase text-slate-500 tracking-wider">Notifications</h3>
-            <button id="markAllReadBtn" class="text-[10px] text-indigo-600 font-bold hover:underline">Clear all</button>
+  <main class="max-w-[1920px] mx-auto px-4 sm:px-6 py-6 h-[calc(100vh-64px)] flex flex-col lg:flex-row gap-6 overflow-hidden">
+    
+    <aside class="hidden lg:flex flex-col w-72 shrink-0 h-full gap-4 pb-2">
+      <div class="glass-panel flex-1 rounded-3xl flex flex-col overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+        <div class="p-5 border-b border-white/50 flex items-center justify-between bg-white/30 backdrop-blur-md">
+          <div class="flex items-center gap-2">
+              <span class="text-lg">📂</span>
+              <h2 class="font-bold text-sm text-slate-800">Subaccounts</h2>
           </div>
-          <div id="notifList" class="max-h-80 overflow-y-auto"></div>
+          <button id="addSubBtn" class="text-[10px] font-bold bg-white/80 border border-white text-slate-600 hover:text-indigo-600 hover:bg-white rounded-lg px-2.5 py-1.5 transition-all shadow-sm">+ Add</button>
+        </div>
+        <div id="subList" class="flex-1 overflow-y-auto p-3 space-y-1.5 custom-scrollbar">
+          </div>
+      </div>
+      
+      <div class="glass-panel p-4 rounded-2xl flex items-center gap-3 shadow-sm border border-white/60 bg-white/60">
+        <div class="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-md">👤</div>
+        <div class="min-w-0">
+          <div id="userBadge" class="font-bold text-sm text-slate-900 truncate">Loading...</div>
+          <div id="wsBadge" class="text-xs text-slate-500 truncate opacity-80">Workspace</div>
         </div>
       </div>
+    </aside>
 
-      <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 border border-white shadow-sm flex items-center justify-center text-xs font-bold text-slate-600 cursor-pointer hover:ring-2 hover:ring-indigo-500 hover:ring-offset-2 transition-all" id="logoutBtn" title="Logout">
-        <span id="userInitials">?</span>
-      </div>
+    <section class="flex-1 h-full overflow-x-auto overflow-y-hidden pb-4">
+      <div id="board" class="h-full flex gap-6 min-w-max px-2">
+        </div>
+    </section>
+
+  </main>
+
+</div> <div id="subDetailsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-sm p-4 hidden">
+  <div class="fade-in-up w-full max-w-lg bg-white rounded-3xl shadow-2xl p-6 border border-white">
+    <div class="flex justify-between items-start mb-6">
+        <div>
+            <h3 id="sdName" class="font-bold text-2xl text-slate-900">Subaccount Name</h3>
+            <p class="text-xs text-slate-500">Pipeline Statistics</p>
+        </div>
+        <button id="closeSubDetailsBtn" class="text-slate-400 hover:text-slate-700">✕</button>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="bg-indigo-50 rounded-2xl p-4 text-center">
+            <div id="sdTotal" class="text-2xl font-bold text-indigo-600">0</div>
+            <div class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Total Tasks</div>
+        </div>
+        <div class="bg-emerald-50 rounded-2xl p-4 text-center">
+            <div id="sdDone" class="text-2xl font-bold text-emerald-600">0</div>
+            <div class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Completed</div>
+        </div>
+    </div>
+
+    <div class="mb-6">
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Category Breakdown</h4>
+        <div id="sdBreakdown" class="space-y-2 text-sm text-slate-600"></div>
+    </div>
+
+    <div class="border-t border-slate-100 pt-4 mt-4">
+        <button id="btnDeleteSub" class="w-full py-3 rounded-xl bg-rose-50 text-rose-600 font-bold text-sm hover:bg-rose-100 transition flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            Delete Subaccount Permanently
+        </button>
     </div>
   </div>
-</header>
-
-<main class="max-w-[1920px] mx-auto px-4 sm:px-6 py-6 h-[calc(100vh-64px)] flex flex-col lg:flex-row gap-6 overflow-hidden">
-  
-  <aside class="hidden lg:flex flex-col w-72 shrink-0 h-full gap-4 pb-2">
-    <div class="glass-panel flex-1 rounded-3xl flex flex-col overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-      <div class="p-5 border-b border-white/50 flex items-center justify-between bg-white/30 backdrop-blur-md">
-        <div class="flex items-center gap-2">
-            <span class="text-lg">📂</span>
-            <h2 class="font-bold text-sm text-slate-800">Subaccounts</h2>
-        </div>
-        <button id="addSubBtn" class="text-[10px] font-bold bg-white/80 border border-white text-slate-600 hover:text-indigo-600 hover:bg-white rounded-lg px-2.5 py-1.5 transition-all shadow-sm">+ Add</button>
-      </div>
-      <div id="subList" class="flex-1 overflow-y-auto p-3 space-y-1.5 custom-scrollbar">
-        </div>
-    </div>
-    
-    <div class="glass-panel p-4 rounded-2xl flex items-center gap-3 shadow-sm border border-white/60 bg-white/60">
-      <div class="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-md">👤</div>
-      <div class="min-w-0">
-        <div id="userBadge" class="font-bold text-sm text-slate-900 truncate">Loading...</div>
-        <div id="wsBadge" class="text-xs text-slate-500 truncate opacity-80">Workspace</div>
-      </div>
-    </div>
-  </aside>
-
-  <section class="flex-1 h-full overflow-x-auto overflow-y-hidden pb-4">
-    <div id="board" class="h-full flex gap-6 min-w-max px-2">
-      </div>
-  </section>
-
-</main>
+</div>
 
 <div id="subModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-sm p-4 hidden">
   <div class="fade-in-up w-full max-w-sm bg-white rounded-3xl shadow-2xl p-6 border border-white">
     <h3 class="font-bold text-lg mb-1">Add Subaccount</h3>
-    <p class="text-xs text-slate-500 mb-4">Create a new client bucket.</p>
     <input id="subNameInput" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Acme Solar - Texas" />
     <div class="mt-6 flex justify-end gap-2">
       <button id="closeSubModalBtn" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50">Cancel</button>
@@ -264,9 +288,20 @@
           </select>
         </div>
         <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Category (Pipeline)</label>
+          <select id="tCategory" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white transition-shadow">
+            <option value="general">General</option>
+            <option value="backend">Backend</option>
+            <option value="frontend">Frontend</option>
+            <option value="ai_agent">AI Agent</option>
+            <option value="design">Design</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="space-y-1">
           <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Upload File (Image/PDF/Video)</label>
           <input type="file" id="tFile" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
-        </div>
       </div>
 
       <div class="space-y-1">
@@ -298,7 +333,7 @@
              <button id="btnDeleteTask" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Delete Task">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
              </button>
-             <button id="closeDetailsModal" class="p-2 text-slate-400 hover:text-slate-700 transition">✕</button>
+             <button id="closeDetailsModal" class="text-slate-400 hover:text-slate-700 transition">✕</button>
           </div>
         </div>
         
@@ -408,7 +443,7 @@ async function notifyWebhook(actionType, taskTitle, details, targetUser, attachm
     if(!EMAIL_WEBHOOK_URL) return;
 
     const recipient = EXPERT_EMAILS[targetUser] || "kalamshar786@gmail.com";
-    const bodyText = `Action by: ${USER} (${ROLE})\n\n${details}\n\n${attachmentUrl ? "📎 File: " + attachmentUrl : ""}`;
+    const bodyText = `Action by: ${USER} (${ROLE})\n\n${details}\n\n${attachmentUrl ? "📎 File Attached: " + attachmentUrl : ""}`;
 
     try {
         await fetch(EMAIL_WEBHOOK_URL, {
@@ -429,13 +464,14 @@ async function notifyWebhook(actionType, taskTitle, details, targetUser, attachm
 let WS = null, USER = null, ROLE = null, UID = null;
 let subaccounts = [], tasks = [], notifications = [];
 let currentTaskId = null;
+let currentSubId = null; // For Sub Details Modal
 
 const COLUMNS = [
-  { id: "requested", label: "Requested", color: "bg-sky-500", light: "bg-sky-50" },
-  { id: "clarify", label: "Clarification", color: "bg-amber-500", light: "bg-amber-50" },
-  { id: "progress", label: "In Progress", color: "bg-indigo-500", light: "bg-indigo-50" },
-  { id: "review", label: "Client Review", color: "bg-fuchsia-500", light: "bg-fuchsia-50" },
-  { id: "done", label: "Done", color: "bg-emerald-500", light: "bg-emerald-50" }
+  { id: "requested", label: "Requested", color: "bg-sky-500" },
+  { id: "clarify", label: "Clarification", color: "bg-amber-500" },
+  { id: "progress", label: "In Progress", color: "bg-indigo-500" },
+  { id: "review", label: "Client Review", color: "bg-fuchsia-500" },
+  { id: "done", label: "Done", color: "bg-emerald-500" }
 ];
 
 const isBuilder = () => ROLE === "builder";
@@ -479,6 +515,8 @@ async function loadUserProfile(ws, username, uid) {
   ROLE = snap.exists ? snap.data().role : "client";
 
   $("authModal").classList.add("hidden");
+  $("appContent").classList.remove("hidden"); // Show main app
+  
   $("userBadge").textContent = USER;
   $("wsBadge").textContent = WS;
   $("userInitials").textContent = USER.substring(0,2).toUpperCase();
@@ -512,11 +550,7 @@ function initRealtime() {
     renderSubs(); 
     if (currentTaskId) {
       const t = tasks.find(x => x.id === currentTaskId);
-      if (t) renderDetails(t);
-      else {
-          $("detailsModal").classList.add("hidden");
-          currentTaskId = null;
-      }
+      if (t) renderDetails(t); else { $("detailsModal").classList.add("hidden"); currentTaskId = null; }
     }
   });
 
@@ -554,20 +588,80 @@ function renderSubs() {
      btn.className = `sub-item w-full text-left px-4 py-3.5 rounded-2xl text-sm font-medium flex justify-between items-center transition-all duration-300 group ${isActive ? 'active' : 'text-slate-600 bg-white/50 border border-white/50 hover:bg-white hover:shadow-md'}`;
      
      btn.innerHTML = `
-        <span class="truncate mr-2 font-semibold tracking-tight ${isActive ? 'text-white' : 'group-hover:text-indigo-600'}">${escapeHtml(s.name)}</span> 
-        ${open > 0 
-           ? `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-sm ${isActive ? 'bg-white text-indigo-600' : 'bg-indigo-600 text-white'}">${open}</span>` 
-           : `<span class="h-5 w-5 rounded-full flex items-center justify-center ${isActive ? 'bg-indigo-500/30' : 'bg-slate-100'}"><svg class="w-3 h-3 ${isActive ? 'text-white' : 'text-slate-300'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></span>`
-        }
+        <span class="truncate mr-2 font-semibold tracking-tight ${isActive ? 'text-white' : 'group-hover:text-indigo-600'}">${escapeHtml(s.name)}</span>
+        <div class="flex items-center gap-2">
+            ${open > 0 ? `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-sm ${isActive ? 'bg-white text-indigo-600' : 'bg-indigo-600 text-white'}">${open}</span>` : ''}
+            <span class="settings-icon opacity-0 group-hover:opacity-100 text-slate-400 hover:text-indigo-600 transition-opacity p-1">⚙️</span>
+        </div>
      `;
      
-     btn.onclick = () => { 
-         $("filterSubaccount").value = s.id; 
-         renderBoard(); 
-         renderSubs();
+     // Handle Click logic: Main body = filter, Gear icon = settings
+     btn.onclick = (e) => { 
+         if(e.target.classList.contains('settings-icon')) {
+             e.stopPropagation();
+             openSubDetails(s.id);
+         } else {
+             $("filterSubaccount").value = s.id; 
+             renderBoard(); 
+             renderSubs();
+         }
      };
      list.appendChild(btn);
   });
+}
+
+// ⚙️ SUBACCOUNT DETAILS & DELETE
+function openSubDetails(sid) {
+    currentSubId = sid;
+    const s = subaccounts.find(x => x.id === sid);
+    if(!s) return;
+
+    // Calc Stats
+    const relevantTasks = tasks.filter(t => t.subaccountId === sid);
+    const total = relevantTasks.length;
+    const done = relevantTasks.filter(t => t.status === 'done').length;
+    
+    // Pipeline Breakdown
+    const counts = { frontend: 0, backend: 0, ai_agent: 0, design: 0, general: 0 };
+    relevantTasks.forEach(t => { counts[t.category || 'general'] = (counts[t.category || 'general'] || 0) + 1; });
+
+    $("sdName").textContent = s.name;
+    $("sdTotal").textContent = total;
+    $("sdDone").textContent = done;
+    
+    const breakdownHTML = Object.entries(counts)
+        .filter(([k,v]) => v > 0)
+        .map(([k,v]) => `<div class="flex justify-between uppercase text-xs font-bold text-slate-500"><span>${k.replace('_',' ')}</span><span>${v}</span></div>`)
+        .join("");
+        
+    $("sdBreakdown").innerHTML = breakdownHTML || "<div class='text-xs italic text-slate-400'>No tasks yet.</div>";
+
+    $("subDetailsModal").classList.remove("hidden");
+    $("subDetailsModal").classList.add("flex");
+}
+
+$("closeSubDetailsBtn").onclick = () => { $("subDetailsModal").classList.add("hidden"); currentSubId = null; };
+
+$("btnDeleteSub").onclick = async () => {
+    if(!currentSubId) return;
+    if(confirm("DANGER: Delete this subaccount and ALL its tasks? This cannot be undone.")) {
+        // 1. Delete all tasks
+        const batch = db.batch();
+        const subTasks = tasks.filter(t => t.subaccountId === currentSubId);
+        subTasks.forEach(t => {
+            batch.delete(db.collection("workspaces").doc(WS).collection("tasks").doc(t.id));
+        });
+        await batch.commit();
+
+        // 2. Delete subaccount
+        await db.collection("workspaces").doc(WS).collection("subaccounts").doc(currentSubId).delete();
+        
+        showToast("Subaccount Deleted");
+        $("subDetailsModal").classList.add("hidden");
+        // Reset filter
+        $("filterSubaccount").value = "";
+        renderBoard();
+    }
 }
 
 function renderBoard() {
@@ -604,27 +698,28 @@ function renderBoard() {
     
     colTasks.forEach(t => {
        const subName = subaccounts.find(s => s.id === t.subaccountId)?.name || "—";
+       const category = t.category ? t.category.replace('_',' ').toUpperCase() : 'GENERAL';
+       const catColors = { backend:'bg-pink-100 text-pink-600', frontend:'bg-sky-100 text-sky-600', ai_agent:'bg-purple-100 text-purple-600', design:'bg-amber-100 text-amber-600', general:'bg-slate-100 text-slate-600' };
+       const catClass = catColors[t.category || 'general'];
+
        const card = document.createElement("div");
        card.className = "glass-card p-4 rounded-2xl cursor-pointer relative group";
        card.setAttribute("data-id", t.id);
        
        card.innerHTML = `
          <div class="flex justify-between items-start mb-2.5">
-            <span class="text-[9px] font-bold text-indigo-600 bg-indigo-50/80 px-2 py-1 rounded-lg border border-indigo-100 truncate max-w-[140px] uppercase tracking-wide backdrop-blur-sm">${escapeHtml(subName)}</span>
-            <div class="h-6 w-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 border border-white shadow-sm ring-1 ring-slate-100" title="Assignee">
-                ${t.assigneeUsername ? t.assigneeUsername.charAt(0).toUpperCase() : '?'}
-            </div>
+            <span class="text-[9px] font-bold px-2 py-1 rounded-md border border-white/50 truncate max-w-[100px] tracking-wide ${catClass}">${category}</span>
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">${escapeHtml(subName)}</span>
          </div>
          <h4 class="font-bold text-sm text-slate-800 leading-snug mb-3 pr-2 group-hover:text-indigo-600 transition-colors">${escapeHtml(t.title)}</h4>
          
          <div class="flex items-center justify-between pt-3 border-t border-slate-100/50">
              <div class="flex items-center gap-2">
                 ${t.attachmentUrl ? `<span class="text-xs bg-slate-100 p-1 rounded-md" title="Has attachment">📎</span>` : ''}
-                <span class="text-[10px] text-slate-400 font-medium">${new Date(t.createdAt?.seconds * 1000 || Date.now()).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>
+                <div class="h-5 w-5 rounded-full bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-500 border border-white shadow-sm" title="Assignee">${t.assigneeUsername ? t.assigneeUsername.charAt(0).toUpperCase() : '?'}</div>
              </div>
              <div class="flex items-center gap-1.5 text-slate-400 group-hover:text-indigo-500 transition-colors bg-slate-50 px-2 py-0.5 rounded-full">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                <span class="text-[10px] font-bold">${(t.messages||[]).length}</span>
+                <span class="text-[10px] font-bold">💬 ${(t.messages||[]).length}</span>
              </div>
          </div>
        `;
@@ -711,13 +806,13 @@ $("createTaskBtn").onclick = async () => {
     const title = clean($("tTitle").value);
     const subId = $("tSub").value;
     const assignee = clean($("tAssignee").value);
+    const category = $("tCategory").value; // Pipeline Category
     const details = clean($("tDetails").value);
     const file = $("tFile").files[0];
     let attachmentUrl = "";
 
     if(!title || !subId || !assignee) return alert("Title, Subaccount, and Assignee are required.");
 
-    // Disable button to prevent double-clicks
     const btn = $("createTaskBtn");
     btn.disabled = true;
     btn.textContent = "Processing...";
@@ -734,7 +829,7 @@ $("createTaskBtn").onclick = async () => {
     }
 
     const ref = await db.collection("workspaces").doc(WS).collection("tasks").add({
-        title, details, subaccountId: subId, assigneeUsername: assignee, attachmentUrl,
+        title, details, subaccountId: subId, assigneeUsername: assignee, attachmentUrl, category,
         status: 'requested', createdBy: USER, createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         messages: [{by: USER, role: ROLE, text: "Request created.", at: nowISO()}]
     });
@@ -771,7 +866,7 @@ function openDetails(id) {
 
 $("closeDetailsModal").onclick = () => { $("detailsModal").classList.add("hidden"); currentTaskId = null; };
 
-// 🔴 DELETE ACTION
+// 🔴 DELETE TASK ACTION
 $("btnDeleteTask").onclick = async () => {
     if(!currentTaskId) return;
     if(confirm("Are you sure you want to delete this task permanently?")) {
@@ -857,8 +952,11 @@ $("filterSubaccount").addEventListener("change", renderBoard);
 $("notifBtn").onclick = () => $("notifPanel").classList.toggle("hidden");
 
 auth.onAuthStateChanged(u => {
-    if(!u) $("authModal").classList.remove("hidden");
-    else if(localStorage.getItem('sct_session_v1')) { /* restore logic */ }
+    if(!u) {
+        $("authModal").classList.remove("hidden");
+        $("appContent").classList.add("hidden");
+    }
+    // Session restore logic is inside loadUserProfile called by Auth if needed
 });
 </script>
 </body>

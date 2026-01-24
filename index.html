@@ -93,10 +93,11 @@
   </div>
 </div>
 
-<div id="loadingScreen" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-50">
+<div id="loadingScreen" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-50 transition-opacity duration-500">
     <div class="flex flex-col items-center gap-4 animate-pulse">
         <div class="h-16 w-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-xl flex items-center justify-center text-white text-3xl">⚡</div>
         <div class="text-sm font-bold text-slate-400 uppercase tracking-widest">Loading TaskFlow...</div>
+        <button onclick="forceLogin()" class="mt-4 text-xs text-indigo-500 underline">Stuck? Click here to Login</button>
     </div>
 </div>
 
@@ -486,11 +487,11 @@ let currentTaskId = null;
 let currentSubId = null;
 
 const COLUMNS = [
-  { id: "requested", label: "Requested", color: "bg-sky-500" },
-  { id: "clarify", label: "Clarification", color: "bg-amber-500" },
-  { id: "progress", label: "In Progress", color: "bg-indigo-500" },
-  { id: "review", label: "Client Review", color: "bg-fuchsia-500" },
-  { id: "done", label: "Done", color: "bg-emerald-500" }
+  { id: "requested", label: "Requested", color: "bg-sky-500", light: "bg-sky-50" },
+  { id: "clarify", label: "Clarification", color: "bg-amber-500", light: "bg-amber-50" },
+  { id: "progress", label: "In Progress", color: "bg-indigo-500", light: "bg-indigo-50" },
+  { id: "review", label: "Client Review", color: "bg-fuchsia-500", light: "bg-fuchsia-50" },
+  { id: "done", label: "Done", color: "bg-emerald-500", light: "bg-emerald-50" }
 ];
 
 const isBuilder = () => ROLE === "builder";
@@ -500,8 +501,15 @@ const canCreate = () => isClient() || isBuilder();
 const canAddSub = () => true;
 
 /* =========================
-   AUTH
+   AUTH & LOADING
 ========================= */
+// Force user to login manually first time, then auto-login
+function forceLogin() {
+    $("loadingScreen").classList.add("hidden");
+    $("authModal").classList.remove("hidden");
+    $("appContent").classList.add("hidden");
+}
+
 async function authenticate(isRegister) {
   const ws = clean($("wsInput").value);
   const username = clean($("usernameInput").value).toLowerCase();
@@ -527,39 +535,43 @@ async function authenticate(isRegister) {
   }
 }
 
-// 🟢 Correct Load User Profile
+// 🟢 SAFE LOAD PROFILE (With Timeout)
 async function loadUserProfile(uid) {
-  // Find WS name from email
-  const user = auth.currentUser;
-  if (!user || !user.email) return;
-  const ws = user.email.split('@')[1].split('.')[0]; 
-  
-  WS = ws; UID = uid;
-  const snap = await db.collection("workspaces").doc(WS).collection("users").doc(UID).get();
-  
-  if (snap.exists) {
-      const data = snap.data();
-      USER = data.username;
-      ROLE = data.role;
-  } else {
-      // Fallback
-      USER = user.email.split('@')[0];
-      ROLE = "client";
+  try {
+      const user = auth.currentUser;
+      if (!user || !user.email) throw new Error("No user email");
+      
+      const ws = user.email.split('@')[1].split('.')[0]; 
+      
+      WS = ws; UID = uid;
+      const snap = await db.collection("workspaces").doc(WS).collection("users").doc(UID).get();
+      
+      if (snap.exists) {
+          const data = snap.data();
+          USER = data.username;
+          ROLE = data.role;
+      } else {
+          USER = user.email.split('@')[0];
+          ROLE = "client";
+      }
+
+      // Hide Loaders & Show App
+      $("loadingScreen").classList.add("hidden");
+      $("authModal").classList.add("hidden");
+      $("appContent").classList.remove("hidden");
+      
+      $("userBadge").textContent = USER;
+      $("wsBadge").textContent = WS;
+      $("userInitials").textContent = USER.substring(0,2).toUpperCase();
+
+      $("newTaskBtn").style.display = canCreate() ? "flex" : "none";
+      $("addSubBtn").style.display = canAddSub() ? "block" : "none";
+      
+      initRealtime();
+  } catch(e) {
+      console.error("Profile Load Error", e);
+      forceLogin();
   }
-
-  // Hide Loaders & Show App
-  $("loadingScreen").classList.add("hidden");
-  $("authModal").classList.add("hidden");
-  $("appContent").classList.remove("hidden");
-  
-  $("userBadge").textContent = USER;
-  $("wsBadge").textContent = WS;
-  $("userInitials").textContent = USER.substring(0,2).toUpperCase();
-
-  $("newTaskBtn").style.display = canCreate() ? "flex" : "none";
-  $("addSubBtn").style.display = canAddSub() ? "block" : "none";
-  
-  initRealtime();
 }
 
 $("loginBtn").onclick = () => authenticate(false);
@@ -983,15 +995,26 @@ $("searchInput").addEventListener("input", renderBoard);
 $("filterSubaccount").addEventListener("change", renderBoard);
 $("notifBtn").onclick = () => $("notifPanel").classList.toggle("hidden");
 
+// 🟢 SAFE AUTH LISTENER (Prevents double login)
 auth.onAuthStateChanged(u => {
     if(!u) {
-        $("loadingScreen").classList.add("hidden");
-        $("authModal").classList.remove("hidden");
-        $("appContent").classList.add("hidden");
+        // Show Login UI after delay to prevent flash
+        setTimeout(() => {
+            $("loadingScreen").classList.add("hidden");
+            $("authModal").classList.remove("hidden");
+            $("appContent").classList.add("hidden");
+        }, 1000); 
     } else {
         loadUserProfile(u.uid);
     }
 });
+
+// Force timeout safety if Firebase hangs
+setTimeout(() => {
+    if(!$("loadingScreen").classList.contains("hidden") && !auth.currentUser) {
+        forceLogin();
+    }
+}, 4000);
 </script>
 </body>
 </html>

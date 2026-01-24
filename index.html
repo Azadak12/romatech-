@@ -14,211 +14,294 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
-    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
-    ::-webkit-scrollbar{ width: 8px; height: 8px; }
-    ::-webkit-scrollbar-thumb{ background: rgba(148,163,184,.45); border-radius: 999px; }
-    ::-webkit-scrollbar-track{ background: transparent; }
-
-    .fade-in { animation: fadeIn .2s ease-out both; }
-    @keyframes fadeIn { from {opacity:0; transform: translateY(8px) scale(.99);} to {opacity:1; transform:none;} }
-
-    .glass { backdrop-filter: blur(10px); }
+    /* --- Modern Typography & Scrollbar --- */
+    body { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
     
-    .sortable-ghost { opacity: 0.4; background: #e0e7ff; border: 2px dashed #6366f1; }
-    .sortable-drag { cursor: grabbing; opacity: 1; transform: scale(1.02); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.6); }
+
+    /* --- Animations --- */
+    .fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .fade-in { animation: fadeIn 0.2s ease-out both; }
+    
+    @keyframes fadeInUp { 
+      from { opacity: 0; transform: translateY(15px) scale(0.98); } 
+      to { opacity: 1; transform: translateY(0) scale(1); } 
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* --- Glassmorphism --- */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+    
+    .glass-card {
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      transition: all 0.2s ease;
+    }
+    .glass-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+      border-color: #818cf8;
+    }
+
+    /* --- Drag & Drop --- */
+    .sortable-ghost { opacity: 0.4; background: #e0e7ff; border: 2px dashed #6366f1; transform: scale(0.95); }
+    .sortable-drag { cursor: grabbing; opacity: 1; transform: scale(1.05) rotate(1deg); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15); z-index: 50; }
   </style>
 </head>
 
-<body class="min-h-screen text-slate-900 bg-[radial-gradient(1200px_600px_at_20%_0%,rgba(99,102,241,.10),transparent_55%),radial-gradient(900px_500px_at_85%_10%,rgba(168,85,247,.10),transparent_50%),linear-gradient(to_bottom,rgba(248,250,252,1),rgba(241,245,249,1))]">
+<body class="min-h-screen text-slate-800 bg-[#f8fafc] bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-100 via-slate-50 to-white selection:bg-indigo-100 selection:text-indigo-700">
 
-<div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[100] hidden">
-  <div class="fade-in rounded-2xl bg-slate-900 text-white px-4 py-2.5 text-sm shadow-xl flex items-center gap-2">
-    <span id="toastText">Saved</span>
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] hidden">
+  <div class="fade-in-up flex items-center gap-3 px-5 py-3 rounded-full bg-slate-900 text-white shadow-2xl">
+    <span class="text-emerald-400 text-lg">✓</span>
+    <span id="toastText" class="font-medium text-sm">Action Successful</span>
   </div>
 </div>
 
-<div id="authModal" class="fixed inset-0 z-50 bg-black/40 glass flex items-center justify-center p-4">
-  <div class="fade-in w-full max-w-md rounded-3xl bg-white border border-slate-200 shadow-2xl overflow-hidden">
-    <div class="p-5 border-b border-slate-100">
-      <div class="flex items-center gap-3">
-        <div class="h-10 w-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 shadow-lg"></div>
-        <div class="min-w-0">
-          <div class="font-extrabold leading-tight text-lg">Tracker Login</div>
-          <div class="text-xs text-slate-500">Agency Operations</div>
+<div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-sm p-4 hidden">
+  <div class="fade-in-up w-full max-w-md bg-white rounded-3xl shadow-2xl border border-white/50 overflow-hidden">
+    <div class="p-8 pb-6 border-b border-slate-50 bg-slate-50/50">
+      <div class="flex items-center gap-4">
+        <div class="h-12 w-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 shadow-lg shadow-indigo-200 flex items-center justify-center text-white text-xl">🚀</div>
+        <div>
+          <h2 class="font-bold text-xl text-slate-900 tracking-tight">Agency Login</h2>
+          <p class="text-sm text-slate-500 font-medium">Task Tracker System</p>
         </div>
       </div>
     </div>
-    <div class="p-5 space-y-4">
+    
+    <div class="p-8 space-y-5">
       <div>
-        <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Workspace</label>
-        <input id="wsInput" class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition" placeholder="e.g. AgencyName" autocomplete="off" />
+        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Workspace</label>
+        <input id="wsInput" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-3 outline-none transition-all focus:ring-2" placeholder="e.g. BranhamCo" autocomplete="off">
       </div>
       <div>
-        <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Name (Username)</label>
-        <input id="usernameInput" class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition" placeholder="e.g. branham" autocomplete="username" />
+        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Username</label>
+        <input id="usernameInput" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-3 outline-none transition-all focus:ring-2" placeholder="e.g. branham" autocomplete="username">
       </div>
       <div>
-        <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Password</label>
-        <input id="passwordInput" type="password" class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition" placeholder="Min 6 characters" autocomplete="current-password" />
+        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Password</label>
+        <input id="passwordInput" type="password" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-3 outline-none transition-all focus:ring-2" placeholder="••••••••" autocomplete="current-password">
       </div>
       <div>
-        <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Role</label>
-        <select id="roleInput" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition">
+        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Who are you?</label>
+        <select id="roleInput" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-3 outline-none transition-all focus:ring-2">
           <option value="client">Agency Owner (Branham)</option>
           <option value="ghl_expert">GHL Expert (Yashfa / Kalam)</option>
           <option value="builder">Builder (Admin)</option>
         </select>
       </div>
-      <div id="authMsg" class="text-sm text-rose-600 font-medium hidden"></div>
-      <div class="pt-2 flex gap-3">
-        <button id="loginBtn" class="flex-1 rounded-xl bg-slate-900 text-white px-4 py-3 text-sm font-bold hover:bg-slate-800 active:scale-[.98] transition shadow-lg">Login</button>
-        <button id="registerBtn" class="flex-1 rounded-xl bg-indigo-600 text-white px-4 py-3 text-sm font-bold hover:bg-indigo-700 active:scale-[.98] transition shadow-lg shadow-indigo-200">Register</button>
+
+      <div id="authMsg" class="hidden p-3 rounded-lg bg-rose-50 text-rose-600 text-xs font-bold text-center border border-rose-100"></div>
+
+      <div class="flex gap-3 pt-2">
+        <button id="loginBtn" class="flex-1 text-white bg-slate-900 hover:bg-slate-800 focus:ring-4 focus:outline-none focus:ring-slate-300 font-bold rounded-xl text-sm px-5 py-3 text-center transition-transform active:scale-95">Login</button>
+        <button id="registerBtn" class="flex-1 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 focus:ring-4 focus:outline-none focus:ring-indigo-200 font-bold rounded-xl text-sm px-5 py-3 text-center transition-transform active:scale-95">Register</button>
       </div>
     </div>
   </div>
 </div>
 
-<header class="sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 glass backdrop-blur-md">
-  <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-    <div class="flex items-center gap-3 min-w-0">
-      <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 shadow-md"></div>
-      <div class="min-w-0 hidden sm:block">
-        <h1 class="text-sm font-extrabold leading-tight text-slate-900">Task Tracker</h1>
-        <p class="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Agency Operations</p>
+<header class="glass-panel sticky top-0 z-40 border-b border-white/20">
+  <div class="max-w-[1800px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+    
+    <div class="flex items-center gap-3">
+      <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 shadow-md shadow-indigo-200 flex items-center justify-center text-white font-bold text-lg">⚡</div>
+      <div class="hidden md:block">
+        <h1 class="text-sm font-extrabold text-slate-900 leading-none">TaskFlow</h1>
+        <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mt-0.5">Branham & Co</p>
       </div>
     </div>
 
     <div class="flex items-center gap-3 flex-1 justify-end">
-      <div class="relative hidden md:block max-w-md w-full">
-        <input id="searchInput" type="text" placeholder="Search..." class="w-full rounded-xl border border-slate-200 bg-white/50 pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition" />
-        <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</div>
+      
+      <div class="relative hidden md:block w-64 group">
+        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <input id="searchInput" type="text" class="block w-full p-2 pl-10 text-sm text-slate-900 border border-slate-200 rounded-xl bg-slate-50/50 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all placeholder-slate-400" placeholder="Search tasks...">
       </div>
 
-      <select id="filterSubaccount" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 max-w-[150px] truncate">
+      <select id="filterSubaccount" class="md:hidden bg-slate-50 border border-slate-200 text-slate-900 text-xs rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-2 outline-none max-w-[120px]">
         <option value="">All Subs</option>
       </select>
 
-      <button id="newTaskBtn" style="display:none;" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-indigo-200 hover:bg-indigo-700 active:scale-[.98] transition whitespace-nowrap">+ New Request</button>
+      <button id="newTaskBtn" style="display:none;" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-xl text-xs shadow-lg shadow-indigo-200 transition-all hover:shadow-indigo-300 active:scale-95 flex items-center gap-2">
+        <span>+</span> New Request
+      </button>
 
       <div class="relative">
-        <button id="notifBtn" class="h-9 w-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 active:scale-[.95] transition flex items-center justify-center relative">
-          🔔 <span id="notifCount" class="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center text-[9px] font-bold rounded-full bg-rose-500 text-white hidden">0</span>
+        <button id="notifBtn" class="p-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-indigo-600 transition-colors relative">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+          <span id="notifCount" class="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-rose-500 border border-white hidden"></span>
         </button>
-        <div id="notifPanel" class="hidden absolute right-0 mt-3 w-[360px] max-w-[90vw] rounded-2xl bg-white border border-slate-100 shadow-xl overflow-hidden z-50">
-          <div class="p-3 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
-            <div class="font-bold text-xs uppercase tracking-wider text-slate-500">Notifications</div>
-            <button id="markAllReadBtn" class="text-[10px] font-bold text-indigo-600 hover:underline">Mark read</button>
+        <div id="notifPanel" class="hidden absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50 fade-in-up origin-top-right">
+          <div class="px-4 py-3 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+            <h3 class="text-xs font-bold uppercase text-slate-500 tracking-wider">Notifications</h3>
+            <button id="markAllReadBtn" class="text-[10px] text-indigo-600 font-bold hover:underline">Clear all</button>
           </div>
-          <div id="notifList" class="max-h-[300px] overflow-y-auto"></div>
+          <div id="notifList" class="max-h-64 overflow-y-auto"></div>
         </div>
       </div>
 
-      <button id="logoutBtn" class="text-xs font-bold text-slate-500 hover:text-slate-800 px-2 transition">Logout</button>
+      <div class="h-8 w-8 rounded-full bg-slate-200 border border-white shadow-sm flex items-center justify-center text-xs font-bold text-slate-600 cursor-pointer hover:bg-slate-300 transition" id="logoutBtn" title="Logout">
+        <span id="userInitials">?</span>
+      </div>
     </div>
   </div>
 </header>
 
-<main class="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 h-[calc(100vh-65px)] overflow-hidden flex flex-col lg:flex-row gap-6">
-  <aside class="hidden lg:flex flex-col w-64 shrink-0 gap-4 h-full pb-2">
-    <div class="flex-1 rounded-3xl bg-white border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-      <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-        <h2 class="font-bold text-sm text-slate-700">Subaccounts</h2>
-        <button id="addSubBtn" style="display:none;" class="text-xs font-bold bg-white border border-slate-200 rounded-lg px-2 py-1 hover:bg-slate-50 transition">+ Add</button>
+<main class="max-w-[1800px] mx-auto px-4 sm:px-6 py-6 h-[calc(100vh-64px)] flex flex-col lg:flex-row gap-6 overflow-hidden">
+  
+  <aside class="hidden lg:flex flex-col w-72 shrink-0 h-full gap-4 pb-2">
+    <div class="glass-panel flex-1 rounded-3xl flex flex-col overflow-hidden shadow-sm">
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-white/50">
+        <h2 class="font-bold text-sm text-slate-800">Subaccounts</h2>
+        <button id="addSubBtn" class="text-[10px] font-bold bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 rounded-lg px-2 py-1 transition-all shadow-sm">+ Add</button>
       </div>
-      <div id="subList" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
-    </div>
-    <div class="rounded-2xl bg-indigo-50 border border-indigo-100 p-4">
-      <div class="flex items-center gap-3">
-        <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs" id="userInitials">U</div>
-        <div class="min-w-0">
-          <div id="userBadge" class="font-bold text-sm text-indigo-900 truncate">User</div>
-          <div id="wsBadge" class="text-xs text-indigo-500 truncate">Workspace</div>
+      <div id="subList" class="flex-1 overflow-y-auto p-3 space-y-1">
         </div>
+    </div>
+    
+    <div class="glass-panel p-4 rounded-2xl flex items-center gap-3 shadow-sm">
+      <div class="h-10 w-10 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 font-bold">👤</div>
+      <div class="min-w-0">
+        <div id="userBadge" class="font-bold text-sm text-slate-900 truncate">Loading...</div>
+        <div id="wsBadge" class="text-xs text-slate-500 truncate">Workspace</div>
       </div>
     </div>
   </aside>
 
   <section class="flex-1 h-full overflow-x-auto overflow-y-hidden pb-4">
-    <div id="board" class="h-full flex gap-5 min-w-max px-1"></div>
+    <div id="board" class="h-full flex gap-6 min-w-max px-2">
+      </div>
   </section>
+
 </main>
 
-<div id="subModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 glass p-4">
-  <div class="fade-in w-full max-w-md rounded-3xl bg-white shadow-2xl p-6">
+<div id="subModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm p-4 hidden">
+  <div class="fade-in-up w-full max-w-sm bg-white rounded-3xl shadow-2xl p-6">
     <h3 class="font-bold text-lg mb-1">Add Subaccount</h3>
-    <input id="subNameInput" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 mt-2" placeholder="e.g. Acme Solar" />
-    <div class="mt-6 flex justify-end gap-3">
-      <button id="closeSubModalBtn" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-100">Cancel</button>
-      <button id="saveSubBtn" class="px-6 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200">Save</button>
+    <p class="text-xs text-slate-500 mb-4">Create a new client bucket.</p>
+    <input id="subNameInput" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Acme Solar - Texas" />
+    <div class="mt-6 flex justify-end gap-2">
+      <button id="closeSubModalBtn" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50">Cancel</button>
+      <button id="saveSubBtn" class="px-5 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200">Create</button>
     </div>
   </div>
 </div>
 
-<div id="taskModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 glass p-4">
-  <div class="fade-in w-full max-w-2xl rounded-3xl bg-white shadow-2xl flex flex-col max-h-[90vh]">
-    <div class="p-6 border-b border-slate-100 flex items-center justify-between">
-      <h3 class="font-bold text-xl">New Request</h3>
-      <button id="closeTaskModal" class="h-8 w-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500">✕</button>
-    </div>
-    <div class="p-6 overflow-y-auto space-y-4">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div><label class="block text-xs font-bold text-slate-600 uppercase mb-1">Title</label><input id="tTitle" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
-        <div><label class="block text-xs font-bold text-slate-600 uppercase mb-1">Subaccount</label><select id="tSub" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white"></select></div>
+<div id="taskModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm p-4 hidden">
+  <div class="fade-in-up w-full max-w-2xl bg-white rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+      <div>
+        <h3 class="font-bold text-lg text-slate-900">New Request</h3>
+        <p class="text-xs text-slate-500">Submit a task for the GHL Expert</p>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Assign Expert</label>
-          <select id="tAssignee" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+      <button id="closeTaskModal" class="text-slate-400 hover:text-rose-500 transition">✕</button>
+    </div>
+    
+    <div class="p-6 overflow-y-auto space-y-5">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-500 uppercase">Task Title</label>
+          <input id="tTitle" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Short summary..." />
+        </div>
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-500 uppercase">Subaccount</label>
+          <select id="tSub" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white"></select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-500 uppercase">Assign Expert</label>
+          <select id="tAssignee" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
             <option value="kalam">Kalam</option>
             <option value="yashfa">Yashfa</option>
           </select>
         </div>
-        <div><label class="block text-xs font-bold text-slate-600 uppercase mb-1">Attachment URL</label><input id="tAttach" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="https://..." /></div>
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-500 uppercase">Loom / Screenshot URL</label>
+          <input id="tAttach" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="https://..." />
+        </div>
       </div>
-      <div><label class="block text-xs font-bold text-slate-600 uppercase mb-1">Details</label><textarea id="tDetails" rows="5" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea></div>
+
+      <div class="space-y-1">
+        <label class="text-xs font-bold text-slate-500 uppercase">Details</label>
+        <textarea id="tDetails" rows="4" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none" placeholder="Describe what needs to be done..."></textarea>
+      </div>
     </div>
-    <div class="p-6 border-t border-slate-100 bg-slate-50 rounded-b-3xl flex justify-end gap-3">
-      <button id="cancelTaskBtn" class="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:bg-white hover:shadow-sm">Cancel</button>
-      <button id="createTaskBtn" class="px-6 py-2.5 rounded-xl text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200">Create & Notify</button>
+
+    <div class="p-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+      <button id="cancelTaskBtn" class="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:bg-white hover:shadow-sm transition">Cancel</button>
+      <button id="createTaskBtn" class="px-6 py-2.5 rounded-xl text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition transform active:scale-95">Create & Notify</button>
     </div>
   </div>
 </div>
 
-<div id="detailsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 glass p-4">
-  <div class="fade-in w-full max-w-6xl h-[85vh] rounded-3xl bg-white shadow-2xl flex overflow-hidden">
-    <div class="w-full lg:w-1/3 bg-slate-50 border-r border-slate-200 flex flex-col">
-      <div class="p-6 border-b border-slate-200">
-        <div class="flex items-start justify-between">
-            <h3 id="dTitle" class="font-bold text-xl text-slate-900 leading-tight"></h3>
-            <button id="closeDetailsModal" class="text-slate-400 hover:text-slate-700">✕</button>
+<div id="detailsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-sm p-4 hidden">
+  <div class="fade-in-up w-full max-w-5xl h-[85vh] bg-white rounded-3xl shadow-2xl flex overflow-hidden">
+    
+    <div class="w-full lg:w-1/3 bg-slate-50/80 border-r border-slate-200 flex flex-col">
+      <div class="p-6 border-b border-slate-200 bg-white/50">
+        <div class="flex justify-between items-start mb-1">
+          <h3 id="dTitle" class="font-bold text-lg text-slate-900 leading-tight">Task Title</h3>
+          <button id="closeDetailsModal" class="text-slate-400 hover:text-slate-700 transition">✕</button>
         </div>
-        <div id="dMeta" class="mt-2 text-xs font-medium text-slate-500"></div>
-        <a id="dAttachLink" href="#" target="_blank" class="hidden mt-3 inline-flex items-center gap-1 text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-100 hover:bg-indigo-100">📎 Attachment</a>
+        <div id="dMeta" class="text-xs font-medium text-slate-500 mb-3">Meta info</div>
+        <a id="dAttachLink" href="#" target="_blank" class="hidden inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-lg border border-indigo-100 hover:bg-indigo-100 transition">
+          🔗 View Attachment
+        </a>
       </div>
+
       <div class="flex-1 overflow-y-auto p-6 space-y-5">
-        <div class="space-y-1"><label class="text-[10px] font-bold uppercase text-slate-500">Status</label><select id="dStatus" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></select></div>
-        <div class="space-y-1"><label class="text-[10px] font-bold uppercase text-slate-500">Subaccount</label><select id="dSub" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></select></div>
-        <div class="space-y-1"><label class="text-[10px] font-bold uppercase text-slate-500">Details</label><textarea id="dDetails" rows="8" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea></div>
+        <div class="space-y-1">
+          <label class="text-[10px] font-bold uppercase text-slate-400">Status</label>
+          <select id="dStatus" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></select>
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] font-bold uppercase text-slate-400">Subaccount</label>
+          <select id="dSub" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></select>
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] font-bold uppercase text-slate-400">Description</label>
+          <textarea id="dDetails" rows="6" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+        </div>
+
         <div id="expertControls" class="grid grid-cols-2 gap-2 pt-2">
-            <button onclick="updateStatus('clarify')" class="p-2 rounded-lg bg-white border border-slate-200 text-xs font-bold">⚠️ Clarify</button>
-            <button onclick="updateStatus('progress')" class="p-2 rounded-lg bg-white border border-slate-200 text-xs font-bold">🔨 In Progress</button>
-            <button onclick="updateStatus('review')" class="col-span-2 p-2 rounded-lg bg-slate-800 text-white text-xs font-bold">👀 Send for Review</button>
-            <button onclick="updateStatus('done')" class="col-span-2 p-2 rounded-lg bg-emerald-600 text-white text-xs font-bold">✅ Mark Done</button>
+          <button onclick="updateStatus('clarify')" class="p-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-600 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200 transition">⚠️ Clarify</button>
+          <button onclick="updateStatus('progress')" class="p-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition">🔨 In Progress</button>
+          <button onclick="updateStatus('review')" class="col-span-2 p-2.5 rounded-xl bg-slate-800 text-white text-xs font-bold hover:bg-slate-900 transition">👀 Send for Review</button>
+          <button onclick="updateStatus('done')" class="col-span-2 p-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition">✅ Mark Done</button>
         </div>
+
         <div id="clientControls" class="hidden grid grid-cols-2 gap-2 pt-2">
-            <button onclick="updateStatus('done')" class="col-span-2 p-3 rounded-xl bg-emerald-600 text-white text-sm font-bold shadow-lg">Approve ✅</button>
-            <button onclick="updateStatus('clarify')" class="col-span-2 p-2 rounded-xl border border-rose-200 text-rose-600 text-sm font-bold">Request Changes</button>
+          <button onclick="updateStatus('done')" class="col-span-2 p-3 rounded-xl bg-emerald-600 text-white text-sm font-bold shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition">Approve & Close ✅</button>
+          <button onclick="updateStatus('clarify')" class="col-span-2 p-2 rounded-xl border border-rose-200 text-rose-600 bg-rose-50 text-sm font-bold hover:bg-rose-100 transition">Request Changes</button>
         </div>
-        <button id="saveTaskBtn" class="w-full py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold shadow-lg hover:bg-indigo-700">Save Changes</button>
+
+        <button id="saveTaskBtn" class="w-full py-2.5 rounded-xl bg-white border border-indigo-100 text-indigo-600 text-sm font-bold hover:bg-indigo-50 transition">Save Edits</button>
       </div>
     </div>
+
     <div class="w-full lg:w-2/3 flex flex-col bg-white">
-      <div class="p-4 border-b border-slate-100 bg-slate-50/30"><h4 class="font-bold text-sm text-slate-700">Discussion</h4></div>
-      <div id="thread" class="flex-1 overflow-y-auto p-4 space-y-3 bg-white"></div>
+      <div class="p-4 border-b border-slate-100 bg-slate-50/30">
+        <h4 class="font-bold text-sm text-slate-700">Discussion Log</h4>
+      </div>
+      <div id="thread" class="flex-1 overflow-y-auto p-5 space-y-4 bg-white"></div>
       <div class="p-4 border-t border-slate-100 bg-slate-50">
         <div class="flex gap-2">
-          <input id="msgInput" class="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Type a message..." />
-          <button id="sendMsgBtn" class="bg-indigo-600 text-white px-5 rounded-xl font-bold hover:bg-indigo-700 transition">Send</button>
+          <input id="msgInput" class="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="Write a comment..." />
+          <button id="sendMsgBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 rounded-xl font-bold transition shadow-md shadow-indigo-100">Send</button>
         </div>
       </div>
     </div>
@@ -227,10 +310,9 @@
 
 <script>
 /* =================================================================
-   🔴 CONFIGURATION: PASTE YOUR N8N URL HERE
+   ⚡️ CONFIGURATION
    ================================================================= */
-// IMPORTANT: Use the Production URL from n8n (not the Test URL) when going live
-const EMAIL_WEBHOOK_URL = ""; 
+const EMAIL_WEBHOOK_URL = "https://hooks.zapier.com/hooks/catch/23603752/uqaboo7/"; // n8n or Zapier URL
 const RECIPIENT_EMAIL = "kalamshar786@gmail.com";
 
 /* =========================
@@ -250,7 +332,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 /* =========================
-   HELPERS & n8n LOGIC
+   HELPERS & UTILS
 ========================= */
 const $ = (id) => document.getElementById(id);
 const clean = (s) => (s || "").trim();
@@ -260,7 +342,7 @@ const escapeHtml = (str) => (str ?? "").toString().replace(/&/g, "&amp;").replac
 function linkify(text) {
   const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
   return escapeHtml(text).replace(urlRegex, (url) => {
-    return `<a href="${url}" target="_blank" class="text-indigo-600 font-medium hover:underline break-all relative z-10" onclick="event.stopPropagation()">${url}</a>`;
+    return `<a href="${url}" target="_blank" class="text-indigo-600 font-semibold hover:underline break-all relative z-10" onclick="event.stopPropagation()">${url}</a>`;
   });
 }
 
@@ -268,40 +350,37 @@ function showToast(msg) {
   const t = $("toast");
   $("toastText").textContent = msg;
   t.classList.remove("hidden");
-  setTimeout(() => t.classList.add("hidden"), 2000);
+  clearTimeout(window.toastTimer);
+  window.toastTimer = setTimeout(() => t.classList.add("hidden"), 2500);
 }
 
-// ⚡️ CENTRAL WEBHOOK FUNCTION FOR N8N
 async function notifyWebhook(actionType, taskTitle, details) {
     if(!EMAIL_WEBHOOK_URL) return;
-
     try {
         await fetch(EMAIL_WEBHOOK_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 recipient: RECIPIENT_EMAIL,
-                subject: `[Task Tracker] ${actionType}: ${taskTitle}`,
+                subject: `[Tracker] ${actionType}: ${taskTitle}`,
                 message: `Action by: ${USER} (${ROLE})\n\nDetails:\n${details}`,
                 sentAt: new Date().toLocaleString()
             })
         });
-        console.log("📧 Notification sent to n8n:", actionType);
-    } catch(e) {
-        console.error("Notification failed", e);
-    }
+    } catch(e) { console.error(e); }
 }
 
 // Global State
 let WS = null, USER = null, ROLE = null, UID = null;
 let subaccounts = [], tasks = [], notifications = [];
 let currentTaskId = null;
+
 const COLUMNS = [
-  { id: "requested", label: "Requested", color: "bg-sky-500" },
-  { id: "clarify", label: "Clarification", color: "bg-amber-500" },
-  { id: "progress", label: "In Progress", color: "bg-indigo-500" },
-  { id: "review", label: "Client Review", color: "bg-fuchsia-500" },
-  { id: "done", label: "Done", color: "bg-emerald-500" }
+  { id: "requested", label: "Requested", color: "bg-sky-500", light: "bg-sky-50" },
+  { id: "clarify", label: "Clarification", color: "bg-amber-500", light: "bg-amber-50" },
+  { id: "progress", label: "In Progress", color: "bg-indigo-500", light: "bg-indigo-50" },
+  { id: "review", label: "Client Review", color: "bg-fuchsia-500", light: "bg-fuchsia-50" },
+  { id: "done", label: "Done", color: "bg-emerald-500", light: "bg-emerald-50" }
 ];
 
 const isBuilder = () => ROLE === "builder";
@@ -318,8 +397,10 @@ async function authenticate(isRegister) {
   const username = clean($("usernameInput").value).toLowerCase();
   const password = $("passwordInput").value;
   const role = $("roleInput").value;
+
   if (!ws || !username || !password) return alert("All fields required");
   const email = `${username}@${ws}.local`;
+  
   try {
     let userCred;
     if (isRegister) {
@@ -341,12 +422,15 @@ async function loadUserProfile(ws, username, uid) {
   WS = ws; USER = username; UID = uid;
   const snap = await db.collection("workspaces").doc(WS).collection("users").doc(UID).get();
   ROLE = snap.exists ? snap.data().role : "client";
+
   $("authModal").classList.add("hidden");
   $("userBadge").textContent = USER;
-  $("wsBadge").textContent = WS + " • " + ROLE;
+  $("wsBadge").textContent = WS;
   $("userInitials").textContent = USER.substring(0,2).toUpperCase();
-  $("newTaskBtn").style.display = canCreate() ? "block" : "none";
+
+  $("newTaskBtn").style.display = canCreate() ? "flex" : "none";
   $("addSubBtn").style.display = canAddSub() ? "block" : "none";
+  
   initRealtime();
 }
 
@@ -359,18 +443,25 @@ $("logoutBtn").onclick = () => { auth.signOut(); location.reload(); };
 ========================= */
 function initRealtime() {
   const root = db.collection("workspaces").doc(WS);
+  
+  // SUBS
   root.collection("subaccounts").orderBy("createdAt", "desc").onSnapshot(snap => {
     subaccounts = snap.docs.map(d => ({id: d.id, ...d.data()}));
     renderSubs(); renderBoard(); updateDropdowns();
   });
+
+  // TASKS - 🔴 FIX: Call renderSubs here to update counts!
   root.collection("tasks").orderBy("createdAt", "desc").onSnapshot(snap => {
     tasks = snap.docs.map(d => ({id: d.id, ...d.data()}));
     renderBoard();
+    renderSubs(); // <--- THIS UPDATES THE COUNTS IN SIDEBAR
     if (currentTaskId) {
       const t = tasks.find(x => x.id === currentTaskId);
       if (t) renderDetails(t);
     }
   });
+
+  // NOTIFS
   root.collection("notifications").where("toUsername", "==", USER).orderBy("createdAt", "desc").limit(20).onSnapshot(snap => {
     notifications = snap.docs.map(d => ({id: d.id, ...d.data()}));
     renderNotifs();
@@ -378,37 +469,46 @@ function initRealtime() {
 }
 
 function updateDropdowns() {
-  const generateOptions = (includeCount) => {
-      return subaccounts.map(s => {
-          const count = tasks.filter(t => t.subaccountId === s.id && t.status !== 'done').length;
-          const label = includeCount && count > 0 ? `${escapeHtml(s.name)} (${count} Open)` : escapeHtml(s.name);
-          return `<option value="${s.id}">${label}</option>`;
-      }).join("");
-  };
-  const currentFilter = $("filterSubaccount").value;
-  $("filterSubaccount").innerHTML = `<option value="">All Subs</option>` + generateOptions(true);
-  $("filterSubaccount").value = currentFilter;
-  $("tSub").innerHTML = generateOptions(true);
-  $("dSub").innerHTML = generateOptions(false);
+  const opts = subaccounts.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
+  $("filterSubaccount").innerHTML = `<option value="">All Subs</option>` + opts;
+  $("tSub").innerHTML = opts;
+  $("dSub").innerHTML = opts;
   $("dStatus").innerHTML = COLUMNS.map(c => `<option value="${c.id}">${c.label}</option>`).join("");
 }
 
 function renderSubs() {
   const list = $("subList");
   list.innerHTML = "";
-  if (subaccounts.length === 0) { list.innerHTML = `<div class="text-xs text-slate-400 p-2 italic">No subaccounts.</div>`; return; }
+  
+  if (subaccounts.length === 0) { 
+    list.innerHTML = `<div class="text-xs text-slate-400 p-4 text-center italic border-2 border-dashed border-slate-100 rounded-xl">No subaccounts yet.</div>`; 
+    return; 
+  }
+
+  const currentFilter = $("filterSubaccount").value;
+
   subaccounts.forEach(s => {
-     const total = tasks.filter(t => t.subaccountId === s.id).length;
+     // 🔴 Logic: Count only active tasks (not done)
      const open = tasks.filter(t => t.subaccountId === s.id && t.status !== 'done').length;
-     const div = document.createElement("button");
-     div.className = "w-full text-left px-3 py-2.5 rounded-xl text-sm hover:bg-slate-50 flex justify-between items-center group transition";
-     div.innerHTML = `<span class="font-medium text-slate-700 group-hover:text-indigo-600 truncate mr-2">${escapeHtml(s.name)}</span>${open > 0 ? `<span class="bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">${open}</span>` : `<span class="text-[10px] text-slate-300">${total}</span>`}`;
-     div.onclick = () => { 
-         $("filterSubaccount").value = s.id; renderBoard(); 
-         Array.from(list.children).forEach(c => c.classList.remove("bg-indigo-50", "border-indigo-100"));
-         div.classList.add("bg-indigo-50", "border", "border-indigo-100");
+     const isActive = currentFilter === s.id;
+
+     const btn = document.createElement("button");
+     btn.className = `w-full text-left px-3.5 py-3 rounded-xl text-sm font-medium flex justify-between items-center transition-all duration-200 group ${isActive ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'text-slate-600 hover:bg-white hover:shadow-sm'}`;
+     
+     btn.innerHTML = `
+        <span class="truncate mr-2 ${isActive ? 'text-white' : 'group-hover:text-indigo-600'}">${escapeHtml(s.name)}</span> 
+        ${open > 0 
+           ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isActive ? 'bg-white text-indigo-600' : 'bg-indigo-100 text-indigo-600'}">${open}</span>` 
+           : `<span class="opacity-0 group-hover:opacity-100 text-[10px] text-slate-300 transition-opacity">0</span>`
+        }
+     `;
+     
+     btn.onclick = () => { 
+         $("filterSubaccount").value = s.id; 
+         renderBoard(); 
+         renderSubs(); // Re-render to update active state styling
      };
-     list.appendChild(div);
+     list.appendChild(btn);
   });
 }
 
@@ -417,36 +517,75 @@ function renderBoard() {
   board.innerHTML = "";
   const filterSub = $("filterSubaccount").value;
   const search = $("searchInput").value.toLowerCase();
+  
   const filtered = tasks.filter(t => {
     if (filterSub && t.subaccountId !== filterSub) return false;
     if (search && !t.title.toLowerCase().includes(search)) return false;
     return true;
   });
+
   COLUMNS.forEach(col => {
     const colTasks = filtered.filter(t => (t.status || 'requested') === col.id);
+    
+    // Column Structure
     const colDiv = document.createElement("div");
-    colDiv.className = "w-[320px] shrink-0 flex flex-col h-full rounded-2xl bg-slate-50/50 border border-slate-200/60";
-    colDiv.innerHTML = `<div class="p-4 flex items-center justify-between shrink-0"><div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full ${col.color}"></div><h3 class="font-bold text-sm text-slate-700 uppercase">${col.label}</h3></div><span class="text-xs font-bold text-slate-400 bg-white px-2 py-0.5 rounded-md border border-slate-100">${colTasks.length}</span></div><div class="flex-1 overflow-y-auto px-2 pb-2 space-y-3" id="col_${col.id}" data-status="${col.id}"></div>`;
+    colDiv.className = "w-80 shrink-0 flex flex-col h-full rounded-3xl bg-slate-100/50 border border-white/60 shadow-inner overflow-hidden";
+    
+    colDiv.innerHTML = `
+      <div class="p-4 flex items-center justify-between shrink-0 bg-white/40 backdrop-blur-sm border-b border-white/50">
+         <div class="flex items-center gap-2">
+            <div class="h-2.5 w-2.5 rounded-full ${col.color}"></div>
+            <h3 class="font-bold text-xs text-slate-700 uppercase tracking-wider">${col.label}</h3>
+         </div>
+         <span class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-full shadow-sm">${colTasks.length}</span>
+      </div>
+      <div class="flex-1 overflow-y-auto px-3 pb-3 space-y-3 pt-3 scroll-smooth" id="col_${col.id}" data-status="${col.id}">
+      </div>
+    `;
+    
     const zone = colDiv.querySelector(`#col_${col.id}`);
+    
     colTasks.forEach(t => {
        const subName = subaccounts.find(s => s.id === t.subaccountId)?.name || "—";
        const card = document.createElement("div");
-       card.className = "bg-white p-4 rounded-xl shadow-sm border border-slate-100 cursor-pointer hover:shadow-md hover:border-indigo-100 transition group relative";
+       card.className = "glass-card p-4 rounded-2xl cursor-pointer relative group border border-transparent";
        card.setAttribute("data-id", t.id);
-       card.innerHTML = `<div class="flex justify-between items-start mb-2"><span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 truncate max-w-[120px]">${escapeHtml(subName)}</span><span class="text-[10px] text-slate-400">@${t.assigneeUsername}</span></div><h4 class="font-bold text-sm text-slate-800 leading-snug mb-2">${escapeHtml(t.title)}</h4>${t.attachmentUrl ? `<div class="mb-2 text-[10px] flex items-center gap-1 text-indigo-500 font-bold">📎 Attached</div>` : ''}<div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-50"><div class="text-[10px] text-slate-400">${new Date(t.createdAt?.seconds * 1000 || Date.now()).toLocaleDateString()}</div><div class="text-[10px] font-bold text-slate-500 flex items-center gap-1">💬 ${(t.messages||[]).length}</div></div>`;
+       
+       card.innerHTML = `
+         <div class="flex justify-between items-start mb-2">
+            <span class="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100 truncate max-w-[140px] uppercase tracking-wide">${escapeHtml(subName)}</span>
+            <div class="h-5 w-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-500 border border-slate-200" title="Assignee">
+                ${t.assigneeUsername ? t.assigneeUsername.charAt(0).toUpperCase() : '?'}
+            </div>
+         </div>
+         <h4 class="font-bold text-sm text-slate-800 leading-snug mb-3 pr-2">${escapeHtml(t.title)}</h4>
+         
+         <div class="flex items-center justify-between pt-3 border-t border-slate-50">
+             <div class="flex items-center gap-2">
+                ${t.attachmentUrl ? `<span class="text-xs" title="Has attachment">📎</span>` : ''}
+                <span class="text-[10px] text-slate-400 font-medium">${new Date(t.createdAt?.seconds * 1000 || Date.now()).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>
+             </div>
+             <div class="flex items-center gap-1 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                <span class="text-[10px] font-bold">${(t.messages||[]).length}</span>
+             </div>
+         </div>
+       `;
        card.addEventListener('click', () => openDetails(t.id));
        zone.appendChild(card);
     });
+    
     board.appendChild(colDiv);
+
+    // Initialize Sortable
     new Sortable(zone, {
-        group: 'shared', animation: 150, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', delay: 100, delayOnTouchOnly: true,
+        group: 'shared', animation: 200, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', delay: 100, delayOnTouchOnly: true,
         onEnd: function (evt) {
             const taskId = evt.item.getAttribute('data-id');
             const newStatus = evt.to.getAttribute('data-status');
             if (newStatus !== evt.from.getAttribute('data-status')) {
                 const t = tasks.find(x => x.id === taskId);
                 db.collection("workspaces").doc(WS).collection("tasks").doc(taskId).update({status: newStatus});
-                // 📧 TRIGGER EMAIL (Drag & Drop)
                 notifyWebhook("Status Change", t?.title || "Task", `Moved to ${newStatus}`);
                 showToast(`Moved to ${newStatus}`);
             }
@@ -459,18 +598,40 @@ function renderNotifs() {
   const list = $("notifList");
   list.innerHTML = "";
   const unread = notifications.filter(n => !n.read).length;
-  $("notifCount").textContent = unread;
-  $("notifCount").classList.toggle("hidden", unread===0);
-  if(notifications.length === 0) { list.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">All caught up!</div>`; return; }
+  const badge = $("notifCount");
+  
+  if (unread > 0) {
+      badge.textContent = ""; 
+      badge.classList.remove("hidden");
+      badge.classList.add("animate-pulse");
+  } else {
+      badge.classList.add("hidden");
+  }
+
+  if(notifications.length === 0) { 
+      list.innerHTML = `<div class="p-6 text-center text-xs text-slate-400 italic">No notifications yet.</div>`; 
+      return; 
+  }
+
   notifications.forEach(n => {
      const div = document.createElement("div");
-     div.className = `p-3 border-b border-slate-50 text-xs cursor-pointer ${n.read ? 'bg-white opacity-60' : 'bg-indigo-50/50'}`;
-     div.innerHTML = `<div class="font-bold ${n.read?'text-slate-700':'text-indigo-700'}">${escapeHtml(n.title)}</div><div class="text-slate-500 truncate mt-0.5">${escapeHtml(n.body)}</div>`;
+     div.className = `p-3 border-b border-slate-50 text-xs cursor-pointer transition-colors hover:bg-slate-50 ${n.read ? 'opacity-60 bg-white' : 'bg-indigo-50/30'}`;
+     div.innerHTML = `
+        <div class="flex gap-2">
+            <div class="mt-0.5 h-2 w-2 rounded-full ${n.read ? 'bg-transparent' : 'bg-indigo-500'} shrink-0"></div>
+            <div>
+                <div class="font-bold ${n.read?'text-slate-700':'text-indigo-700'}">${escapeHtml(n.title)}</div>
+                <div class="text-slate-500 truncate mt-0.5">${escapeHtml(n.body)}</div>
+            </div>
+        </div>`;
      div.onclick = async () => { await db.collection("workspaces").doc(WS).collection("notifications").doc(n.id).update({read:true}); if(n.taskId) openDetails(n.taskId); };
      list.appendChild(div);
   });
 }
 
+/* =========================
+   ACTIONS
+========================= */
 $("addSubBtn").onclick = () => { $("subModal").classList.remove("hidden"); $("subModal").classList.add("flex"); };
 $("closeSubModalBtn").onclick = () => $("subModal").classList.add("hidden");
 $("saveSubBtn").onclick = async () => {
@@ -488,23 +649,25 @@ $("newTaskBtn").onclick = () => {
 $("closeTaskModal").onclick = () => $("taskModal").classList.add("hidden");
 $("cancelTaskBtn").onclick = () => $("taskModal").classList.add("hidden");
 
-/* CREATE TASK */
 $("createTaskBtn").onclick = async () => {
     const title = clean($("tTitle").value);
     const subId = $("tSub").value;
     const assignee = clean($("tAssignee").value);
     const details = clean($("tDetails").value);
     const attachmentUrl = clean($("tAttach").value);
+
     if(!title || !subId || !assignee) return alert("Title, Subaccount, and Assignee are required.");
+
     const ref = await db.collection("workspaces").doc(WS).collection("tasks").add({
         title, details, subaccountId: subId, assigneeUsername: assignee, attachmentUrl,
         status: 'requested', createdBy: USER, createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         messages: [{by: USER, role: ROLE, text: "Request created.", at: nowISO()}]
     });
+
     await db.collection("workspaces").doc(WS).collection("notifications").add({
         toUsername: assignee, title: "New Task", body: title, taskId: ref.id, read: false, createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    // 📧 TRIGGER EMAIL (Create)
+
     notifyWebhook("New Task", title, details);
     $("taskModal").classList.add("hidden");
     $("tTitle").value = ""; $("tDetails").value = ""; $("tAttach").value = "";
@@ -522,6 +685,7 @@ function openDetails(id) {
     $("dSub").value = t.subaccountId;
     $("dDetails").value = t.details || "";
     if(t.attachmentUrl) { $("dAttachLink").href = t.attachmentUrl; $("dAttachLink").classList.remove("hidden"); $("dAttachLink").classList.add("inline-flex"); } else { $("dAttachLink").classList.add("hidden"); }
+    
     if(isClient() && t.status === 'review') { $("clientControls").classList.remove("hidden"); $("expertControls").classList.add("hidden"); } 
     else { $("clientControls").classList.add("hidden"); $("expertControls").classList.remove("hidden"); }
     renderThread(t);
@@ -532,15 +696,20 @@ $("closeDetailsModal").onclick = () => { $("detailsModal").classList.add("hidden
 function renderThread(t) {
     const div = $("thread"); div.innerHTML = "";
     if(t.details) {
-        const d = document.createElement("div"); d.className = "p-4 rounded-xl bg-slate-50 border border-slate-100 mb-4";
-        d.innerHTML = `<div class="text-[10px] font-bold uppercase text-slate-400 mb-1">Original Request</div><div class="text-sm text-slate-700 whitespace-pre-wrap">${linkify(t.details)}</div>`;
+        const d = document.createElement("div"); d.className = "p-4 rounded-2xl bg-slate-50/80 border border-slate-100 mb-6";
+        d.innerHTML = `<div class="text-[10px] font-bold uppercase text-slate-400 mb-2">Original Request</div><div class="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">${linkify(t.details)}</div>`;
         div.appendChild(d);
     }
     (t.messages||[]).forEach(m => {
         const isMe = m.by === USER;
         const msg = document.createElement("div");
-        msg.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
-        msg.innerHTML = `<div class="max-w-[85%] p-3 rounded-2xl text-sm ${isMe ? 'bg-indigo-600 text-white rounded-tr-sm shadow-md' : 'bg-white border border-slate-200 rounded-tl-sm shadow-sm'}">${linkify(m.text)}</div><div class="text-[10px] text-slate-400 mt-1 px-1">${m.by}</div>`;
+        msg.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-3`;
+        msg.innerHTML = `
+            <div class="max-w-[85%] px-4 py-3 rounded-2xl text-sm shadow-sm ${isMe ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white border border-slate-100 rounded-tl-none text-slate-700'}">
+               ${linkify(m.text)}
+            </div>
+            <div class="text-[10px] text-slate-400 mt-1 px-1 font-medium">${m.by}</div>
+        `;
         div.appendChild(msg);
     });
     div.scrollTop = div.scrollHeight;
@@ -553,7 +722,7 @@ $("sendMsgBtn").onclick = async () => {
     const msgs = [...(t.messages||[]), {by: USER, role: ROLE, text: txt, at: nowISO()}];
     await db.collection("workspaces").doc(WS).collection("tasks").doc(currentTaskId).update({messages: msgs});
     $("msgInput").value = "";
-    // 📧 TRIGGER EMAIL (Comment)
+    
     notifyWebhook("New Comment", t.title, `${USER}: ${txt}`);
     if(t.assigneeUsername !== USER) {
         await db.collection("workspaces").doc(WS).collection("notifications").add({
@@ -566,9 +735,8 @@ async function updateStatus(st) {
     if(!currentTaskId) return;
     const t = tasks.find(x => x.id === currentTaskId);
     await db.collection("workspaces").doc(WS).collection("tasks").doc(currentTaskId).update({status: st});
-    // 📧 TRIGGER EMAIL (Button Status)
     notifyWebhook("Status Change", t.title, `Moved to ${st}`);
-    showToast("Status: " + st);
+    showToast("Status Updated");
     if(st === 'done') $("detailsModal").classList.add("hidden");
 }
 
@@ -588,6 +756,7 @@ $("markAllReadBtn").onclick = async () => {
 
 $("searchInput").addEventListener("input", renderBoard);
 $("filterSubaccount").addEventListener("change", renderBoard);
+$("notifBtn").onclick = () => $("notifPanel").classList.toggle("hidden");
 
 auth.onAuthStateChanged(u => {
     if(!u) $("authModal").classList.remove("hidden");

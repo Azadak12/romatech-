@@ -66,11 +66,9 @@
     }
 
     /* --- Sidebar Item Logic --- */
-    .sub-item-container {
-        transition: all 0.2s;
-    }
+    .sub-item-container { transition: all 0.2s; }
 
-    /* Active State (Selected for filtering) - Using !important to force override */
+    /* Active State (Selected for filtering) */
     .sub-item-main.active {
         background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
         color: white !important;
@@ -78,11 +76,8 @@
         border: none;
     }
 
-    /* Hover State (When not active) */
-    .sub-item-main:not(.active):hover {
-        background-color: #f8fafc;
-        transform: translateX(2px);
-    }
+    /* Hover State */
+    .sub-item-main:not(.active):hover { background-color: #f8fafc; transform: translateX(2px); }
 
     /* Inner Text Colors - Forced White when active */
     .sub-item-main.active .sub-name { color: white !important; }
@@ -90,16 +85,9 @@
     .sub-item-main.active .sub-arrow { color: rgba(255,255,255,0.6) !important; }
 
     /* Settings Gear Icon */
-    .settings-btn {
-        opacity: 0.4;
-        transition: all 0.2s;
-    }
+    .settings-btn { opacity: 0.4; transition: all 0.2s; }
     .sub-item-container:hover .settings-btn { opacity: 1; }
-    .settings-btn:hover {
-        background-color: #e2e8f0;
-        color: #4f46e5;
-        transform: rotate(30deg);
-    }
+    .settings-btn:hover { background-color: #e2e8f0; color: #4f46e5; transform: rotate(30deg); }
 
     /* Drag & Drop */
     .sortable-ghost { opacity: 0.4; background: #e0e7ff; border: 2px dashed #6366f1; transform: scale(0.95); }
@@ -120,20 +108,12 @@
     <div class="inline-block p-4 rounded-3xl bg-white/10 backdrop-blur-md border border-white/10 shadow-2xl mb-4">
        <span class="text-6xl">🚀</span>
     </div>
-    <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 via-white to-purple-200">
-      TaskFlow
-    </h1>
-    <p class="text-slate-400 text-lg md:text-xl font-light tracking-wide max-w-lg mx-auto">
-      Agency Operations & Client Request Management System
-    </p>
-    
+    <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 via-white to-purple-200">TaskFlow</h1>
+    <p class="text-slate-400 text-lg md:text-xl font-light tracking-wide max-w-lg mx-auto">Agency Operations & Client Request Management System</p>
     <button id="enterBtn" class="group relative px-8 py-4 bg-white text-slate-900 rounded-full font-bold text-lg shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_-15px_rgba(255,255,255,0.5)] transition-all hover:scale-105 active:scale-95">
-      <span class="relative z-10 flex items-center gap-2">
-        Enter Workspace <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
-      </span>
+      <span class="relative z-10 flex items-center gap-2">Enter Workspace <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg></span>
     </button>
   </div>
-  
   <div class="absolute bottom-8 text-slate-500 text-xs tracking-widest uppercase">Branham & Co • Internal Tools</div>
 </div>
 
@@ -177,9 +157,7 @@
           <option value="builder">Builder (Admin)</option>
         </select>
       </div>
-
       <div id="authMsg" class="hidden p-3 rounded-xl bg-rose-50 text-rose-600 text-xs font-bold text-center border border-rose-100"></div>
-
       <div class="flex gap-3 pt-2">
         <button id="loginBtn" class="flex-1 text-white bg-slate-900 hover:bg-slate-800 focus:ring-4 focus:ring-slate-200 font-bold rounded-xl text-sm px-5 py-3.5 text-center transition-all active:scale-95 shadow-lg">Login</button>
         <button id="registerBtn" class="flex-1 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 focus:ring-4 focus:ring-indigo-100 font-bold rounded-xl text-sm px-5 py-3.5 text-center transition-all active:scale-95">Register</button>
@@ -264,12 +242,10 @@
 
 <div id="subDetailsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-md p-4 hidden">
     <div class="fade-in-up w-full max-w-4xl h-[80vh] bg-slate-50 rounded-[2rem] shadow-2xl flex overflow-hidden border border-white/40">
-        
         <div class="w-72 bg-white border-r border-slate-200 flex flex-col p-6">
             <div class="h-16 w-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-3xl mb-4 shadow-lg text-white">⚙️</div>
             <h2 class="font-bold text-lg text-slate-800 mb-1">Manage Subaccount</h2>
             <p class="text-xs text-slate-400 font-medium mb-6">Edit settings or delete.</p>
-
             <div class="space-y-4 mb-auto">
                 <div>
                    <label class="text-[10px] font-bold uppercase text-slate-400">Subaccount Name</label>
@@ -277,60 +253,33 @@
                 </div>
                 <button id="btnUpdateSub" class="w-full py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition shadow-sm">Save Changes</button>
             </div>
-
             <div class="mt-8 pt-6 border-t border-slate-100">
-                <button id="btnDeleteSub" class="w-full py-3 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-sm font-bold hover:bg-rose-100 transition shadow-sm flex items-center justify-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    Delete Account
-                </button>
+                <button id="btnDeleteSub" class="w-full py-3 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-sm font-bold hover:bg-rose-100 transition shadow-sm flex items-center justify-center gap-2">Delete Account</button>
             </div>
         </div>
-
         <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="font-bold text-lg text-slate-700">Project Progress Overview</h3>
                 <button onclick="$('subDetailsModal').classList.add('hidden')" class="h-8 w-8 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-500 transition">✕</button>
             </div>
-
             <div class="grid grid-cols-2 gap-6 mb-8">
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                    <div class="flex justify-between mb-2">
-                        <span class="text-xs font-bold text-slate-500 uppercase">Backend / API</span>
-                        <span id="progBackend" class="text-xs font-bold text-indigo-600">0%</span>
-                    </div>
-                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                        <div id="barBackend" class="h-full bg-indigo-500 w-0 transition-all duration-1000"></div>
-                    </div>
+                    <div class="flex justify-between mb-2"><span class="text-xs font-bold text-slate-500 uppercase">Backend / API</span><span id="progBackend" class="text-xs font-bold text-indigo-600">0%</span></div>
+                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden"><div id="barBackend" class="h-full bg-indigo-500 w-0 transition-all duration-1000"></div></div>
                 </div>
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                    <div class="flex justify-between mb-2">
-                        <span class="text-xs font-bold text-slate-500 uppercase">Frontend / UI</span>
-                        <span id="progFrontend" class="text-xs font-bold text-pink-600">0%</span>
-                    </div>
-                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                        <div id="barFrontend" class="h-full bg-pink-500 w-0 transition-all duration-1000"></div>
-                    </div>
+                    <div class="flex justify-between mb-2"><span class="text-xs font-bold text-slate-500 uppercase">Frontend / UI</span><span id="progFrontend" class="text-xs font-bold text-pink-600">0%</span></div>
+                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden"><div id="barFrontend" class="h-full bg-pink-500 w-0 transition-all duration-1000"></div></div>
                 </div>
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                    <div class="flex justify-between mb-2">
-                        <span class="text-xs font-bold text-slate-500 uppercase">AI Agents</span>
-                        <span id="progAI" class="text-xs font-bold text-emerald-600">0%</span>
-                    </div>
-                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                        <div id="barAI" class="h-full bg-emerald-500 w-0 transition-all duration-1000"></div>
-                    </div>
+                    <div class="flex justify-between mb-2"><span class="text-xs font-bold text-slate-500 uppercase">AI Agents</span><span id="progAI" class="text-xs font-bold text-emerald-600">0%</span></div>
+                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden"><div id="barAI" class="h-full bg-emerald-500 w-0 transition-all duration-1000"></div></div>
                 </div>
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                    <div class="flex justify-between mb-2">
-                        <span class="text-xs font-bold text-slate-500 uppercase">Pipeline / Auto</span>
-                        <span id="progPipe" class="text-xs font-bold text-amber-600">0%</span>
-                    </div>
-                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                        <div id="barPipe" class="h-full bg-amber-500 w-0 transition-all duration-1000"></div>
-                    </div>
+                    <div class="flex justify-between mb-2"><span class="text-xs font-bold text-slate-500 uppercase">Pipeline / Auto</span><span id="progPipe" class="text-xs font-bold text-amber-600">0%</span></div>
+                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden"><div id="barPipe" class="h-full bg-amber-500 w-0 transition-all duration-1000"></div></div>
                 </div>
             </div>
-
             <h3 class="font-bold text-lg text-slate-700 mb-4">Request History</h3>
             <div id="sdHistoryList" class="space-y-3"></div>
         </div>
@@ -371,6 +320,21 @@
           <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Subaccount</label>
           <select id="tSub" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white"></select>
         </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+         <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Priority</label>
+            <select id="tPriority" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                <option value="low">Low Priority</option>
+                <option value="medium" selected>Medium Priority</option>
+                <option value="high">High Priority 🔥</option>
+            </select>
+         </div>
+         <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Due Date</label>
+            <input type="date" id="tDate" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white" />
+         </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -435,6 +399,22 @@
           <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Status</label>
           <select id="dStatus" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></select>
         </div>
+
+        <div class="grid grid-cols-2 gap-3">
+             <div class="space-y-1">
+                <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Priority</label>
+                <select id="dPriority" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High 🔥</option>
+                </select>
+             </div>
+             <div class="space-y-1">
+                <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Due Date</label>
+                <input type="date" id="dDate" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500" />
+             </div>
+        </div>
+
         <div class="space-y-1">
           <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Subaccount</label>
           <select id="dSub" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></select>
@@ -637,7 +617,6 @@ function updateDropdowns() {
   $("dStatus").innerHTML = COLUMNS.map(c => `<option value="${c.id}">${c.label}</option>`).join("");
 }
 
-// 🔵 UPDATED: Separate Filter vs. Details Logic with INPUT fix
 function renderSubs() {
   const list = $("subList");
   list.innerHTML = "";
@@ -652,9 +631,7 @@ function renderSubs() {
      const container = document.createElement("div");
      container.className = `sub-item-container flex gap-2 items-center mb-2 px-1`;
 
-     // Button 1: Filter (Main Part)
      const btn = document.createElement("button");
-     // ACTIVE HIGHLIGHT FIXED WITH !important in CSS
      btn.className = `sub-item-main flex-1 text-left px-4 py-3 rounded-xl text-sm font-medium flex justify-between items-center border border-transparent transition-all duration-200 ${isActive ? 'active' : 'text-slate-600'}`;
      btn.innerHTML = `
         <span class="sub-name truncate font-semibold tracking-tight">${escapeHtml(s.name)}</span> 
@@ -665,7 +642,6 @@ function renderSubs() {
         renderBoard(); renderSubs(); 
      };
 
-     // Button 2: Settings (Gear)
      const settingsBtn = document.createElement("button");
      settingsBtn.className = `settings-btn h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all`;
      settingsBtn.innerHTML = `<span class="text-lg">⚙️</span>`; 
@@ -706,12 +682,32 @@ function renderBoard() {
     const zone = colDiv.querySelector(`#col_${col.id}`);
     colTasks.forEach(t => {
        const subName = subaccounts.find(s => s.id === t.subaccountId)?.name || "—";
+       
+       // Priority Logic
+       let prioBadge = "";
+       if(t.priority === "high") prioBadge = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded border border-rose-200 bg-rose-50 text-rose-600">HIGH</span>`;
+       else if(t.priority === "medium") prioBadge = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-600">MED</span>`;
+       else prioBadge = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 text-slate-500">LOW</span>`;
+
+       // Due Date Logic
+       let dateDisplay = "";
+       if(t.dueDate) {
+           const d = new Date(t.dueDate);
+           const isOverdue = d < new Date() && t.status !== 'done';
+           dateDisplay = `<span class="text-[10px] font-medium ${isOverdue ? 'text-rose-600 font-bold' : 'text-slate-400'}">${d.toLocaleDateString(undefined, {month:'short', day:'numeric'})} ${isOverdue ? '⚠️' : ''}</span>`;
+       } else {
+           dateDisplay = `<span class="text-[10px] text-slate-400 font-medium">${new Date(t.createdAt?.seconds * 1000 || Date.now()).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>`;
+       }
+
        const card = document.createElement("div");
        card.className = "glass-card p-4 rounded-2xl cursor-pointer relative group";
        card.setAttribute("data-id", t.id);
        card.innerHTML = `
          <div class="flex justify-between items-start mb-2.5">
-            <span class="text-[9px] font-bold text-indigo-600 bg-indigo-50/80 px-2 py-1 rounded-lg border border-indigo-100 truncate max-w-[140px] uppercase tracking-wide backdrop-blur-sm">${escapeHtml(subName)}</span>
+            <div class="flex gap-1">
+                <span class="text-[9px] font-bold text-indigo-600 bg-indigo-50/80 px-2 py-1 rounded-lg border border-indigo-100 truncate max-w-[100px] uppercase tracking-wide backdrop-blur-sm">${escapeHtml(subName)}</span>
+                ${prioBadge}
+            </div>
             <div class="h-6 w-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 border border-white shadow-sm ring-1 ring-slate-100">
                 ${t.assigneeUsername ? t.assigneeUsername.charAt(0).toUpperCase() : '?'}
             </div>
@@ -721,7 +717,7 @@ function renderBoard() {
          <div class="flex items-center justify-between pt-3 border-t border-slate-100/50">
              <div class="flex items-center gap-2">
                 ${t.attachmentUrl ? `<span class="text-xs bg-slate-100 p-1 rounded-md">📎</span>` : ''}
-                <span class="text-[10px] text-slate-400 font-medium">${new Date(t.createdAt?.seconds * 1000 || Date.now()).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>
+                ${dateDisplay}
              </div>
              <div class="flex items-center gap-1.5 text-slate-400 group-hover:text-indigo-500 transition-colors bg-slate-50 px-2 py-0.5 rounded-full">
                 <span class="text-[10px] font-bold">💬 ${(t.messages||[]).length}</span>
@@ -777,50 +773,32 @@ function openSubDetails(subId) {
 function renderSubDetails(subId) {
     const sub = subaccounts.find(s => s.id === subId);
     if (!sub) return;
-    
-    $("editSubName").value = sub.name; // Fill Edit Input
+    $("editSubName").value = sub.name; 
     const subTasks = tasks.filter(t => t.subaccountId === subId);
-
     const calcProgress = (cat) => {
         const catTasks = subTasks.filter(t => t.category === cat);
         if (catTasks.length === 0) return 0;
         const done = catTasks.filter(t => t.status === 'done').length;
         return Math.round((done / catTasks.length) * 100);
     };
-
-    const cats = {
-        backend: calcProgress('backend'),
-        frontend: calcProgress('frontend'),
-        ai_agent: calcProgress('ai_agent'),
-        pipeline: calcProgress('pipeline')
-    };
-
+    const cats = { backend: calcProgress('backend'), frontend: calcProgress('frontend'), ai_agent: calcProgress('ai_agent'), pipeline: calcProgress('pipeline') };
     $("progBackend").textContent = `${cats.backend}%`; $("barBackend").style.width = `${cats.backend}%`;
     $("progFrontend").textContent = `${cats.frontend}%`; $("barFrontend").style.width = `${cats.frontend}%`;
     $("progAI").textContent = `${cats.ai_agent}%`; $("barAI").style.width = `${cats.ai_agent}%`;
     $("progPipe").textContent = `${cats.pipeline}%`; $("barPipe").style.width = `${cats.pipeline}%`;
-
     const list = $("sdHistoryList");
     list.innerHTML = "";
     if(subTasks.length === 0) { list.innerHTML = `<div class="text-center text-slate-400 text-sm py-4">No requests found.</div>`; }
-    
     subTasks.forEach(t => {
         const div = document.createElement("div");
         div.className = "flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl hover:shadow-md transition cursor-pointer";
         const statusColors = { requested:'bg-sky-100 text-sky-700', done:'bg-emerald-100 text-emerald-700', progress:'bg-indigo-100 text-indigo-700', clarify:'bg-amber-100 text-amber-700', review:'bg-fuchsia-100 text-fuchsia-700' };
-        div.innerHTML = `
-            <div>
-                <div class="font-bold text-slate-800 text-sm">${escapeHtml(t.title)}</div>
-                <div class="text-[10px] text-slate-400 mt-1">${new Date(t.createdAt?.seconds*1000).toLocaleDateString()} • #${t.category||'general'}</div>
-            </div>
-            <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${statusColors[t.status]||'bg-slate-100'}">${t.status}</span>
-        `;
+        div.innerHTML = `<div><div class="font-bold text-slate-800 text-sm">${escapeHtml(t.title)}</div><div class="text-[10px] text-slate-400 mt-1">${new Date(t.createdAt?.seconds*1000).toLocaleDateString()} • #${t.category||'general'}</div></div><span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${statusColors[t.status]||'bg-slate-100'}">${t.status}</span>`;
         div.onclick = () => { $("subDetailsModal").classList.add("hidden"); openDetails(t.id); };
         list.appendChild(div);
     });
 }
 
-// 🔵 Update Sub Name
 $("btnUpdateSub").onclick = async () => {
     const newName = clean($("editSubName").value);
     if(!newName || !currentSubId) return;
@@ -828,7 +806,6 @@ $("btnUpdateSub").onclick = async () => {
     showToast("Subaccount Name Updated");
 };
 
-// 🔴 Delete Subaccount
 $("btnDeleteSub").onclick = async () => {
     if(!confirm(`Are you sure you want to DELETE this subaccount? This cannot be undone.`)) return;
     await db.collection("workspaces").doc(WS).collection("subaccounts").doc(currentSubId).delete();
@@ -837,7 +814,6 @@ $("btnDeleteSub").onclick = async () => {
     renderSubs(); renderBoard();
     showToast("Subaccount Deleted");
 };
-
 
 /* =========================
    ACTIONS
@@ -865,6 +841,8 @@ $("createTaskBtn").onclick = async () => {
     const category = $("tCategory").value; 
     const assignee = clean($("tAssignee").value);
     const details = clean($("tDetails").value);
+    const priority = $("tPriority").value; // New
+    const dueDate = $("tDate").value; // New
     const file = $("tFile").files[0];
     let attachmentUrl = "";
 
@@ -880,7 +858,7 @@ $("createTaskBtn").onclick = async () => {
     }
 
     const ref = await db.collection("workspaces").doc(WS).collection("tasks").add({
-        title, details, subaccountId: subId, category, assigneeUsername: assignee, attachmentUrl,
+        title, details, subaccountId: subId, category, priority, dueDate, assigneeUsername: assignee, attachmentUrl,
         status: 'requested', createdBy: USER, createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         messages: [{by: USER, role: ROLE, text: "Request created.", at: nowISO()}]
     });
@@ -892,7 +870,7 @@ $("createTaskBtn").onclick = async () => {
     notifyWebhook("New Task", title, details, assignee, attachmentUrl);
     
     $("taskModal").classList.add("hidden");
-    $("tTitle").value = ""; $("tDetails").value = ""; $("tFile").value = "";
+    $("tTitle").value = ""; $("tDetails").value = ""; $("tFile").value = ""; $("tDate").value = "";
     btn.disabled = false; btn.textContent = "Create & Notify";
     showToast("Task Created");
 };
@@ -907,6 +885,9 @@ function openDetails(id) {
     $("dStatus").value = t.status;
     $("dSub").value = t.subaccountId;
     $("dDetails").value = t.details || "";
+    $("dPriority").value = t.priority || "medium"; // New
+    $("dDate").value = t.dueDate || ""; // New
+    
     if(t.attachmentUrl) { $("dAttachLink").href = t.attachmentUrl; $("dAttachLink").classList.remove("hidden"); $("dAttachLink").classList.add("inline-flex"); } else { $("dAttachLink").classList.add("hidden"); }
     
     if(isClient() && t.status === 'review') { $("clientControls").classList.remove("hidden"); $("expertControls").classList.add("hidden"); } 
@@ -939,10 +920,7 @@ function renderThread(t) {
         const isMe = m.by === USER;
         const msg = document.createElement("div");
         msg.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-3`;
-        msg.innerHTML = `
-            <div class="max-w-[85%] px-4 py-3 rounded-2xl text-sm shadow-sm ${isMe ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white border border-slate-100 rounded-tl-none text-slate-700'}">${linkify(m.text)}</div>
-            <div class="text-[10px] text-slate-400 mt-1 px-1 font-medium">${m.by}</div>
-        `;
+        msg.innerHTML = `<div class="max-w-[85%] px-4 py-3 rounded-2xl text-sm shadow-sm ${isMe ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white border border-slate-100 rounded-tl-none text-slate-700'}">${linkify(m.text)}</div><div class="text-[10px] text-slate-400 mt-1 px-1 font-medium">${m.by}</div>`;
         div.appendChild(msg);
     });
     div.scrollTop = div.scrollHeight;
@@ -973,7 +951,13 @@ async function updateStatus(st) {
 
 $("saveTaskBtn").onclick = async () => {
     if(!currentTaskId) return;
-    await db.collection("workspaces").doc(WS).collection("tasks").doc(currentTaskId).update({ details: clean($("dDetails").value), subaccountId: $("dSub").value, status: $("dStatus").value });
+    await db.collection("workspaces").doc(WS).collection("tasks").doc(currentTaskId).update({ 
+        details: clean($("dDetails").value), 
+        subaccountId: $("dSub").value, 
+        status: $("dStatus").value,
+        priority: $("dPriority").value, // New
+        dueDate: $("dDate").value       // New
+    });
     showToast("Changes Saved");
 };
 
@@ -987,9 +971,7 @@ $("searchInput").addEventListener("input", renderBoard);
 $("notifBtn").onclick = () => $("notifPanel").classList.toggle("hidden");
 
 auth.onAuthStateChanged(u => {
-    if(!u) { 
-        if($("welcomeScreen").classList.contains("hidden")) $("authModal").classList.remove("hidden");
-    }
+    if(!u) { if($("welcomeScreen").classList.contains("hidden")) $("authModal").classList.remove("hidden"); }
 });
 </script>
 </body>

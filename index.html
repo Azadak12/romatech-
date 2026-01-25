@@ -535,7 +535,7 @@ async function authenticate(isRegister) {
   }
 }
 
-// 🟢 SAFE LOAD PROFILE (With Timeout)
+// 🟢 SAFE LOAD PROFILE
 async function loadUserProfile(uid) {
   try {
       const user = auth.currentUser;
@@ -995,17 +995,14 @@ $("searchInput").addEventListener("input", renderBoard);
 $("filterSubaccount").addEventListener("change", renderBoard);
 $("notifBtn").onclick = () => $("notifPanel").classList.toggle("hidden");
 
-// 🟢 SAFE AUTH LISTENER (Prevents double login)
+// 🟢 OPTIMIZED AUTH LISTENER
 auth.onAuthStateChanged(u => {
-    if(!u) {
-        // Show Login UI after delay to prevent flash
-        setTimeout(() => {
-            $("loadingScreen").classList.add("hidden");
-            $("authModal").classList.remove("hidden");
-            $("appContent").classList.add("hidden");
-        }, 1000); 
-    } else {
+    if (u) {
         loadUserProfile(u.uid);
+    } else {
+        $("loadingScreen").classList.add("hidden");
+        $("authModal").classList.remove("hidden");
+        $("appContent").classList.add("hidden");
     }
 });
 

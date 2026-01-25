@@ -6,7 +6,6 @@
   <title>Agency Task Tracker (Branham & Co)</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -15,7 +14,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
   <style>
-    /* --- Modern Typography --- */
+    /* --- Typography & Base --- */
     body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
     
     /* --- Custom Scrollbar --- */
@@ -26,15 +25,17 @@
 
     /* --- Animations --- */
     .fade-in-up { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
-    .fade-in { animation: fadeIn 0.3s ease-out both; }
+    .fade-out { animation: fadeOut 0.4s ease-in forwards; }
+    .fade-in { animation: fadeIn 0.4s ease-out forwards; }
     
     @keyframes fadeInUp { 
       from { opacity: 0; transform: translateY(20px) scale(0.98); } 
       to { opacity: 1; transform: translateY(0) scale(1); } 
     }
+    @keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-    /* Subtle Background Pulse */
+    /* --- Animated Background --- */
     @keyframes bgPulse {
         0% { background-position: 0% 50%; }
         50% { background-position: 100% 50%; }
@@ -57,34 +58,54 @@
     .glass-card {
       background: rgba(255, 255, 255, 0.85);
       border: 1px solid rgba(255, 255, 255, 0.8);
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .glass-card:hover {
       transform: translateY(-3px) scale(1.01);
-      box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.15), 0 8px 10px -2px rgba(99, 102, 241, 0.05);
+      box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.15);
       border-color: #a5b4fc;
     }
 
-    /* --- Sidebar Item Active State --- */
-    .sub-item.active {
-        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-        color: white;
-        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
-        border: none;
-    }
-    .sub-item:not(.active):hover {
-        background: rgba(255,255,255,0.8);
-        transform: translateX(4px);
-    }
+    /* --- Sidebar & UI Elements --- */
+    .sub-item:hover { background: rgba(255,255,255,0.8); transform: translateX(4px); }
+    .sub-item:active { transform: scale(0.98); }
 
-    /* --- Drag & Drop --- */
+    /* Drag & Drop */
     .sortable-ghost { opacity: 0.4; background: #e0e7ff; border: 2px dashed #6366f1; transform: scale(0.95); }
-    .sortable-drag { cursor: grabbing; opacity: 1; transform: scale(1.05) rotate(2deg); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); z-index: 50; }
+    .sortable-drag { cursor: grabbing; opacity: 1; transform: scale(1.05) rotate(2deg); z-index: 50; }
   </style>
 </head>
 
-<body class="min-h-screen text-slate-800 bg-gradient-to-br from-indigo-50 via-slate-50 to-purple-50 animated-bg selection:bg-indigo-100 selection:text-indigo-700">
+<body class="min-h-screen text-slate-800 bg-gradient-to-br from-indigo-50 via-slate-50 to-purple-50 animated-bg selection:bg-indigo-100 selection:text-indigo-700 overflow-hidden">
+
+<div id="welcomeScreen" class="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-slate-900 text-white transition-opacity duration-500">
+  <div class="absolute inset-0 overflow-hidden">
+    <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+    <div class="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-indigo-600 rounded-full blur-[150px] opacity-30"></div>
+    <div class="absolute bottom-[10%] right-[10%] w-[40%] h-[40%] bg-purple-600 rounded-full blur-[150px] opacity-30"></div>
+  </div>
+
+  <div class="relative z-10 text-center space-y-8 p-6">
+    <div class="inline-block p-4 rounded-3xl bg-white/10 backdrop-blur-md border border-white/10 shadow-2xl mb-4">
+       <span class="text-6xl">🚀</span>
+    </div>
+    <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 via-white to-purple-200">
+      TaskFlow
+    </h1>
+    <p class="text-slate-400 text-lg md:text-xl font-light tracking-wide max-w-lg mx-auto">
+      Agency Operations & Client Request Management System
+    </p>
+    
+    <button id="enterBtn" class="group relative px-8 py-4 bg-white text-slate-900 rounded-full font-bold text-lg shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_-15px_rgba(255,255,255,0.5)] transition-all hover:scale-105 active:scale-95">
+      <span class="relative z-10 flex items-center gap-2">
+        Enter Workspace <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+      </span>
+    </button>
+  </div>
+  
+  <div class="absolute bottom-8 text-slate-500 text-xs tracking-widest uppercase">Branham & Co • Internal Tools</div>
+</div>
 
 <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] hidden">
   <div class="fade-in-up flex items-center gap-3 px-6 py-3.5 rounded-full bg-slate-900/90 text-white shadow-2xl backdrop-blur-md">
@@ -97,10 +118,10 @@
   <div class="fade-in-up w-full max-w-md bg-white/90 rounded-[2rem] shadow-2xl border border-white overflow-hidden">
     <div class="p-8 pb-6 border-b border-slate-100 bg-slate-50/50">
       <div class="flex items-center gap-4">
-        <div class="h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-lg shadow-indigo-200 flex items-center justify-center text-white text-2xl">🚀</div>
+        <div class="h-12 w-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-lg shadow-indigo-200 flex items-center justify-center text-white text-xl">⚡</div>
         <div>
-          <h2 class="font-bold text-2xl text-slate-900 tracking-tight">TaskFlow</h2>
-          <p class="text-sm text-slate-500 font-medium">Agency Operations System</p>
+          <h2 class="font-bold text-2xl text-slate-900 tracking-tight">Login</h2>
+          <p class="text-sm text-slate-500 font-medium">Access your dashboard</p>
         </div>
       </div>
     </div>
@@ -108,19 +129,19 @@
     <div class="p-8 space-y-5">
       <div>
         <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Workspace</label>
-        <input id="wsInput" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent block p-3.5 outline-none transition-all" placeholder="e.g. BranhamCo" autocomplete="off">
+        <input id="wsInput" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 block p-3.5 outline-none transition-all" placeholder="e.g. BranhamCo" autocomplete="off">
       </div>
       <div>
         <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Username</label>
-        <input id="usernameInput" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent block p-3.5 outline-none transition-all" placeholder="e.g. branham" autocomplete="username">
+        <input id="usernameInput" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 block p-3.5 outline-none transition-all" placeholder="e.g. branham" autocomplete="username">
       </div>
       <div>
         <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Password</label>
-        <input id="passwordInput" type="password" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent block p-3.5 outline-none transition-all" placeholder="••••••••" autocomplete="current-password">
+        <input id="passwordInput" type="password" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 block p-3.5 outline-none transition-all" placeholder="••••••••" autocomplete="current-password">
       </div>
       <div>
         <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Role</label>
-        <select id="roleInput" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent block p-3.5 outline-none transition-all">
+        <select id="roleInput" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 block p-3.5 outline-none transition-all">
           <option value="client">Agency Owner (Branham)</option>
           <option value="ghl_expert">GHL Expert (Yashfa / Kalam)</option>
           <option value="builder">Builder (Admin)</option>
@@ -139,7 +160,6 @@
 
 <header class="glass-panel sticky top-0 z-40">
   <div class="max-w-[1920px] mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-4 h-16">
-    
     <div class="flex items-center gap-3 pl-2">
       <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 shadow-md shadow-indigo-200 flex items-center justify-center text-white font-bold text-lg">⚡</div>
       <div class="hidden md:block">
@@ -149,17 +169,12 @@
     </div>
 
     <div class="flex items-center gap-4 flex-1 justify-end">
-      
       <div class="relative hidden md:block w-72 group">
         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         </div>
-        <input id="searchInput" type="text" class="block w-full p-2.5 pl-10 text-sm text-slate-700 border border-slate-200 rounded-xl bg-white/50 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all placeholder-slate-400 shadow-sm" placeholder="Search tasks, details...">
+        <input id="searchInput" type="text" class="block w-full p-2.5 pl-10 text-sm text-slate-700 border border-slate-200 rounded-xl bg-white/50 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all placeholder-slate-400 shadow-sm" placeholder="Search tasks...">
       </div>
-
-      <select id="filterSubaccount" class="md:hidden bg-white border border-slate-200 text-slate-700 text-xs rounded-xl focus:ring-indigo-500 block p-2 outline-none max-w-[120px] shadow-sm">
-        <option value="">All Subs</option>
-      </select>
 
       <button id="newTaskBtn" style="display:none;" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-5 rounded-xl text-xs shadow-lg shadow-slate-200 transition-all hover:-translate-y-0.5 active:scale-95 flex items-center gap-2">
         <span class="bg-white/20 rounded-full p-0.5"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg></span>
@@ -167,11 +182,11 @@
       </button>
 
       <div class="relative">
-        <button id="notifBtn" class="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm relative active:scale-95">
+        <button id="notifBtn" class="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-all shadow-sm relative">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
           <span id="notifCount" class="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-rose-500 border border-white hidden"></span>
         </button>
-        <div id="notifPanel" class="hidden absolute right-0 mt-4 w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50 fade-in-up origin-top-right ring-1 ring-black/5">
+        <div id="notifPanel" class="hidden absolute right-0 mt-4 w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50 fade-in-up origin-top-right">
           <div class="px-4 py-3 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
             <h3 class="text-xs font-bold uppercase text-slate-500 tracking-wider">Notifications</h3>
             <button id="markAllReadBtn" class="text-[10px] text-indigo-600 font-bold hover:underline">Clear all</button>
@@ -180,7 +195,7 @@
         </div>
       </div>
 
-      <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 border border-white shadow-sm flex items-center justify-center text-xs font-bold text-slate-600 cursor-pointer hover:ring-2 hover:ring-indigo-500 hover:ring-offset-2 transition-all" id="logoutBtn" title="Logout">
+      <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 border border-white shadow-sm flex items-center justify-center text-xs font-bold text-slate-600 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all" id="logoutBtn" title="Logout">
         <span id="userInitials">?</span>
       </div>
     </div>
@@ -198,8 +213,7 @@
         </div>
         <button id="addSubBtn" class="text-[10px] font-bold bg-white/80 border border-white text-slate-600 hover:text-indigo-600 hover:bg-white rounded-lg px-2.5 py-1.5 transition-all shadow-sm">+ Add</button>
       </div>
-      <div id="subList" class="flex-1 overflow-y-auto p-3 space-y-1.5 custom-scrollbar">
-        </div>
+      <div id="subList" class="flex-1 overflow-y-auto p-3 space-y-1.5 custom-scrollbar"></div>
     </div>
     
     <div class="glass-panel p-4 rounded-2xl flex items-center gap-3 shadow-sm border border-white/60 bg-white/60">
@@ -212,17 +226,82 @@
   </aside>
 
   <section class="flex-1 h-full overflow-x-auto overflow-y-hidden pb-4">
-    <div id="board" class="h-full flex gap-6 min-w-max px-2">
-      </div>
+    <div id="board" class="h-full flex gap-6 min-w-max px-2"></div>
   </section>
-
 </main>
+
+<div id="subDetailsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-md p-4 hidden">
+    <div class="fade-in-up w-full max-w-4xl h-[80vh] bg-slate-50 rounded-[2rem] shadow-2xl flex overflow-hidden border border-white/40">
+        
+        <div class="w-64 bg-white border-r border-slate-200 flex flex-col p-6">
+            <div class="h-16 w-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-3xl mb-4 shadow-lg text-white">📂</div>
+            <h2 id="sdName" class="font-bold text-2xl text-slate-800 mb-1 leading-tight">Sub Name</h2>
+            <p class="text-xs text-slate-400 font-medium mb-8">Client Account Details</p>
+
+            <div class="mt-auto">
+                <button id="btnDeleteSub" class="w-full py-3 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-sm font-bold hover:bg-rose-100 transition shadow-sm flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Delete Account
+                </button>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-lg text-slate-700">Project Progress</h3>
+                <button onclick="$('subDetailsModal').classList.add('hidden')" class="h-8 w-8 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-500 transition">✕</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-6 mb-8">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-xs font-bold text-slate-500 uppercase">Backend / API</span>
+                        <span id="progBackend" class="text-xs font-bold text-indigo-600">0%</span>
+                    </div>
+                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div id="barBackend" class="h-full bg-indigo-500 w-0 transition-all duration-1000"></div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-xs font-bold text-slate-500 uppercase">Frontend / UI</span>
+                        <span id="progFrontend" class="text-xs font-bold text-pink-600">0%</span>
+                    </div>
+                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div id="barFrontend" class="h-full bg-pink-500 w-0 transition-all duration-1000"></div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-xs font-bold text-slate-500 uppercase">AI Agents</span>
+                        <span id="progAI" class="text-xs font-bold text-emerald-600">0%</span>
+                    </div>
+                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div id="barAI" class="h-full bg-emerald-500 w-0 transition-all duration-1000"></div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-xs font-bold text-slate-500 uppercase">Pipeline / Auto</span>
+                        <span id="progPipe" class="text-xs font-bold text-amber-600">0%</span>
+                    </div>
+                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div id="barPipe" class="h-full bg-amber-500 w-0 transition-all duration-1000"></div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="font-bold text-lg text-slate-700 mb-4">Request History</h3>
+            <div id="sdHistoryList" class="space-y-3">
+                </div>
+        </div>
+    </div>
+</div>
 
 <div id="subModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-sm p-4 hidden">
   <div class="fade-in-up w-full max-w-sm bg-white rounded-3xl shadow-2xl p-6 border border-white">
     <h3 class="font-bold text-lg mb-1">Add Subaccount</h3>
-    <p class="text-xs text-slate-500 mb-4">Create a new client bucket.</p>
-    <input id="subNameInput" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Acme Solar - Texas" />
+    <input id="subNameInput" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-3 mt-4 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Acme Solar - Texas" />
     <div class="mt-6 flex justify-end gap-2">
       <button id="closeSubModalBtn" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50">Cancel</button>
       <button id="saveSubBtn" class="px-5 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200">Create</button>
@@ -247,31 +326,42 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div class="space-y-1">
           <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Task Title</label>
-          <input id="tTitle" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow" placeholder="Short summary..." />
+          <input id="tTitle" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Short summary..." />
         </div>
         <div class="space-y-1">
           <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Subaccount</label>
-          <select id="tSub" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white transition-shadow"></select>
+          <select id="tSub" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white"></select>
         </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Category</label>
+          <select id="tCategory" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+             <option value="general">General Request</option>
+             <option value="backend">Backend / API</option>
+             <option value="frontend">Frontend / UI</option>
+             <option value="ai_agent">AI Agent / Bot</option>
+             <option value="pipeline">Pipeline / Automation</option>
+          </select>
+        </div>
+        <div class="space-y-1">
           <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Assign Expert</label>
-          <select id="tAssignee" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white transition-shadow">
+          <select id="tAssignee" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
             <option value="kalam">Kalam</option>
             <option value="yashfa">Yashfa</option>
           </select>
         </div>
-        <div class="space-y-1">
-          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Upload File (Image/PDF/Video)</label>
-          <input type="file" id="tFile" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
-        </div>
+      </div>
+
+      <div class="space-y-1">
+         <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Upload File</label>
+         <input type="file" id="tFile" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-indigo-500 bg-white file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
       </div>
 
       <div class="space-y-1">
         <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Details</label>
-        <textarea id="tDetails" rows="4" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none transition-shadow" placeholder="Describe what needs to be done..."></textarea>
+        <textarea id="tDetails" rows="4" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none" placeholder="Describe what needs to be done..."></textarea>
       </div>
     </div>
 
@@ -284,15 +374,12 @@
 
 <div id="detailsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-sm p-4 hidden">
   <div class="fade-in-up w-full max-w-5xl h-[85vh] bg-white rounded-3xl shadow-2xl flex overflow-hidden border border-white/50">
-    
     <div class="w-full lg:w-1/3 bg-slate-50/80 border-r border-slate-200 flex flex-col">
       <div class="p-6 border-b border-slate-200 bg-white/50">
         <div class="flex justify-between items-start mb-1">
           <div class="flex flex-col">
              <h3 id="dTitle" class="font-bold text-lg text-slate-900 leading-tight">Task Title</h3>
-             <div id="dMeta" class="text-xs font-medium text-slate-500 mt-1 flex items-center gap-2">
-                <span class="h-2 w-2 rounded-full bg-slate-300"></span> Meta info
-             </div>
+             <div id="dMeta" class="text-xs font-medium text-slate-500 mt-1 flex items-center gap-2"></div>
           </div>
           <div class="flex items-center gap-2">
              <button id="btnDeleteTask" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Delete Task">
@@ -301,24 +388,21 @@
              <button id="closeDetailsModal" class="p-2 text-slate-400 hover:text-slate-700 transition">✕</button>
           </div>
         </div>
-        
-        <a id="dAttachLink" href="#" target="_blank" class="hidden mt-3 inline-flex items-center gap-2 px-3 py-2 bg-white text-indigo-600 text-xs font-bold rounded-xl border border-indigo-100 hover:border-indigo-300 shadow-sm transition-all hover:-translate-y-0.5">
-          <span>🔗</span> View Attachment
-        </a>
+        <a id="dAttachLink" href="#" target="_blank" class="hidden mt-3 inline-flex items-center gap-2 px-3 py-2 bg-white text-indigo-600 text-xs font-bold rounded-xl border border-indigo-100 hover:border-indigo-300 shadow-sm transition-all hover:-translate-y-0.5"><span>🔗</span> View Attachment</a>
       </div>
 
       <div class="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
         <div class="space-y-1">
           <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Status</label>
-          <select id="dStatus" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow"></select>
+          <select id="dStatus" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></select>
         </div>
         <div class="space-y-1">
           <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Subaccount</label>
-          <select id="dSub" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow"></select>
+          <select id="dSub" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></select>
         </div>
         <div class="space-y-1">
           <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Description</label>
-          <textarea id="dDetails" rows="6" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 resize-none transition-shadow"></textarea>
+          <textarea id="dDetails" rows="6" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
         </div>
 
         <div id="expertControls" class="grid grid-cols-2 gap-2 pt-2">
@@ -327,16 +411,13 @@
           <button onclick="updateStatus('review')" class="col-span-2 p-3 rounded-xl bg-slate-800 text-white text-xs font-bold hover:bg-slate-900 transition shadow-lg shadow-slate-200">👀 Send for Review</button>
           <button onclick="updateStatus('done')" class="col-span-2 p-3 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition shadow-lg shadow-emerald-200">✅ Mark Done</button>
         </div>
-
         <div id="clientControls" class="hidden grid grid-cols-2 gap-2 pt-2">
           <button onclick="updateStatus('done')" class="col-span-2 p-3 rounded-xl bg-emerald-600 text-white text-sm font-bold shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition">Approve & Close ✅</button>
           <button onclick="updateStatus('clarify')" class="col-span-2 p-3 rounded-xl border border-rose-200 text-rose-600 bg-rose-50 text-sm font-bold hover:bg-rose-100 transition">Request Changes</button>
         </div>
-
         <button id="saveTaskBtn" class="w-full py-3 rounded-xl bg-white border border-indigo-100 text-indigo-600 text-sm font-bold hover:bg-indigo-50 transition mt-2 shadow-sm">Save Edits</button>
       </div>
     </div>
-
     <div class="w-full lg:w-2/3 flex flex-col bg-white">
       <div class="p-4 border-b border-slate-100 bg-slate-50/30 flex items-center gap-2">
         <span class="text-lg">💬</span>
@@ -358,11 +439,7 @@
    ⚡️ CONFIGURATION
    ================================================================= */
 const EMAIL_WEBHOOK_URL = "https://jalil3-sherani.app.n8n.cloud/webhook/task-notification"; 
-
-const EXPERT_EMAILS = {
-    "kalam": "kalamshar786@gmail.com",
-    "yashfa": "missperfect.mine@gmail.com"
-};
+const EXPERT_EMAILS = { "kalam": "kalamshar786@gmail.com", "yashfa": "missperfect.mine@gmail.com" };
 
 /* =========================
    FIREBASE INIT
@@ -406,22 +483,13 @@ function showToast(msg) {
 
 async function notifyWebhook(actionType, taskTitle, details, targetUser, attachmentUrl) {
     if(!EMAIL_WEBHOOK_URL) return;
-
     const recipient = EXPERT_EMAILS[targetUser] || "kalamshar786@gmail.com";
     const bodyText = `Action by: ${USER} (${ROLE})\n\n${details}\n\n${attachmentUrl ? "📎 File: " + attachmentUrl : ""}`;
-
     try {
         await fetch(EMAIL_WEBHOOK_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                recipient: recipient,
-                subject: `[Tracker] ${actionType}: ${taskTitle}`,
-                message: bodyText,
-                sentAt: new Date().toLocaleString()
-            })
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ recipient, subject: `[Tracker] ${actionType}: ${taskTitle}`, message: bodyText, sentAt: new Date().toLocaleString() })
         });
-        console.log(`📧 Email triggered to: ${recipient}`);
     } catch(e) { console.error(e); }
 }
 
@@ -429,24 +497,34 @@ async function notifyWebhook(actionType, taskTitle, details, targetUser, attachm
 let WS = null, USER = null, ROLE = null, UID = null;
 let subaccounts = [], tasks = [], notifications = [];
 let currentTaskId = null;
+let currentSubId = null; // For Subaccount Details Modal
 
 const COLUMNS = [
-  { id: "requested", label: "Requested", color: "bg-sky-500", light: "bg-sky-50" },
-  { id: "clarify", label: "Clarification", color: "bg-amber-500", light: "bg-amber-50" },
-  { id: "progress", label: "In Progress", color: "bg-indigo-500", light: "bg-indigo-50" },
-  { id: "review", label: "Client Review", color: "bg-fuchsia-500", light: "bg-fuchsia-50" },
-  { id: "done", label: "Done", color: "bg-emerald-500", light: "bg-emerald-50" }
+  { id: "requested", label: "Requested", color: "bg-sky-500" },
+  { id: "clarify", label: "Clarification", color: "bg-amber-500" },
+  { id: "progress", label: "In Progress", color: "bg-indigo-500" },
+  { id: "review", label: "Client Review", color: "bg-fuchsia-500" },
+  { id: "done", label: "Done", color: "bg-emerald-500" }
 ];
 
 const isBuilder = () => ROLE === "builder";
-const isExpert = () => ROLE === "ghl_expert";
 const isClient = () => ROLE === "client";
 const canCreate = () => isClient() || isBuilder();
-const canAddSub = () => true;
 
 /* =========================
-   AUTH
+   WELCOME SCREEN & AUTH
 ========================= */
+// Initial State: Welcome Screen is visible.
+$("enterBtn").onclick = () => {
+    const ws = $("welcomeScreen");
+    ws.classList.add("fade-out");
+    setTimeout(() => {
+        ws.classList.add("hidden");
+        // After welcome fades, check auth state handled by onAuthStateChanged
+        if(!auth.currentUser) $("authModal").classList.remove("hidden");
+    }, 400);
+};
+
 async function authenticate(isRegister) {
   const ws = clean($("wsInput").value);
   const username = clean($("usernameInput").value).toLowerCase();
@@ -482,9 +560,7 @@ async function loadUserProfile(ws, username, uid) {
   $("userBadge").textContent = USER;
   $("wsBadge").textContent = WS;
   $("userInitials").textContent = USER.substring(0,2).toUpperCase();
-
   $("newTaskBtn").style.display = canCreate() ? "flex" : "none";
-  $("addSubBtn").style.display = canAddSub() ? "block" : "none";
   
   initRealtime();
 }
@@ -510,14 +586,8 @@ function initRealtime() {
     tasks = snap.docs.map(d => ({id: d.id, ...d.data()}));
     renderBoard();
     renderSubs(); 
-    if (currentTaskId) {
-      const t = tasks.find(x => x.id === currentTaskId);
-      if (t) renderDetails(t);
-      else {
-          $("detailsModal").classList.add("hidden");
-          currentTaskId = null;
-      }
-    }
+    if (currentTaskId) { const t = tasks.find(x => x.id === currentTaskId); if(t) renderDetails(t); else { $("detailsModal").classList.add("hidden"); currentTaskId = null; } }
+    if (currentSubId && !$("subDetailsModal").classList.contains("hidden")) { renderSubDetails(currentSubId); }
   });
 
   // NOTIFS
@@ -529,7 +599,6 @@ function initRealtime() {
 
 function updateDropdowns() {
   const opts = subaccounts.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
-  $("filterSubaccount").innerHTML = `<option value="">All Subs</option>` + opts;
   $("tSub").innerHTML = opts;
   $("dSub").innerHTML = opts;
   $("dStatus").innerHTML = COLUMNS.map(c => `<option value="${c.id}">${c.label}</option>`).join("");
@@ -538,34 +607,18 @@ function updateDropdowns() {
 function renderSubs() {
   const list = $("subList");
   list.innerHTML = "";
-  
-  if (subaccounts.length === 0) { 
-    list.innerHTML = `<div class="text-xs text-slate-400 p-4 text-center italic border-2 border-dashed border-slate-200 rounded-xl m-2">No subaccounts yet.</div>`; 
-    return; 
-  }
-
-  const currentFilter = $("filterSubaccount").value;
+  if (subaccounts.length === 0) { list.innerHTML = `<div class="text-xs text-slate-400 p-4 text-center italic border-2 border-dashed border-slate-200 rounded-xl m-2">No subaccounts yet.</div>`; return; }
 
   subaccounts.forEach(s => {
      const open = tasks.filter(t => t.subaccountId === s.id && t.status !== 'done').length;
-     const isActive = currentFilter === s.id;
-
      const btn = document.createElement("button");
-     btn.className = `sub-item w-full text-left px-4 py-3.5 rounded-2xl text-sm font-medium flex justify-between items-center transition-all duration-300 group ${isActive ? 'active' : 'text-slate-600 bg-white/50 border border-white/50 hover:bg-white hover:shadow-md'}`;
-     
+     btn.className = `sub-item w-full text-left px-4 py-3.5 rounded-2xl text-sm font-medium flex justify-between items-center transition-all duration-300 group text-slate-600 bg-white/50 border border-white/50 hover:bg-white hover:shadow-md`;
      btn.innerHTML = `
-        <span class="truncate mr-2 font-semibold tracking-tight ${isActive ? 'text-white' : 'group-hover:text-indigo-600'}">${escapeHtml(s.name)}</span> 
-        ${open > 0 
-           ? `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-sm ${isActive ? 'bg-white text-indigo-600' : 'bg-indigo-600 text-white'}">${open}</span>` 
-           : `<span class="h-5 w-5 rounded-full flex items-center justify-center ${isActive ? 'bg-indigo-500/30' : 'bg-slate-100'}"><svg class="w-3 h-3 ${isActive ? 'text-white' : 'text-slate-300'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></span>`
-        }
+        <span class="truncate mr-2 font-semibold tracking-tight group-hover:text-indigo-600">${escapeHtml(s.name)}</span> 
+        ${open > 0 ? `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-sm bg-indigo-600 text-white">${open}</span>` : `<span class="h-5 w-5 rounded-full flex items-center justify-center bg-slate-100 text-slate-300">➜</span>`}
      `;
-     
-     btn.onclick = () => { 
-         $("filterSubaccount").value = s.id; 
-         renderBoard(); 
-         renderSubs();
-     };
+     // NEW: Click opens Subaccount Details Dashboard
+     btn.onclick = () => openSubDetails(s.id);
      list.appendChild(btn);
   });
 }
@@ -573,21 +626,17 @@ function renderSubs() {
 function renderBoard() {
   const board = $("board");
   board.innerHTML = "";
-  const filterSub = $("filterSubaccount").value;
   const search = $("searchInput").value.toLowerCase();
   
   const filtered = tasks.filter(t => {
-    if (filterSub && t.subaccountId !== filterSub) return false;
     if (search && !t.title.toLowerCase().includes(search)) return false;
     return true;
   });
 
   COLUMNS.forEach(col => {
     const colTasks = filtered.filter(t => (t.status || 'requested') === col.id);
-    
     const colDiv = document.createElement("div");
     colDiv.className = "w-80 shrink-0 flex flex-col h-full rounded-[1.5rem] bg-white/40 border border-white/60 shadow-inner overflow-hidden backdrop-blur-sm";
-    
     colDiv.innerHTML = `
       <div class="p-4 flex items-center justify-between shrink-0 border-b border-white/40">
          <div class="flex items-center gap-2.5">
@@ -596,44 +645,37 @@ function renderBoard() {
          </div>
          <span class="text-[10px] font-bold text-slate-500 bg-white/80 px-2.5 py-1 rounded-full shadow-sm ring-1 ring-slate-100">${colTasks.length}</span>
       </div>
-      <div class="flex-1 overflow-y-auto px-3 pb-3 space-y-3 pt-3 scroll-smooth custom-scrollbar" id="col_${col.id}" data-status="${col.id}">
-      </div>
+      <div class="flex-1 overflow-y-auto px-3 pb-3 space-y-3 pt-3 scroll-smooth custom-scrollbar" id="col_${col.id}" data-status="${col.id}"></div>
     `;
-    
     const zone = colDiv.querySelector(`#col_${col.id}`);
-    
     colTasks.forEach(t => {
        const subName = subaccounts.find(s => s.id === t.subaccountId)?.name || "—";
        const card = document.createElement("div");
        card.className = "glass-card p-4 rounded-2xl cursor-pointer relative group";
        card.setAttribute("data-id", t.id);
-       
        card.innerHTML = `
          <div class="flex justify-between items-start mb-2.5">
             <span class="text-[9px] font-bold text-indigo-600 bg-indigo-50/80 px-2 py-1 rounded-lg border border-indigo-100 truncate max-w-[140px] uppercase tracking-wide backdrop-blur-sm">${escapeHtml(subName)}</span>
-            <div class="h-6 w-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 border border-white shadow-sm ring-1 ring-slate-100" title="Assignee">
+            <div class="h-6 w-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 border border-white shadow-sm ring-1 ring-slate-100">
                 ${t.assigneeUsername ? t.assigneeUsername.charAt(0).toUpperCase() : '?'}
             </div>
          </div>
          <h4 class="font-bold text-sm text-slate-800 leading-snug mb-3 pr-2 group-hover:text-indigo-600 transition-colors">${escapeHtml(t.title)}</h4>
-         
+         ${t.category ? `<div class="text-[10px] text-slate-400 mb-2 font-mono">#${t.category}</div>` : ''}
          <div class="flex items-center justify-between pt-3 border-t border-slate-100/50">
              <div class="flex items-center gap-2">
-                ${t.attachmentUrl ? `<span class="text-xs bg-slate-100 p-1 rounded-md" title="Has attachment">📎</span>` : ''}
+                ${t.attachmentUrl ? `<span class="text-xs bg-slate-100 p-1 rounded-md">📎</span>` : ''}
                 <span class="text-[10px] text-slate-400 font-medium">${new Date(t.createdAt?.seconds * 1000 || Date.now()).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>
              </div>
              <div class="flex items-center gap-1.5 text-slate-400 group-hover:text-indigo-500 transition-colors bg-slate-50 px-2 py-0.5 rounded-full">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                <span class="text-[10px] font-bold">${(t.messages||[]).length}</span>
+                <span class="text-[10px] font-bold">💬 ${(t.messages||[]).length}</span>
              </div>
          </div>
        `;
        card.addEventListener('click', () => openDetails(t.id));
        zone.appendChild(card);
     });
-    
     board.appendChild(colDiv);
-
     new Sortable(zone, {
         group: 'shared', animation: 200, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', delay: 100, delayOnTouchOnly: true,
         onEnd: function (evt) {
@@ -642,8 +684,7 @@ function renderBoard() {
             if (newStatus !== evt.from.getAttribute('data-status')) {
                 const t = tasks.find(x => x.id === taskId);
                 db.collection("workspaces").doc(WS).collection("tasks").doc(taskId).update({status: newStatus});
-                const target = t.assigneeUsername || "kalam";
-                notifyWebhook("Status Change", t?.title || "Task", `Moved to ${newStatus}`, target, t.attachmentUrl);
+                notifyWebhook("Status Change", t?.title, `Moved to ${newStatus}`, t?.assigneeUsername, t?.attachmentUrl);
                 showToast(`Moved to ${newStatus}`);
             }
         }
@@ -656,35 +697,91 @@ function renderNotifs() {
   list.innerHTML = "";
   const unread = notifications.filter(n => !n.read).length;
   const badge = $("notifCount");
-  
-  if (unread > 0) {
-      badge.textContent = ""; 
-      badge.classList.remove("hidden");
-      badge.classList.add("animate-pulse");
-  } else {
-      badge.classList.add("hidden");
-  }
-
-  if(notifications.length === 0) { 
-      list.innerHTML = `<div class="p-6 text-center text-xs text-slate-400 italic">No notifications yet.</div>`; 
-      return; 
-  }
-
+  if (unread > 0) { badge.textContent = ""; badge.classList.remove("hidden"); badge.classList.add("animate-pulse"); } else { badge.classList.add("hidden"); }
+  if(notifications.length === 0) { list.innerHTML = `<div class="p-6 text-center text-xs text-slate-400 italic">No notifications yet.</div>`; return; }
   notifications.forEach(n => {
      const div = document.createElement("div");
      div.className = `p-3 border-b border-slate-50 text-xs cursor-pointer transition-colors hover:bg-slate-50 ${n.read ? 'opacity-60 bg-white' : 'bg-indigo-50/30'}`;
-     div.innerHTML = `
-        <div class="flex gap-2">
-            <div class="mt-0.5 h-2 w-2 rounded-full ${n.read ? 'bg-transparent' : 'bg-indigo-500'} shrink-0"></div>
-            <div>
-                <div class="font-bold ${n.read?'text-slate-700':'text-indigo-700'}">${escapeHtml(n.title)}</div>
-                <div class="text-slate-500 truncate mt-0.5">${escapeHtml(n.body)}</div>
-            </div>
-        </div>`;
+     div.innerHTML = `<div class="font-bold ${n.read?'text-slate-700':'text-indigo-700'}">${escapeHtml(n.title)}</div><div class="text-slate-500 truncate mt-0.5">${escapeHtml(n.body)}</div>`;
      div.onclick = async () => { await db.collection("workspaces").doc(WS).collection("notifications").doc(n.id).update({read:true}); if(n.taskId) openDetails(n.taskId); };
      list.appendChild(div);
   });
 }
+
+/* =========================
+   SUBACCOUNT DETAILS DASHBOARD
+========================= */
+function openSubDetails(subId) {
+    currentSubId = subId;
+    renderSubDetails(subId);
+    $("subDetailsModal").classList.remove("hidden");
+    $("subDetailsModal").classList.add("flex");
+}
+
+function renderSubDetails(subId) {
+    const sub = subaccounts.find(s => s.id === subId);
+    if (!sub) return;
+    
+    $("sdName").textContent = sub.name;
+
+    // Filter tasks for this subaccount
+    const subTasks = tasks.filter(t => t.subaccountId === subId);
+    const total = subTasks.length;
+
+    // Calculate Progress by Category
+    const calcProgress = (cat) => {
+        const catTasks = subTasks.filter(t => t.category === cat);
+        if (catTasks.length === 0) return 0;
+        const done = catTasks.filter(t => t.status === 'done').length;
+        return Math.round((done / catTasks.length) * 100);
+    };
+
+    const cats = {
+        backend: calcProgress('backend'),
+        frontend: calcProgress('frontend'),
+        ai_agent: calcProgress('ai_agent'),
+        pipeline: calcProgress('pipeline')
+    };
+
+    $("progBackend").textContent = `${cats.backend}%`; $("barBackend").style.width = `${cats.backend}%`;
+    $("progFrontend").textContent = `${cats.frontend}%`; $("barFrontend").style.width = `${cats.frontend}%`;
+    $("progAI").textContent = `${cats.ai_agent}%`; $("barAI").style.width = `${cats.ai_agent}%`;
+    $("progPipe").textContent = `${cats.pipeline}%`; $("barPipe").style.width = `${cats.pipeline}%`;
+
+    // Render History List
+    const list = $("sdHistoryList");
+    list.innerHTML = "";
+    if(subTasks.length === 0) { list.innerHTML = `<div class="text-center text-slate-400 text-sm py-4">No requests found.</div>`; }
+    
+    subTasks.forEach(t => {
+        const div = document.createElement("div");
+        div.className = "flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl hover:shadow-md transition cursor-pointer";
+        const statusColors = { requested:'bg-sky-100 text-sky-700', done:'bg-emerald-100 text-emerald-700', progress:'bg-indigo-100 text-indigo-700', clarify:'bg-amber-100 text-amber-700', review:'bg-fuchsia-100 text-fuchsia-700' };
+        
+        div.innerHTML = `
+            <div>
+                <div class="font-bold text-slate-800 text-sm">${escapeHtml(t.title)}</div>
+                <div class="text-[10px] text-slate-400 mt-1">${new Date(t.createdAt?.seconds*1000).toLocaleDateString()} • #${t.category||'general'}</div>
+            </div>
+            <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${statusColors[t.status]||'bg-slate-100'}">${t.status}</span>
+        `;
+        div.onclick = () => { $("subDetailsModal").classList.add("hidden"); openDetails(t.id); };
+        list.appendChild(div);
+    });
+}
+
+// 🔴 Delete Subaccount Logic
+$("btnDeleteSub").onclick = async () => {
+    if(!confirm(`Are you sure you want to DELETE ${$("sdName").textContent}? This cannot be undone.`)) return;
+    
+    // Optional: Delete all tasks associated? Or keep them orphaned? 
+    // For safety, we just delete the subaccount ref. Tasks remain but won't show in filtered views properly.
+    await db.collection("workspaces").doc(WS).collection("subaccounts").doc(currentSubId).delete();
+    
+    $("subDetailsModal").classList.add("hidden");
+    showToast("Subaccount Deleted");
+};
+
 
 /* =========================
    ACTIONS
@@ -706,35 +803,29 @@ $("newTaskBtn").onclick = () => {
 $("closeTaskModal").onclick = () => $("taskModal").classList.add("hidden");
 $("cancelTaskBtn").onclick = () => $("taskModal").classList.add("hidden");
 
-// 🟢 UPLOAD + CREATE TASK
+// 🟢 CREATE TASK with Category
 $("createTaskBtn").onclick = async () => {
     const title = clean($("tTitle").value);
     const subId = $("tSub").value;
+    const category = $("tCategory").value; // New
     const assignee = clean($("tAssignee").value);
     const details = clean($("tDetails").value);
     const file = $("tFile").files[0];
     let attachmentUrl = "";
 
     if(!title || !subId || !assignee) return alert("Title, Subaccount, and Assignee are required.");
-
-    // Disable button to prevent double-clicks
-    const btn = $("createTaskBtn");
-    btn.disabled = true;
-    btn.textContent = "Processing...";
+    const btn = $("createTaskBtn"); btn.disabled = true; btn.textContent = "Processing...";
 
     if (file) {
         try {
             const ref = storage.ref(`workspaces/${WS}/files/${Date.now()}_${file.name}`);
             await ref.put(file);
             attachmentUrl = await ref.getDownloadURL();
-        } catch(e) {
-            console.error("Upload failed", e);
-            alert("File upload failed. Task created without file.");
-        }
+        } catch(e) { console.error("Upload failed", e); }
     }
 
     const ref = await db.collection("workspaces").doc(WS).collection("tasks").add({
-        title, details, subaccountId: subId, assigneeUsername: assignee, attachmentUrl,
+        title, details, subaccountId: subId, category, assigneeUsername: assignee, attachmentUrl,
         status: 'requested', createdBy: USER, createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         messages: [{by: USER, role: ROLE, text: "Request created.", at: nowISO()}]
     });
@@ -747,8 +838,7 @@ $("createTaskBtn").onclick = async () => {
     
     $("taskModal").classList.add("hidden");
     $("tTitle").value = ""; $("tDetails").value = ""; $("tFile").value = "";
-    btn.disabled = false;
-    btn.textContent = "Create & Notify";
+    btn.disabled = false; btn.textContent = "Create & Notify";
     showToast("Task Created");
 };
 
@@ -758,7 +848,7 @@ function openDetails(id) {
     if(!t) return;
     $("detailsModal").classList.remove("hidden"); $("detailsModal").classList.add("flex");
     $("dTitle").textContent = t.title;
-    $("dMeta").textContent = `@${t.assigneeUsername} • Created by ${t.createdBy || '?'}`;
+    $("dMeta").textContent = `@${t.assigneeUsername} • ${t.category||'general'} • Created by ${t.createdBy || '?'}`;
     $("dStatus").value = t.status;
     $("dSub").value = t.subaccountId;
     $("dDetails").value = t.details || "";
@@ -771,13 +861,11 @@ function openDetails(id) {
 
 $("closeDetailsModal").onclick = () => { $("detailsModal").classList.add("hidden"); currentTaskId = null; };
 
-// 🔴 DELETE ACTION
 $("btnDeleteTask").onclick = async () => {
     if(!currentTaskId) return;
     if(confirm("Are you sure you want to delete this task permanently?")) {
         const t = tasks.find(x => x.id === currentTaskId);
-        notifyWebhook("Task Deleted", t?.title || "Deleted Task", "Task was permanently deleted.", t?.assigneeUsername, "");
-        
+        notifyWebhook("Task Deleted", t?.title, "Deleted", t?.assigneeUsername, "");
         await db.collection("workspaces").doc(WS).collection("tasks").doc(currentTaskId).delete();
         showToast("Task Deleted");
         $("detailsModal").classList.add("hidden");
@@ -797,9 +885,7 @@ function renderThread(t) {
         const msg = document.createElement("div");
         msg.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-3`;
         msg.innerHTML = `
-            <div class="max-w-[85%] px-4 py-3 rounded-2xl text-sm shadow-sm ${isMe ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white border border-slate-100 rounded-tl-none text-slate-700'}">
-               ${linkify(m.text)}
-            </div>
+            <div class="max-w-[85%] px-4 py-3 rounded-2xl text-sm shadow-sm ${isMe ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white border border-slate-100 rounded-tl-none text-slate-700'}">${linkify(m.text)}</div>
             <div class="text-[10px] text-slate-400 mt-1 px-1 font-medium">${m.by}</div>
         `;
         div.appendChild(msg);
@@ -814,15 +900,10 @@ $("sendMsgBtn").onclick = async () => {
     const msgs = [...(t.messages||[]), {by: USER, role: ROLE, text: txt, at: nowISO()}];
     await db.collection("workspaces").doc(WS).collection("tasks").doc(currentTaskId).update({messages: msgs});
     $("msgInput").value = "";
-    
-    // Notify target
     const target = t.assigneeUsername || "kalam";
     notifyWebhook("New Comment", t.title, `${USER}: ${txt}`, target, "");
-
     if(t.assigneeUsername !== USER) {
-        await db.collection("workspaces").doc(WS).collection("notifications").add({
-           toUsername: t.assigneeUsername, title: "New Comment", body: `${USER} commented on ${t.title}`, taskId: t.id, read: false, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        await db.collection("workspaces").doc(WS).collection("notifications").add({ toUsername: t.assigneeUsername, title: "New Comment", body: `${USER} commented on ${t.title}`, taskId: t.id, read: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
     }
 };
 
@@ -830,19 +911,14 @@ async function updateStatus(st) {
     if(!currentTaskId) return;
     const t = tasks.find(x => x.id === currentTaskId);
     await db.collection("workspaces").doc(WS).collection("tasks").doc(currentTaskId).update({status: st});
-    
-    const target = t.assigneeUsername || "kalam";
-    notifyWebhook("Status Change", t.title, `Moved to ${st}`, target, "");
-    
+    notifyWebhook("Status Change", t.title, `Moved to ${st}`, t.assigneeUsername, "");
     showToast("Status Updated");
     if(st === 'done') $("detailsModal").classList.add("hidden");
 }
 
 $("saveTaskBtn").onclick = async () => {
     if(!currentTaskId) return;
-    await db.collection("workspaces").doc(WS).collection("tasks").doc(currentTaskId).update({
-        details: clean($("dDetails").value), subaccountId: $("dSub").value, status: $("dStatus").value
-    });
+    await db.collection("workspaces").doc(WS).collection("tasks").doc(currentTaskId).update({ details: clean($("dDetails").value), subaccountId: $("dSub").value, status: $("dStatus").value });
     showToast("Changes Saved");
 };
 
@@ -853,12 +929,13 @@ $("markAllReadBtn").onclick = async () => {
 }
 
 $("searchInput").addEventListener("input", renderBoard);
-$("filterSubaccount").addEventListener("change", renderBoard);
 $("notifBtn").onclick = () => $("notifPanel").classList.toggle("hidden");
 
 auth.onAuthStateChanged(u => {
-    if(!u) $("authModal").classList.remove("hidden");
-    else if(localStorage.getItem('sct_session_v1')) { /* restore logic */ }
+    if(!u) { 
+        // Logic handled by Welcome Screen fade out mostly, but ensure:
+        if($("welcomeScreen").classList.contains("hidden")) $("authModal").classList.remove("hidden");
+    }
 });
 </script>
 </body>

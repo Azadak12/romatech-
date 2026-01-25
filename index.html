@@ -46,23 +46,23 @@
 
     /* --- Glassmorphism --- */
     .glass-panel {
-      background: rgba(255, 255, 255, 0.65);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 255, 255, 0.6);
       box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
     }
     
     .glass-card {
-      background: rgba(255, 255, 255, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.8);
+      background: #ffffff; /* Cleaner white for better contrast */
+      border: 1px solid rgba(226, 232, 240, 0.8);
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .glass-card:hover {
-      transform: translateY(-3px) scale(1.01);
-      box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.15);
-      border-color: #a5b4fc;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.15);
+      border-color: #818cf8;
     }
 
     /* --- Sidebar Item Logic --- */
@@ -70,9 +70,9 @@
 
     /* Active State (Selected for filtering) */
     .sub-item-main.active {
-        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+        background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
         color: white !important;
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
         border: none;
     }
 
@@ -105,10 +105,10 @@
   </div>
 
   <div class="relative z-10 text-center space-y-8 p-6">
-    <div class="inline-block p-4 rounded-3xl bg-white/10 backdrop-blur-md border border-white/10 shadow-2xl mb-4">
-       <span class="text-6xl">🚀</span>
+    <div class="inline-block p-5 rounded-3xl bg-indigo-600 shadow-2xl mb-4 text-white">
+       <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
     </div>
-    <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 via-white to-purple-200">TaskFlow</h1>
+    <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-white drop-shadow-sm">TaskFlow</h1>
     <p class="text-slate-400 text-lg md:text-xl font-light tracking-wide max-w-lg mx-auto">Agency Operations & Client Request Management System</p>
     <button id="enterBtn" class="group relative px-8 py-4 bg-white text-slate-900 rounded-full font-bold text-lg shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_-15px_rgba(255,255,255,0.5)] transition-all hover:scale-105 active:scale-95">
       <span class="relative z-10 flex items-center gap-2">Enter Workspace <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg></span>
@@ -125,10 +125,12 @@
 </div>
 
 <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 hidden">
-  <div class="fade-in-up w-full max-w-md bg-white/90 rounded-[2rem] shadow-2xl border border-white overflow-hidden">
+  <div class="fade-in-up w-full max-w-md bg-white rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden">
     <div class="p-8 pb-6 border-b border-slate-100 bg-slate-50/50">
       <div class="flex items-center gap-4">
-        <div class="h-12 w-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-lg shadow-indigo-200 flex items-center justify-center text-white text-xl">⚡</div>
+        <div class="h-12 w-12 rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-200 flex items-center justify-center text-white">
+             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+        </div>
         <div>
           <h2 class="font-bold text-2xl text-slate-900 tracking-tight">Login</h2>
           <p class="text-sm text-slate-500 font-medium">Access your dashboard</p>
@@ -169,7 +171,9 @@
 <header class="glass-panel sticky top-0 z-40">
   <div class="max-w-[1920px] mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-4 h-16">
     <div class="flex items-center gap-3 pl-2">
-      <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 shadow-md shadow-indigo-200 flex items-center justify-center text-white font-bold text-lg">⚡</div>
+      <div class="h-9 w-9 rounded-xl bg-indigo-600 shadow-md shadow-indigo-200 flex items-center justify-center text-white">
+           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+      </div>
       <div class="hidden md:block">
         <h1 class="text-sm font-extrabold text-slate-900 leading-none tracking-tight">TaskFlow</h1>
         <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-0.5">Branham & Co</p>
@@ -196,7 +200,7 @@
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
           <span id="notifCount" class="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-rose-500 border border-white hidden"></span>
         </button>
-        <div id="notifPanel" class="hidden absolute right-0 mt-4 w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50 fade-in-up origin-top-right">
+        <div id="notifPanel" class="hidden absolute right-0 mt-4 w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50 fade-in-up origin-top-right ring-1 ring-black/5">
           <div class="px-4 py-3 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
             <h3 class="text-xs font-bold uppercase text-slate-500 tracking-wider">Notifications</h3>
             <button id="markAllReadBtn" class="text-[10px] text-indigo-600 font-bold hover:underline">Clear all</button>
@@ -205,8 +209,8 @@
         </div>
       </div>
 
-      <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 border border-white shadow-sm flex items-center justify-center text-xs font-bold text-slate-600 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all" id="logoutBtn" title="Logout">
-        <span id="userInitials">?</span>
+      <div class="h-9 w-9 rounded-xl border border-slate-200 shadow-sm flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all overflow-hidden bg-slate-100" id="logoutBtn" title="Logout">
+        <img id="userAvatar" class="w-full h-full object-cover" src="" alt="User" />
       </div>
     </div>
   </div>
@@ -217,9 +221,9 @@
   <aside class="hidden lg:flex flex-col w-72 shrink-0 h-full gap-4 pb-2">
     <div class="glass-panel flex-1 rounded-3xl flex flex-col overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       <div class="p-5 border-b border-white/50 flex items-center justify-between bg-white/30 backdrop-blur-md">
-        <div class="flex items-center gap-2">
-            <span class="text-lg">📂</span>
-            <h2 class="font-bold text-sm text-slate-800">Subaccounts</h2>
+        <div class="flex items-center gap-2 text-slate-700">
+             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+            <h2 class="font-bold text-sm">Subaccounts</h2>
         </div>
         <button id="addSubBtn" class="text-[10px] font-bold bg-white/80 border border-white text-slate-600 hover:text-indigo-600 hover:bg-white rounded-lg px-2.5 py-1.5 transition-all shadow-sm">+ Add</button>
       </div>
@@ -227,7 +231,9 @@
     </div>
     
     <div class="glass-panel p-4 rounded-2xl flex items-center gap-3 shadow-sm border border-white/60 bg-white/60">
-      <div class="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-md">👤</div>
+      <div class="h-10 w-10 rounded-full bg-slate-200 overflow-hidden shadow-sm">
+          <img id="userBadgeAvatar" class="w-full h-full object-cover" src="" />
+      </div>
       <div class="min-w-0">
         <div id="userBadge" class="font-bold text-sm text-slate-900 truncate">Loading...</div>
         <div id="wsBadge" class="text-xs text-slate-500 truncate opacity-80">Workspace</div>
@@ -240,10 +246,12 @@
   </section>
 </main>
 
-<div id="subDetailsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-md p-4 hidden">
+<div id="subDetailsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-md p-4 hidden" onclick="if(event.target===this) this.classList.add('hidden')">
     <div class="fade-in-up w-full max-w-4xl h-[80vh] bg-slate-50 rounded-[2rem] shadow-2xl flex overflow-hidden border border-white/40">
         <div class="w-72 bg-white border-r border-slate-200 flex flex-col p-6">
-            <div class="h-16 w-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-3xl mb-4 shadow-lg text-white">⚙️</div>
+            <div class="h-14 w-14 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mb-4 shadow-sm">
+                 <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            </div>
             <h2 class="font-bold text-lg text-slate-800 mb-1">Manage Subaccount</h2>
             <p class="text-xs text-slate-400 font-medium mb-6">Edit settings or delete.</p>
             <div class="space-y-4 mb-auto">
@@ -286,7 +294,7 @@
     </div>
 </div>
 
-<div id="subModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-sm p-4 hidden">
+<div id="subModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-sm p-4 hidden" onclick="if(event.target===this) this.classList.add('hidden')">
   <div class="fade-in-up w-full max-w-sm bg-white rounded-3xl shadow-2xl p-6 border border-white">
     <h3 class="font-bold text-lg mb-1">Add Subaccount</h3>
     <input id="subNameInput" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-3 mt-4 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Acme Solar - Texas" />
@@ -297,11 +305,13 @@
   </div>
 </div>
 
-<div id="taskModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-sm p-4 hidden">
+<div id="taskModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-sm p-4 hidden" onclick="if(event.target===this) this.classList.add('hidden')">
   <div class="fade-in-up w-full max-w-2xl bg-white rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-white/50">
     <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
       <div class="flex items-center gap-3">
-        <div class="h-8 w-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg">📝</div>
+        <div class="h-8 w-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+        </div>
         <div>
             <h3 class="font-bold text-lg text-slate-900">New Request</h3>
             <p class="text-xs text-slate-500">Submit a task for the GHL Expert</p>
@@ -375,7 +385,7 @@
   </div>
 </div>
 
-<div id="detailsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-sm p-4 hidden">
+<div id="detailsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-sm p-4 hidden" onclick="if(event.target===this) this.classList.add('hidden')">
   <div class="fade-in-up w-full max-w-5xl h-[85vh] bg-white rounded-3xl shadow-2xl flex overflow-hidden border border-white/50">
     <div class="w-full lg:w-1/3 bg-slate-50/80 border-r border-slate-200 flex flex-col">
       <div class="p-6 border-b border-slate-200 bg-white/50">
@@ -500,6 +510,11 @@ function showToast(msg) {
   window.toastTimer = setTimeout(() => t.classList.add("hidden"), 2500);
 }
 
+// Generate Avatar URL
+function getAvatar(name) {
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&bold=true`;
+}
+
 async function notifyWebhook(actionType, taskTitle, details, targetUser, attachmentUrl) {
     if(!EMAIL_WEBHOOK_URL) return;
     const recipient = EXPERT_EMAILS[targetUser] || "kalamshar786@gmail.com";
@@ -576,7 +591,12 @@ async function loadUserProfile(ws, username, uid) {
   $("authModal").classList.add("hidden");
   $("userBadge").textContent = USER;
   $("wsBadge").textContent = WS;
-  $("userInitials").textContent = USER.substring(0,2).toUpperCase();
+  
+  // NEW: Set Avatars
+  const av = getAvatar(USER);
+  $("userAvatar").src = av;
+  $("userBadgeAvatar").src = av;
+
   $("newTaskBtn").style.display = canCreate() ? "flex" : "none";
   initRealtime();
 }
@@ -644,7 +664,7 @@ function renderSubs() {
 
      const settingsBtn = document.createElement("button");
      settingsBtn.className = `settings-btn h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all`;
-     settingsBtn.innerHTML = `<span class="text-lg">⚙️</span>`; 
+     settingsBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>`; 
      settingsBtn.onclick = (e) => { e.stopPropagation(); openSubDetails(s.id); };
 
      container.appendChild(btn);
@@ -683,13 +703,11 @@ function renderBoard() {
     colTasks.forEach(t => {
        const subName = subaccounts.find(s => s.id === t.subaccountId)?.name || "—";
        
-       // Priority Logic
        let prioBadge = "";
        if(t.priority === "high") prioBadge = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded border border-rose-200 bg-rose-50 text-rose-600">HIGH</span>`;
        else if(t.priority === "medium") prioBadge = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-600">MED</span>`;
        else prioBadge = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 text-slate-500">LOW</span>`;
 
-       // Due Date Logic
        let dateDisplay = "";
        if(t.dueDate) {
            const d = new Date(t.dueDate);
@@ -708,8 +726,8 @@ function renderBoard() {
                 <span class="text-[9px] font-bold text-indigo-600 bg-indigo-50/80 px-2 py-1 rounded-lg border border-indigo-100 truncate max-w-[100px] uppercase tracking-wide backdrop-blur-sm">${escapeHtml(subName)}</span>
                 ${prioBadge}
             </div>
-            <div class="h-6 w-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 border border-white shadow-sm ring-1 ring-slate-100">
-                ${t.assigneeUsername ? t.assigneeUsername.charAt(0).toUpperCase() : '?'}
+            <div class="h-6 w-6 rounded-full bg-slate-100 overflow-hidden shadow-sm border border-white">
+                <img src="${getAvatar(t.assigneeUsername||'?')}" class="w-full h-full object-cover" />
             </div>
          </div>
          <h4 class="font-bold text-sm text-slate-800 leading-snug mb-3 pr-2 group-hover:text-indigo-600 transition-colors">${escapeHtml(t.title)}</h4>
@@ -841,8 +859,8 @@ $("createTaskBtn").onclick = async () => {
     const category = $("tCategory").value; 
     const assignee = clean($("tAssignee").value);
     const details = clean($("tDetails").value);
-    const priority = $("tPriority").value; // New
-    const dueDate = $("tDate").value; // New
+    const priority = $("tPriority").value;
+    const dueDate = $("tDate").value;
     const file = $("tFile").files[0];
     let attachmentUrl = "";
 
@@ -885,8 +903,8 @@ function openDetails(id) {
     $("dStatus").value = t.status;
     $("dSub").value = t.subaccountId;
     $("dDetails").value = t.details || "";
-    $("dPriority").value = t.priority || "medium"; // New
-    $("dDate").value = t.dueDate || ""; // New
+    $("dPriority").value = t.priority || "medium"; 
+    $("dDate").value = t.dueDate || ""; 
     
     if(t.attachmentUrl) { $("dAttachLink").href = t.attachmentUrl; $("dAttachLink").classList.remove("hidden"); $("dAttachLink").classList.add("inline-flex"); } else { $("dAttachLink").classList.add("hidden"); }
     
@@ -955,8 +973,8 @@ $("saveTaskBtn").onclick = async () => {
         details: clean($("dDetails").value), 
         subaccountId: $("dSub").value, 
         status: $("dStatus").value,
-        priority: $("dPriority").value, // New
-        dueDate: $("dDate").value       // New
+        priority: $("dPriority").value, 
+        dueDate: $("dDate").value       
     });
     showToast("Changes Saved");
 };

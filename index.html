@@ -114,7 +114,6 @@
 
 <div id="authContainer" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xl hidden">
   <div class="fade-in-up w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/50 relative">
-    
     <div class="h-32 bg-gradient-to-br from-indigo-600 to-purple-700 flex items-center justify-center relative overflow-hidden">
         <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
         <div class="text-white text-center z-10">
@@ -122,7 +121,6 @@
             <h2 class="font-bold text-lg tracking-wide" id="authTitle">Welcome Back</h2>
         </div>
     </div>
-
     <div class="p-8 pt-6 space-y-4">
       <div class="space-y-1">
         <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Workspace</label>
@@ -131,7 +129,6 @@
             <input id="wsInput" class="w-full pl-10 bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 block p-3 outline-none transition-all" placeholder="e.g. BranhamCo">
         </div>
       </div>
-
       <div class="space-y-1">
         <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Username</label>
         <div class="relative">
@@ -139,7 +136,6 @@
             <input id="usernameInput" class="w-full pl-10 bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 block p-3 outline-none transition-all" placeholder="e.g. branham" autocomplete="username">
         </div>
       </div>
-
       <div class="space-y-1">
         <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Password</label>
         <div class="relative">
@@ -147,7 +143,6 @@
             <input id="passwordInput" type="password" class="w-full pl-10 bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 block p-3 outline-none transition-all" placeholder="••••••••" autocomplete="current-password">
         </div>
       </div>
-
       <div id="roleField" class="space-y-1 hidden">
         <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Role</label>
         <select id="roleInput" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 block p-3 outline-none transition-all">
@@ -156,11 +151,8 @@
           <option value="builder">Builder (Admin)</option>
         </select>
       </div>
-
       <div id="authMsg" class="hidden p-3 rounded-xl bg-rose-50 text-rose-600 text-xs font-bold text-center border border-rose-100"></div>
-
       <button id="authActionBtn" class="w-full text-white bg-slate-900 hover:bg-slate-800 focus:ring-4 focus:ring-slate-200 font-bold rounded-xl text-sm px-5 py-3.5 text-center transition-all shadow-lg active:scale-95 mt-2">Sign In</button>
-      
       <div class="text-center pt-2">
           <button id="authToggleBtn" class="text-xs text-indigo-600 font-bold hover:underline">Don't have an account? Create one</button>
       </div>
@@ -239,6 +231,9 @@
             <div id="userBadge" class="font-bold text-sm text-slate-900 truncate">Loading...</div>
             <div id="wsBadge" class="text-xs text-slate-500 truncate opacity-80">Workspace</div>
           </div>
+        </div>
+        <div class="mt-auto pt-4 border-t border-indigo-100 text-[10px] text-slate-400 text-center">
+          System developed by <span class="font-bold text-indigo-500">Abdul Kalam</span>
         </div>
       </aside>
 
@@ -725,13 +720,17 @@ function renderBoard() {
        else if(t.priority === "medium") prioBadge = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-600">MED</span>`;
        else prioBadge = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 text-slate-500">LOW</span>`;
 
+       // 🟢 UPDATED: Show Time Created logic
        let dateDisplay = "";
        if(t.dueDate) {
            const d = new Date(t.dueDate);
            const isOverdue = d < new Date() && t.status !== 'done';
-           dateDisplay = `<span class="text-[10px] font-medium ${isOverdue ? 'text-rose-600 font-bold' : 'text-slate-400'}">${d.toLocaleDateString(undefined, {month:'short', day:'numeric'})} ${isOverdue ? '⚠️' : ''}</span>`;
+           dateDisplay = `<span class="text-[10px] font-medium ${isOverdue ? 'text-rose-600 font-bold' : 'text-slate-400'}">Due: ${d.toLocaleDateString(undefined, {month:'short', day:'numeric'})} ${isOverdue ? '⚠️' : ''}</span>`;
        } else {
-           dateDisplay = `<span class="text-[10px] text-slate-400 font-medium">${new Date(t.createdAt?.seconds * 1000 || Date.now()).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>`;
+           // Show created time if no due date
+           const createdObj = new Date(t.createdAt?.seconds * 1000 || Date.now());
+           const createdStr = createdObj.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true });
+           dateDisplay = `<span class="text-[10px] text-slate-400 font-medium" title="Created At">${createdStr}</span>`;
        }
 
        const card = document.createElement("div");
@@ -916,7 +915,12 @@ function openDetails(id) {
     if(!t) return;
     $("detailsModal").classList.remove("hidden"); $("detailsModal").classList.add("flex");
     $("dTitle").textContent = t.title;
-    $("dMeta").textContent = `@${t.assigneeUsername} • ${t.category||'general'} • Created by ${t.createdBy || '?'}`;
+    
+    // 🟢 UPDATED: Specific Created Time logic
+    const createdObj = new Date(t.createdAt?.seconds * 1000 || Date.now());
+    const createdStr = createdObj.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true });
+    $("dMeta").textContent = `@${t.assigneeUsername} • Created on ${createdStr}`;
+
     $("dStatus").value = t.status;
     $("dSub").value = t.subaccountId;
     $("dDetails").value = t.details || "";
@@ -955,7 +959,10 @@ function renderThread(t) {
         const isMe = m.by === USER;
         const msg = document.createElement("div");
         msg.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-3`;
-        msg.innerHTML = `<div class="max-w-[85%] px-4 py-3 rounded-2xl text-sm shadow-sm ${isMe ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white border border-slate-100 rounded-tl-none text-slate-700'}">${linkify(m.text)}</div><div class="text-[10px] text-slate-400 mt-1 px-1 font-medium">${m.by}</div>`;
+        msg.innerHTML = `
+            <div class="max-w-[85%] px-4 py-3 rounded-2xl text-sm shadow-sm ${isMe ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white border border-slate-100 rounded-tl-none text-slate-700'}">${linkify(m.text)}</div>
+            <div class="text-[10px] text-slate-400 mt-1 px-1 font-medium">${m.by}</div>
+        `;
         div.appendChild(msg);
     });
     div.scrollTop = div.scrollHeight;

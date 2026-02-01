@@ -16,7 +16,7 @@
   <style>
     /* Base Styles */
     body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.2); border-radius: 10px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.5); }
@@ -24,216 +24,243 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
     /* Glassmorphism */
-    .glass-panel { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.6); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05); }
-    .glass-card { background: #ffffff; border: 1px solid rgba(226, 232, 240, 0.8); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-    .glass-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.15); border-color: #818cf8; }
+    .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05); }
+    .glass-card { background: #ffffff; border: 1px solid #f1f5f9; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: all 0.2s ease; }
+    .glass-card:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.1); border-color: #818cf8; }
 
     /* Sidebar Active States */
-    .sub-item-main.active { background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important; color: white !important; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4); border: none; }
-    .sub-item-main:not(.active):hover { background-color: #f8fafc; transform: translateX(2px); }
+    .sub-item-main.active { background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important; color: white !important; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); border: none; }
+    .sub-item-main:not(.active):hover { background-color: #f8fafc; transform: translateX(3px); }
     .sub-item-main.active .sub-name { color: white !important; }
-    .sub-item-main.active .sub-count { background-color: white !important; color: #4f46e5 !important; }
-    .sub-item-main.active .sub-arrow { color: rgba(255,255,255,0.6) !important; }
-
-    /* Drag & Drop */
-    .sortable-ghost { opacity: 0.4; background: #e0e7ff; border: 2px dashed #6366f1; transform: scale(0.95); }
-    .sortable-drag { cursor: grabbing; opacity: 1; transform: scale(1.05) rotate(2deg); z-index: 50; }
+    
+    /* Inputs */
+    .input-field { @apply w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-slate-50 focus:bg-white; }
+    .btn-primary { @apply bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm px-6 py-3 transition-all shadow-lg active:scale-95; }
+    .btn-secondary { @apply bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold rounded-xl text-sm px-5 py-2.5 transition-all; }
   </style>
 </head>
 
-<body class="min-h-screen text-slate-800 bg-gradient-to-br from-indigo-50 via-slate-50 to-purple-50 selection:bg-indigo-100 selection:text-indigo-700 overflow-hidden">
+<body class="min-h-screen text-slate-800 bg-slate-50 overflow-hidden selection:bg-indigo-100 selection:text-indigo-700">
 
-<div id="globalLoader" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-50 text-indigo-600 transition-opacity duration-500">
-    <svg class="animate-spin h-10 w-10 mb-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-    <p class="text-xs font-bold tracking-widest uppercase text-slate-400">Booting KalamOps...</p>
+<div id="globalLoader" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-50 text-indigo-600">
+    <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+    <p class="text-xs font-bold tracking-widest uppercase text-slate-400 animate-pulse">Initializing System...</p>
 </div>
 
-<div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] hidden">
-  <div class="fade-in flex items-center gap-3 px-6 py-3.5 rounded-full bg-slate-900/90 text-white shadow-2xl backdrop-blur-md">
-    <div class="bg-emerald-500 rounded-full p-1"><svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div>
-    <span id="toastText" class="font-medium text-sm tracking-wide">Success</span>
+<div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] hidden transition-all duration-300">
+  <div class="flex items-center gap-3 px-6 py-3.5 rounded-full bg-slate-900/90 text-white shadow-2xl backdrop-blur-md">
+    <span id="toastIcon">✅</span>
+    <span id="toastText" class="font-medium text-sm">Action Successful</span>
   </div>
 </div>
 
-<div id="authContainer" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xl hidden">
-  <div class="fade-in w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/50 relative">
-    <div class="h-32 bg-gradient-to-br from-indigo-600 to-purple-700 flex items-center justify-center relative">
-        <div class="text-white text-center z-10">
-            <div class="text-4xl mb-1">🚀</div>
-            <h2 class="font-bold text-lg tracking-wide" id="authTitle">KalamOps Login</h2>
+<div id="authContainer" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-100/50 backdrop-blur-xl hidden">
+  <div class="fade-in w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-white">
+    
+    <div class="p-8 text-center border-b border-slate-50">
+        <div class="inline-flex h-16 w-16 rounded-2xl bg-indigo-600 shadow-xl shadow-indigo-200 items-center justify-center text-3xl mb-4">🚀</div>
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">KalamOps</h1>
+        <p class="text-sm text-slate-400 mt-1">Agency Operating System</p>
+    </div>
+
+    <div class="p-8 pt-6">
+      <div class="flex bg-slate-100 p-1 rounded-xl mb-6">
+          <button onclick="setAuthMode('login')" id="tabLogin" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white shadow-sm text-slate-800 transition-all">Login</button>
+          <button onclick="setAuthMode('register')" id="tabRegister" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-700 transition-all">New Agency</button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Agency Workspace Name</label>
+            <input id="authWs" class="input-field" placeholder="e.g. BranhamCo" />
         </div>
-    </div>
-    <div class="p-8 pt-6 space-y-4">
-      <div class="space-y-1">
-        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Agency Workspace</label>
-        <input id="wsInput" class="w-full pl-4 bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 block p-3 outline-none" placeholder="e.g. BranhamCo">
+        <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Username / Email</label>
+            <input id="authUser" class="input-field" placeholder="admin" />
+        </div>
+        <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Password</label>
+            <input id="authPass" type="password" class="input-field" placeholder="••••••••" />
+        </div>
+        
+        <div id="regFields" class="hidden">
+            <div class="p-3 bg-indigo-50 rounded-xl text-xs text-indigo-700 font-medium">
+                ✨ Creating a new Agency Workspace. You will be the <b>Owner</b>.
+            </div>
+        </div>
+
+        <button id="authBtn" class="btn-primary w-full mt-2">Access Dashboard</button>
       </div>
-      <div class="space-y-1">
-        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Username</label>
-        <input id="usernameInput" class="w-full pl-4 bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 block p-3 outline-none" placeholder="admin">
-      </div>
-      <div class="space-y-1">
-        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Password</label>
-        <input id="passwordInput" type="password" class="w-full pl-4 bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 block p-3 outline-none" placeholder="••••••••">
-      </div>
-      <div id="authMsg" class="hidden p-3 rounded-xl bg-rose-50 text-rose-600 text-xs font-bold text-center border border-rose-100"></div>
-      <button id="authActionBtn" class="w-full text-white bg-slate-900 hover:bg-slate-800 font-bold rounded-xl text-sm px-5 py-3.5 transition-all shadow-lg mt-2">Enter Dashboard</button>
-      <button id="authToggleBtn" class="w-full text-xs text-slate-400 hover:text-indigo-600 mt-2 hover:underline">New Agency? Create Account</button>
     </div>
   </div>
 </div>
 
-<div id="appInterface" class="hidden opacity-0 transition-opacity duration-500">
-    <header class="glass-panel sticky top-0 z-40">
-      <div class="max-w-[1920px] mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-4 h-16">
-        <div class="flex items-center gap-3 pl-2">
-          <div class="h-9 w-9 rounded-xl bg-indigo-600 shadow-md flex items-center justify-center text-white font-bold">K</div>
-          <div class="hidden md:block">
+<div id="appInterface" class="hidden h-screen flex flex-col">
+    <header class="glass-panel sticky top-0 z-40 h-16 flex-none">
+      <div class="max-w-[1920px] mx-auto px-6 h-full flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold">K</div>
+          <div>
             <h1 class="text-sm font-extrabold text-slate-900 leading-none">KalamOps</h1>
-            <p id="agencyNameDisplay" class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-0.5">Loading...</p>
+            <div class="flex items-center gap-1.5 mt-0.5">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                <p id="agencyDisplay" class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Loading...</p>
+            </div>
           </div>
         </div>
 
-        <div class="flex items-center gap-4 flex-1 justify-end">
-          <input id="searchInput" type="text" class="hidden md:block w-72 p-2.5 pl-4 text-sm border border-slate-200 rounded-xl bg-white/50 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Search tasks...">
+        <div class="flex items-center gap-4">
+          <input id="searchInput" type="text" class="hidden md:block w-64 input-field py-2 text-xs" placeholder="Search tasks...">
           <input type="hidden" id="filterSubaccount" value="" />
 
-          <button id="newTaskBtn" style="display:none;" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-5 rounded-xl text-xs shadow-lg transition-all active:scale-95 flex items-center gap-2">
+          <button id="newTaskBtn" style="display:none;" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-xs shadow-md transition active:scale-95 flex items-center gap-2">
             <span>+</span> New Request
           </button>
 
-          <div class="h-9 w-9 rounded-xl border border-slate-200 shadow-sm flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-indigo-500 overflow-hidden bg-slate-100" id="logoutBtn" title="Logout">
-            <img id="userAvatar" class="w-full h-full object-cover" src="" />
+          <div class="h-9 w-9 rounded-full bg-slate-200 border-2 border-white shadow-sm cursor-pointer overflow-hidden" id="logoutBtn" title="Logout">
+            <img id="headerAvatar" class="w-full h-full object-cover" />
           </div>
         </div>
       </div>
     </header>
 
-    <main class="max-w-[1920px] mx-auto px-4 sm:px-6 py-6 h-[calc(100vh-64px)] flex flex-col lg:flex-row gap-6 overflow-hidden">
-      <aside class="hidden lg:flex flex-col w-72 shrink-0 h-full gap-4 pb-2">
-        <div class="glass-panel flex-1 rounded-3xl flex flex-col overflow-hidden shadow-sm">
-          <div class="p-5 border-b border-white/50 flex items-center justify-between bg-white/30 backdrop-blur-md">
-            <div class="flex items-center gap-2 text-slate-700">
-                <span class="text-lg">📂</span><h2 class="font-bold text-sm">Clients / Projects</h2>
-            </div>
-            <button id="addSubBtn" class="text-[10px] font-bold bg-white/80 border border-white text-slate-600 hover:text-indigo-600 hover:bg-white rounded-lg px-2.5 py-1.5 shadow-sm">+ Add</button>
+    <div class="flex-1 flex overflow-hidden max-w-[1920px] mx-auto w-full px-6 py-6 gap-6">
+      
+      <aside class="w-72 flex-none flex flex-col gap-4 hidden lg:flex">
+        <div class="glass-panel rounded-3xl flex-1 flex flex-col overflow-hidden">
+          <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-white/50">
+            <h2 class="font-bold text-sm text-slate-800 flex items-center gap-2">📂 Clients</h2>
+            <button onclick="openAddClientModal()" class="text-[10px] font-bold bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 rounded-lg px-2.5 py-1.5 transition shadow-sm">+ Add</button>
           </div>
-          <div id="subList" class="flex-1 overflow-y-auto p-3 custom-scrollbar"></div>
+          <div id="subList" class="flex-1 overflow-y-auto p-3 space-y-1"></div>
           
-          <div id="adminPanelBtn" class="hidden p-3 border-t border-white/50 bg-indigo-50/50 cursor-pointer hover:bg-indigo-100 transition-colors" onclick="openAgencySettings()">
-             <div class="flex items-center gap-3">
-                <div class="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">⚙️</div>
+          <div id="adminPanelBtn" class="hidden border-t border-slate-100">
+             <button onclick="openAgencySettings()" class="w-full p-4 flex items-center gap-3 hover:bg-indigo-50 transition text-left">
+                <div class="h-8 w-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">⚙️</div>
                 <div>
                     <h4 class="font-bold text-xs text-indigo-900">Agency Settings</h4>
-                    <p class="text-[9px] text-indigo-500">Manage Team & Pipeline</p>
+                    <p class="text-[9px] text-slate-500">Team & Pipeline</p>
                 </div>
-             </div>
+             </button>
           </div>
         </div>
         
-        <div class="glass-panel p-4 rounded-2xl flex items-center gap-3 shadow-sm border border-white/60 bg-white/60">
-          <div class="h-10 w-10 rounded-full bg-slate-200 overflow-hidden shadow-sm">
-              <img id="userBadgeAvatar" class="w-full h-full object-cover" src="" />
-          </div>
+        <div class="glass-panel p-3 rounded-2xl flex items-center gap-3">
+          <img id="sidebarAvatar" class="h-10 w-10 rounded-full bg-slate-200" />
           <div class="min-w-0">
-            <div id="userBadge" class="font-bold text-sm text-slate-900 truncate">Loading...</div>
-            <div id="userRoleBadge" class="text-[10px] uppercase font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded">...</div>
+            <div id="userNameDisplay" class="font-bold text-sm text-slate-900 truncate">...</div>
+            <div id="userRoleDisplay" class="text-[10px] uppercase font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded w-fit">...</div>
           </div>
         </div>
-        <div class="mt-auto pt-2 text-[10px] text-slate-400 text-center">System by <span class="font-bold text-indigo-500">Abdul Kalam</span></div>
+        <div class="text-center text-[10px] text-slate-300">System by <span class="font-bold">Abdul Kalam</span></div>
       </aside>
 
-      <section class="flex-1 h-full overflow-x-auto overflow-y-hidden pb-4">
-        <div id="board" class="h-full flex gap-6 min-w-max px-2"></div>
+      <section class="flex-1 h-full overflow-x-auto overflow-y-hidden pb-2">
+        <div id="board" class="h-full flex gap-6 min-w-max"></div>
       </section>
-    </main>
-</div>
-
-<div id="agencyModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-md p-4 hidden" onclick="if(event.target===this) this.classList.add('hidden')">
-    <div class="fade-in w-full max-w-4xl h-[85vh] bg-white rounded-[2rem] shadow-2xl flex overflow-hidden">
-        <div class="w-64 bg-slate-50 border-r border-slate-200 p-6 flex flex-col gap-2">
-            <h2 class="font-bold text-lg text-slate-800 mb-4 px-2">Agency Admin</h2>
-            <button onclick="switchTab('tabTeam')" class="text-left px-4 py-3 rounded-xl text-sm font-bold text-slate-600 hover:bg-white hover:shadow-sm transition">👥 Team Management</button>
-            <button onclick="switchTab('tabPipeline')" class="text-left px-4 py-3 rounded-xl text-sm font-bold text-slate-600 hover:bg-white hover:shadow-sm transition">📊 Pipeline Editor</button>
-        </div>
-        
-        <div class="flex-1 p-8 overflow-y-auto bg-white">
-            <div id="tabTeam" class="settings-tab">
-                <h3 class="font-bold text-xl text-slate-800 mb-2">Team Members</h3>
-                <p class="text-xs text-slate-500 mb-6">Add GHL experts, managers, or clients.</p>
-                <div class="flex gap-2 mb-6">
-                    <input id="newMemberName" class="flex-1 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none" placeholder="Name (e.g. Kalam)">
-                    <select id="newMemberRole" class="border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none bg-white">
-                        <option value="expert">GHL Expert</option>
-                        <option value="manager">Manager</option>
-                        <option value="client">Client (Restricted)</option>
-                    </select>
-                    <button onclick="addTeamMember()" class="bg-indigo-600 text-white px-5 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700">Add</button>
-                </div>
-                <div id="teamList" class="space-y-2"></div>
-            </div>
-
-            <div id="tabPipeline" class="settings-tab hidden">
-                <h3 class="font-bold text-xl text-slate-800 mb-2">Custom Pipeline Stages</h3>
-                <p class="text-xs text-slate-500 mb-6">Customize the columns on your Kanban board.</p>
-                <div id="stageList" class="space-y-3 mb-6"></div>
-                <button onclick="addStage()" class="w-full py-3 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 font-bold text-sm hover:border-indigo-300 hover:text-indigo-600 transition">+ Add New Stage</button>
-                <div class="mt-8 pt-4 border-t border-slate-100 flex justify-end">
-                    <button onclick="savePipeline()" class="bg-slate-900 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-lg hover:bg-slate-800">Save Pipeline Layout</button>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
-<div id="taskModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-sm p-4 hidden" onclick="if(event.target===this) this.classList.add('hidden')">
-  <div class="fade-in w-full max-w-2xl bg-white rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-white/50">
-    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-      <h3 class="font-bold text-lg text-slate-900">New Request</h3>
-      <button onclick="$('taskModal').classList.add('hidden')" class="h-8 w-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400">✕</button>
+<div id="addClientModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 hidden" onclick="if(event.target===this) this.classList.add('hidden')">
+  <div class="fade-in w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 border border-white">
+    <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-lg text-slate-800">Add New Client</h3>
+        <button onclick="$('addClientModal').classList.add('hidden')" class="text-slate-400 hover:text-rose-500">✕</button>
     </div>
-    <div class="p-6 overflow-y-auto space-y-5">
-      <input id="tTitle" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Task Title..." />
-      <div class="grid grid-cols-2 gap-4">
-          <select id="tSub" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm outline-none bg-white"></select>
-          <select id="tAssignee" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm outline-none bg-white"></select>
-      </div>
-      <div class="grid grid-cols-2 gap-4">
-          <select id="tPriority" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm outline-none bg-white">
-              <option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High 🔥</option>
-          </select>
-          <input type="date" id="tDate" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm outline-none bg-white" />
-      </div>
-      
-      <div class="space-y-1">
-         <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Attachment</label>
-         <div class="flex gap-2">
-             <input type="file" id="tFile" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm bg-white" />
-         </div>
-         <div id="uploadProgress" class="hidden text-xs font-bold text-indigo-600 mt-1">Uploading... 0%</div>
-      </div>
-
-      <textarea id="tDetails" rows="4" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm outline-none" placeholder="Details..."></textarea>
-    </div>
-    <div class="p-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-      <button onclick="$('taskModal').classList.add('hidden')" class="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:bg-white">Cancel</button>
-      <button id="createTaskBtn" class="px-6 py-2.5 rounded-xl text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg">Create Task</button>
+    <p class="text-xs text-slate-500 mb-4">Create a workspace for a new client project.</p>
+    
+    <label class="text-[10px] font-bold text-slate-400 uppercase">Client / Company Name</label>
+    <input id="newClientInput" class="input-field mt-1" placeholder="e.g. Acme Solar" />
+    
+    <div class="mt-6 flex justify-end gap-2">
+      <button onclick="$('addClientModal').classList.add('hidden')" class="btn-secondary">Cancel</button>
+      <button onclick="saveNewClient()" class="btn-primary">Create Client</button>
     </div>
   </div>
 </div>
 
+<div id="taskModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 hidden" onclick="if(event.target===this) this.classList.add('hidden')">
+  <div class="fade-in w-full max-w-2xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+      <h3 class="font-bold text-lg text-slate-900">New Request</h3>
+      <button onclick="$('taskModal').classList.add('hidden')" class="text-slate-400 hover:text-rose-500">✕</button>
+    </div>
+    <div class="p-6 overflow-y-auto space-y-5">
+      <input id="tTitle" class="input-field text-lg font-bold placeholder-slate-400" placeholder="Task Title..." />
+      
+      <div class="grid grid-cols-2 gap-4">
+          <div><label class="text-[10px] font-bold text-slate-400 uppercase">Client</label><select id="tSub" class="input-field mt-1 bg-white"></select></div>
+          <div><label class="text-[10px] font-bold text-slate-400 uppercase">Assignee</label><select id="tAssignee" class="input-field mt-1 bg-white"></select></div>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-4">
+          <div><label class="text-[10px] font-bold text-slate-400 uppercase">Priority</label><select id="tPriority" class="input-field mt-1 bg-white"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High 🔥</option></select></div>
+          <div><label class="text-[10px] font-bold text-slate-400 uppercase">Due Date</label><input type="date" id="tDate" class="input-field mt-1 bg-white" /></div>
+      </div>
+
+      <div>
+         <label class="text-[10px] font-bold text-slate-400 uppercase">Attachment</label>
+         <div class="mt-1 flex items-center gap-2">
+             <input type="file" id="tFile" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"/>
+         </div>
+         <div id="uploadProgress" class="hidden w-full bg-slate-200 rounded-full h-1.5 mt-2">
+            <div id="uploadBar" class="bg-indigo-600 h-1.5 rounded-full" style="width: 0%"></div>
+         </div>
+      </div>
+
+      <div><label class="text-[10px] font-bold text-slate-400 uppercase">Description</label><textarea id="tDetails" rows="4" class="input-field mt-1 resize-none" placeholder="What needs to be done?"></textarea></div>
+    </div>
+    <div class="p-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+      <button onclick="$('taskModal').classList.add('hidden')" class="btn-secondary">Cancel</button>
+      <button id="createTaskBtn" class="btn-primary">Create Task</button>
+    </div>
+  </div>
+</div>
+
+<div id="agencyModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-md p-4 hidden" onclick="if(event.target===this) this.classList.add('hidden')">
+    <div class="fade-in w-full max-w-4xl h-[80vh] bg-white rounded-2xl shadow-2xl flex overflow-hidden">
+        <div class="w-64 bg-slate-50 border-r border-slate-200 p-6 flex flex-col gap-2">
+            <h2 class="font-bold text-lg text-slate-800 mb-4 px-2">Admin Settings</h2>
+            <button onclick="switchTab('tabTeam')" class="text-left px-4 py-3 rounded-xl text-sm font-bold text-slate-600 hover:bg-white hover:shadow-sm transition">👥 Team</button>
+            <button onclick="switchTab('tabPipeline')" class="text-left px-4 py-3 rounded-xl text-sm font-bold text-slate-600 hover:bg-white hover:shadow-sm transition">📊 Pipeline</button>
+        </div>
+        <div class="flex-1 p-8 overflow-y-auto bg-white">
+            <div id="tabTeam" class="settings-tab">
+                <h3 class="font-bold text-xl text-slate-800 mb-2">Team Management</h3>
+                <div class="flex gap-2 mb-6">
+                    <input id="newMemberName" class="input-field flex-1" placeholder="Name (e.g. Kalam)">
+                    <select id="newMemberRole" class="input-field w-40"><option value="expert">Expert</option><option value="manager">Manager</option><option value="client">Client</option></select>
+                    <button onclick="addTeamMember()" class="btn-primary px-4">Add</button>
+                </div>
+                <div id="teamList" class="space-y-2"></div>
+            </div>
+            <div id="tabPipeline" class="settings-tab hidden">
+                <h3 class="font-bold text-xl text-slate-800 mb-2">Pipeline Stages</h3>
+                <div id="stageList" class="space-y-3 mb-6"></div>
+                <button onclick="addStage()" class="w-full py-3 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 font-bold hover:border-indigo-300 hover:text-indigo-600 transition">+ Add Stage</button>
+                <div class="mt-6 flex justify-end"><button onclick="savePipeline()" class="btn-primary">Save Changes</button></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-// --- CONFIG ---
+// --- UTILS ---
 const $ = (id) => document.getElementById(id);
-// ⚠️ REPLACE WITH YOUR REAL FIREBASE CONFIG ⚠️
+const showToast = (msg, icon='✅') => { 
+    $("toastText").textContent = msg; $("toastIcon").textContent = icon;
+    $("toast").classList.remove('hidden'); setTimeout(() => $("toast").classList.add('hidden'), 3000); 
+};
+const getAvatar = (name) => `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&bold=true`;
+
+// --- FIREBASE CONFIG (REPLACE WITH YOURS) ---
 const firebaseConfig = {
   apiKey: "AIzaSyDHL0tVJ7tm4lK4r7gQrZ7McPJwFOaRulc",
   authDomain: "romatech-system.firebaseapp.com",
   projectId: "romatech-system",
   storageBucket: "romatech-system.firebasestorage.app",
   messagingSenderId: "368102739583",
-  appId: "1:368102739583:web:92baa7b3abf14e7653b94a",
-  measurementId: "G-7CWF4D2V3T"
+  appId: "1:368102739583:web:92baa7b3abf14e7653b94a"
 };
 if (!firebase.apps?.length) firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
@@ -241,282 +268,296 @@ const db = firebase.firestore();
 const storage = firebase.storage();
 
 // --- STATE ---
-let USER = null, ROLE = null, AGENCY_ID = null;
-let pipelineStages = []; 
-let teamMembers = [];    
+let USER=null, ROLE=null, AGENCY_ID=null;
+let pipelineStages = [];
+let teamMembers = [];
+let authMode = "login";
 
 const DEFAULT_STAGES = [
-    {id: 'requested', label: 'Requested', color: 'bg-sky-500'},
-    {id: 'progress', label: 'In Progress', color: 'bg-indigo-500'},
-    {id: 'review', label: 'Review', color: 'bg-purple-500'},
+    {id: 'req', label: 'Requested', color: 'bg-sky-500'},
+    {id: 'prog', label: 'In Progress', color: 'bg-indigo-500'},
+    {id: 'rev', label: 'Review', color: 'bg-purple-500'},
     {id: 'done', label: 'Done', color: 'bg-emerald-500'}
 ];
 
-// --- AUTH & LOAD ---
-auth.onAuthStateChanged(async u => {
-    $("globalLoader").classList.add("hidden");
-    if(!u) { $("authContainer").classList.remove("hidden"); $("appInterface").classList.add("hidden"); }
-    else { loadApp(u); }
-});
+// --- AUTH HANDLERS ---
+function setAuthMode(mode) {
+    authMode = mode;
+    $("tabLogin").className = mode === 'login' ? 'flex-1 py-2 text-xs font-bold rounded-lg bg-white shadow-sm text-slate-800 transition-all' : 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-700 transition-all';
+    $("tabRegister").className = mode === 'register' ? 'flex-1 py-2 text-xs font-bold rounded-lg bg-white shadow-sm text-slate-800 transition-all' : 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-700 transition-all';
+    $("regFields").className = mode === 'register' ? 'block' : 'hidden';
+    $("authBtn").textContent = mode === 'login' ? 'Sign In' : 'Create Agency';
+}
 
-$("authActionBtn").onclick = async () => {
-    const ws = $("wsInput").value.trim();
-    const username = $("usernameInput").value.trim().toLowerCase();
-    const password = $("passwordInput").value;
-    if(!ws || !username || !password) return alert("Fill all fields");
-    const email = `${username}@${ws}.local`; 
+$("authBtn").onclick = async () => {
+    const ws = $("authWs").value.trim();
+    const user = $("authUser").value.trim().toLowerCase();
+    const pass = $("authPass").value;
+    
+    if(!ws || !user || !pass) return showToast("Please fill all fields", "⚠️");
+    
+    const email = `${user}@${ws}.local`; // Virtual Email
     
     try {
-        let cred;
-        try {
-            cred = await auth.signInWithEmailAndPassword(email, password);
-        } catch(e) {
-            if(e.code === 'auth/user-not-found') {
-                if(confirm("New Agency? Create Account for " + ws + "?")) {
-                    cred = await auth.createUserWithEmailAndPassword(email, password);
-                    await db.collection("agencies").doc(ws).set({
-                        name: ws,
-                        owner: username,
-                        stages: DEFAULT_STAGES,
-                        members: [{name: username, role: 'owner'}] 
-                    }, {merge:true});
-                } else return;
-            } else throw e;
+        if(authMode === 'register') {
+            const cred = await auth.createUserWithEmailAndPassword(email, pass);
+            // Initialize Agency DB
+            await db.collection("agencies").doc(ws).set({
+                name: ws,
+                owner: user,
+                stages: DEFAULT_STAGES,
+                members: [{name: user, role: 'owner'}]
+            });
+            showToast("Agency Created!");
+        } else {
+            await auth.signInWithEmailAndPassword(email, pass);
         }
-    } catch(e) { alert(e.message); }
+    } catch(e) {
+        showToast(e.message, "❌");
+    }
 };
 
-async function loadApp(u) {
-    const parts = u.email.split('@');
-    const username = parts[0];
-    AGENCY_ID = parts[1].replace('.local','');
-    USER = username;
+auth.onAuthStateChanged(u => {
+    $("globalLoader").classList.add("hidden");
+    if(u) {
+        // Load App
+        const parts = u.email.split('@');
+        USER = parts[0];
+        AGENCY_ID = parts[1].replace('.local','');
+        
+        $("authContainer").classList.add("hidden");
+        $("appInterface").classList.remove("hidden");
+        setTimeout(() => $("appInterface").classList.remove("opacity-0"), 50);
+        
+        $("agencyDisplay").textContent = AGENCY_ID;
+        $("headerAvatar").src = getAvatar(USER);
+        $("sidebarAvatar").src = getAvatar(USER);
+        $("userNameDisplay").textContent = USER;
+        
+        loadAgencyData();
+    } else {
+        $("appInterface").classList.add("hidden");
+        $("authContainer").classList.remove("hidden");
+    }
+});
 
-    $("authContainer").classList.add("hidden");
-    $("appInterface").classList.remove("hidden");
-    setTimeout(() => $("appInterface").classList.remove("opacity-0"), 50);
-
+// --- DATA LOGIC ---
+function loadAgencyData() {
+    // 1. Listen to Agency Config
     db.collection("agencies").doc(AGENCY_ID).onSnapshot(doc => {
         if(doc.exists) {
             const data = doc.data();
-            $("agencyNameDisplay").textContent = data.name;
             pipelineStages = data.stages || DEFAULT_STAGES;
             teamMembers = data.members || [];
             
             const me = teamMembers.find(m => m.name === USER);
-            ROLE = me ? me.role : 'client'; 
+            ROLE = me ? me.role : 'client';
+            $("userRoleDisplay").textContent = ROLE;
             
-            $("userBadge").textContent = USER;
-            $("userRoleBadge").textContent = ROLE;
-            $("userAvatar").src = `https://ui-avatars.com/api/?name=${USER}&background=random`;
-            $("userBadgeAvatar").src = `https://ui-avatars.com/api/?name=${USER}&background=random`;
-
+            if(ROLE === 'owner' || ROLE === 'admin') $("adminPanelBtn").classList.remove("hidden");
+            if(ROLE !== 'client') $("newTaskBtn").style.display = "flex";
+            
             renderBoard();
             renderTeamSettings();
             renderPipelineSettings();
-            
-            if(ROLE === 'owner' || ROLE === 'admin') $("adminPanelBtn").classList.remove("hidden");
-            else $("adminPanelBtn").classList.add("hidden");
-            if(ROLE !== 'client') $("newTaskBtn").style.display = "flex";
         }
     });
 
+    // 2. Listen to Subaccounts
     db.collection("agencies").doc(AGENCY_ID).collection("subaccounts").onSnapshot(snap => {
-        const subs = snap.docs.map(d => ({id: d.id, ...d.data()}));
-        const list = $("subList"); list.innerHTML = "";
-        const subSelect = $("tSub"); subSelect.innerHTML = "";
-        
-        subs.forEach(s => {
-            const div = document.createElement("button");
-            div.className = "sub-item-main w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm mb-1 transition flex justify-between";
-            div.innerHTML = `<span class="sub-name font-semibold">${s.name}</span>`;
-            div.onclick = () => { 
-                document.querySelectorAll('.sub-item-main').forEach(b => b.classList.remove('active'));
-                div.classList.add('active');
-                $("filterSubaccount").value = s.id; 
-                renderBoard(); 
-            };
-            list.appendChild(div);
-            
-            const opt = document.createElement("option"); opt.value = s.id; opt.textContent = s.name;
-            subSelect.appendChild(opt);
-        });
+        const subs = snap.docs.map(d => ({id:d.id, ...d.data()}));
+        renderSubList(subs);
     });
 
+    // 3. Listen to Tasks
     db.collection("agencies").doc(AGENCY_ID).collection("tasks").orderBy("createdAt", "desc").onSnapshot(snap => {
-        window.allTasks = snap.docs.map(d => ({id: d.id, ...d.data()}));
+        window.allTasks = snap.docs.map(d => ({id:d.id, ...d.data()}));
         renderBoard();
     });
 }
 
-// --- BOARD RENDER ---
+// --- RENDERERS ---
+function renderSubList(subs) {
+    const list = $("subList"); list.innerHTML = "";
+    const select = $("tSub"); select.innerHTML = "";
+    
+    subs.forEach(s => {
+        const btn = document.createElement("button");
+        btn.className = "sub-item-main w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-600 transition mb-1 flex items-center justify-between";
+        btn.innerHTML = `<span class="sub-name">${s.name}</span>`;
+        btn.onclick = () => {
+            document.querySelectorAll(".sub-item-main").forEach(el => el.classList.remove("active"));
+            btn.classList.add("active");
+            $("filterSubaccount").value = s.id;
+            renderBoard();
+        };
+        list.appendChild(btn);
+        
+        const opt = document.createElement("option");
+        opt.value = s.id; opt.textContent = s.name;
+        select.appendChild(opt);
+    });
+}
+
 function renderBoard() {
     const board = $("board"); board.innerHTML = "";
     const filter = $("filterSubaccount").value;
     const tasks = (window.allTasks || []).filter(t => !filter || t.subaccountId === filter);
 
     pipelineStages.forEach(stage => {
-        const colDiv = document.createElement("div");
-        colDiv.className = "w-80 shrink-0 flex flex-col h-full rounded-[1.5rem] bg-white/40 border border-white/60 shadow-inner overflow-hidden backdrop-blur-sm";
+        const col = document.createElement("div");
+        col.className = "w-80 shrink-0 flex flex-col h-full rounded-[1.5rem] bg-slate-100/50 border border-white shadow-inner";
+        
         const stageTasks = tasks.filter(t => t.status === stage.id);
         
-        colDiv.innerHTML = `
-            <div class="p-4 flex items-center justify-between border-b border-white/40">
+        col.innerHTML = `
+            <div class="p-4 flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <div class="h-3 w-3 rounded-full ${stage.color} shadow-sm"></div>
-                    <h3 class="font-bold text-xs text-slate-700 uppercase">${stage.label}</h3>
+                    <div class="h-2 w-2 rounded-full ${stage.color}"></div>
+                    <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">${stage.label}</span>
                 </div>
-                <span class="text-[10px] font-bold bg-white px-2 py-1 rounded-full">${stageTasks.length}</span>
+                <span class="text-[10px] font-bold bg-white px-2 py-0.5 rounded text-slate-400">${stageTasks.length}</span>
             </div>
-            <div class="flex-1 overflow-y-auto px-3 pb-3 space-y-3 pt-3" id="col_${stage.id}" data-status="${stage.id}"></div>
+            <div class="flex-1 overflow-y-auto px-3 pb-3 space-y-3" id="col_${stage.id}"></div>
         `;
         
-        const zone = colDiv.querySelector(`#col_${stage.id}`);
+        const zone = col.querySelector(`#col_${stage.id}`);
         stageTasks.forEach(t => {
-            let dateDisplay = "";
-            if(t.dueDate) {
-               const d = new Date(t.dueDate);
-               dateDisplay = `<span class="text-[10px] text-slate-400 font-bold">📅 ${d.toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>`;
-            } else {
-               // Fallback to Created Time
-               const created = new Date(t.createdAt?.seconds * 1000 || Date.now());
-               dateDisplay = `<span class="text-[10px] text-slate-300">${created.toLocaleString('en-US', {hour:'numeric', minute:'numeric', month:'short', day:'numeric'})}</span>`;
+            let fileIcon = "";
+            if(t.attachmentUrl) {
+                // Simple check for images vs docs
+                const isImg = t.attachmentUrl.includes('jpg') || t.attachmentUrl.includes('png');
+                fileIcon = isImg ? '📷' : '📄';
             }
-
+            
             const card = document.createElement("div");
-            card.className = "glass-card p-4 rounded-2xl cursor-pointer hover:border-indigo-300 relative group";
+            card.className = "glass-card p-4 rounded-2xl cursor-pointer hover:border-indigo-400 group relative";
             card.innerHTML = `
-                <div class="flex justify-between mb-2"><span class="text-[9px] font-bold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded uppercase">${t.priority||'med'}</span></div>
+                <div class="flex justify-between mb-2">
+                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase">${t.priority}</span>
+                    ${fileIcon ? `<span class="text-xs">${fileIcon}</span>` : ''}
+                </div>
                 <h4 class="font-bold text-sm text-slate-800 leading-snug">${t.title}</h4>
-                <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-50">
-                    ${dateDisplay}
-                    <div class="h-5 w-5 rounded-full bg-slate-100 border border-white shadow-sm overflow-hidden"><img src="https://ui-avatars.com/api/?name=${t.assigneeUsername||'?'}&background=random" /></div>
+                <div class="mt-3 flex items-center justify-between pt-2 border-t border-slate-50">
+                    <span class="text-[10px] text-slate-400 font-medium">
+                        ${t.dueDate ? '📅 '+new Date(t.dueDate).toLocaleDateString(undefined, {month:'short', day:'numeric'}) : new Date(t.createdAt?.seconds*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                    </span>
+                    <div class="h-5 w-5 rounded-full overflow-hidden bg-slate-200">
+                        <img src="${getAvatar(t.assigneeUsername || '?')}" />
+                    </div>
                 </div>
             `;
             zone.appendChild(card);
         });
         
         if(ROLE !== 'client') {
-            new Sortable(zone, {
-                group: 'shared', animation: 200,
-                onEnd: (evt) => { /* Update Logic Omitted for brevity, same as previous */ }
-            });
+            new Sortable(zone, { group: 'shared', animation: 200, onEnd: (evt) => {
+                // Update Status Logic
+                const t = tasks.find(x => x.title === evt.item.querySelector('h4').textContent); // Simple find
+                if(t) db.collection("agencies").doc(AGENCY_ID).collection("tasks").doc(t.id).update({status: stage.id});
+            }});
         }
-        board.appendChild(colDiv);
+        board.appendChild(col);
     });
 }
 
-// --- ADMIN SETTINGS ---
-function openAgencySettings() { 
-    $("agencyModal").classList.remove("hidden");
-    renderTeamSettings();
-    renderPipelineSettings();
+// --- ADD CLIENT MODAL LOGIC ---
+function openAddClientModal() { $("addClientModal").classList.remove("hidden"); }
+async function saveNewClient() {
+    const name = $("newClientInput").value;
+    if(!name) return showToast("Name required", "⚠️");
+    await db.collection("agencies").doc(AGENCY_ID).collection("subaccounts").add({name, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
+    $("addClientModal").classList.add("hidden");
+    $("newClientInput").value = "";
+    showToast("Client Added");
 }
-function switchTab(tabId) {
-    document.querySelectorAll('.settings-tab').forEach(el => el.classList.add('hidden'));
-    $(tabId).classList.remove('hidden');
-}
+
+// --- TASK CREATION & FILE UPLOAD ---
+$("newTaskBtn").onclick = () => $("taskModal").classList.remove("hidden");
+
+$("createTaskBtn").onclick = async () => {
+    const btn = $("createTaskBtn");
+    btn.textContent = "Processing..."; btn.disabled = true;
+    
+    const file = $("tFile").files[0];
+    let attachmentUrl = "";
+    
+    if(file) {
+        $("uploadProgress").classList.remove("hidden");
+        const ref = storage.ref(`agencies/${AGENCY_ID}/${Date.now()}_${file.name}`);
+        const task = ref.put(file);
+        
+        await new Promise((resolve, reject) => {
+            task.on('state_changed', 
+                (snap) => {
+                    const pct = (snap.bytesTransferred / snap.totalBytes) * 100;
+                    $("uploadBar").style.width = pct + "%";
+                },
+                (err) => { showToast("Upload Failed", "❌"); btn.disabled=false; reject(err); },
+                async () => { attachmentUrl = await task.snapshot.ref.getDownloadURL(); resolve(); }
+            );
+        });
+    }
+    
+    await db.collection("agencies").doc(AGENCY_ID).collection("tasks").add({
+        title: $("tTitle").value,
+        subaccountId: $("tSub").value,
+        assigneeUsername: $("tAssignee").value,
+        priority: $("tPriority").value,
+        dueDate: $("tDate").value,
+        details: $("tDetails").value,
+        status: pipelineStages[0].id,
+        attachmentUrl,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    $("taskModal").classList.add("hidden");
+    btn.textContent = "Create Task"; btn.disabled = false;
+    $("uploadProgress").classList.add("hidden"); $("uploadBar").style.width = "0%";
+    showToast("Task Created");
+};
+
+// --- SETTINGS ---
 function renderTeamSettings() {
     const list = $("teamList"); list.innerHTML = "";
-    teamMembers.forEach((m, idx) => {
-        const div = document.createElement("div");
-        div.className = "flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100";
-        div.innerHTML = `<div><div class="font-bold text-sm text-slate-800">${m.name}</div><div class="text-[10px] text-slate-500 uppercase">${m.role}</div></div><button onclick="removeMember(${idx})" class="text-rose-500 text-xs hover:underline">Remove</button>`;
-        list.appendChild(div);
-    });
     const sel = $("tAssignee"); sel.innerHTML = "";
-    teamMembers.forEach(m => { if(m.role !== 'client') { const opt = document.createElement("option"); opt.value = m.name; opt.textContent = m.name; sel.appendChild(opt); } });
+    
+    teamMembers.forEach((m, i) => {
+        list.innerHTML += `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg mb-2"><span class="text-sm font-bold text-slate-700">${m.name} <span class="text-[10px] text-slate-400 uppercase ml-2">${m.role}</span></span><button onclick="removeMember(${i})" class="text-rose-500 text-xs">Remove</button></div>`;
+        if(m.role !== 'client') sel.innerHTML += `<option value="${m.name}">${m.name}</option>`;
+    });
 }
 async function addTeamMember() {
     const name = $("newMemberName").value;
     const role = $("newMemberRole").value;
-    if(!name) return;
-    const newMembers = [...teamMembers, {name, role}];
-    await db.collection("agencies").doc(AGENCY_ID).update({ members: newMembers });
-    $("newMemberName").value = "";
+    if(name) {
+        await db.collection("agencies").doc(AGENCY_ID).update({members: [...teamMembers, {name, role}]});
+        $("newMemberName").value = "";
+    }
 }
 async function removeMember(idx) {
-    if(!confirm("Remove user?")) return;
-    const newMembers = teamMembers.filter((_, i) => i !== idx);
-    await db.collection("agencies").doc(AGENCY_ID).update({ members: newMembers });
+    if(confirm("Remove?")) {
+        const newM = [...teamMembers]; newM.splice(idx, 1);
+        await db.collection("agencies").doc(AGENCY_ID).update({members: newM});
+    }
 }
+
+// Pipeline
 function renderPipelineSettings() {
     const list = $("stageList"); list.innerHTML = "";
-    pipelineStages.forEach((s, idx) => {
-        const div = document.createElement("div");
-        div.className = "flex gap-2 items-center";
-        div.innerHTML = `<div class="h-8 w-8 rounded-lg ${s.color} shrink-0"></div><input value="${s.label}" onchange="updateStageLabel(${idx}, this.value)" class="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700"><button onclick="removeStage(${idx})" class="text-rose-500 p-2 hover:bg-rose-50 rounded-lg">✕</button>`;
-        list.appendChild(div);
+    pipelineStages.forEach((s, i) => {
+        list.innerHTML += `<div class="flex gap-2 mb-2"><div class="w-6 h-6 rounded ${s.color}"></div><input class="flex-1 input-field py-1" value="${s.label}" onchange="updateStage(${i}, this.value)"><button onclick="removeStage(${i})" class="text-rose-500">✕</button></div>`;
     });
 }
-function updateStageLabel(idx, val) { pipelineStages[idx].label = val; }
-function removeStage(idx) { pipelineStages.splice(idx, 1); renderPipelineSettings(); }
-function addStage() { pipelineStages.push({id: "stage_"+Date.now(), label: "New Stage", color: "bg-slate-400"}); renderPipelineSettings(); }
-async function savePipeline() { await db.collection("agencies").doc(AGENCY_ID).update({ stages: pipelineStages }); alert("Pipeline updated!"); }
+function updateStage(i, val) { pipelineStages[i].label = val; }
+function removeStage(i) { pipelineStages.splice(i, 1); renderPipelineSettings(); }
+function addStage() { pipelineStages.push({id: 'stg_'+Date.now(), label:'New', color:'bg-slate-400'}); renderPipelineSettings(); }
+async function savePipeline() { await db.collection("agencies").doc(AGENCY_ID).update({stages: pipelineStages}); showToast("Pipeline Saved"); }
 
-// --- TASK CREATION & UPLOAD FIXED ---
-$("newTaskBtn").onclick = () => $("taskModal").classList.remove("hidden");
+function openAgencySettings() { $("agencyModal").classList.remove("hidden"); renderTeamSettings(); renderPipelineSettings(); }
+function switchTab(t) { document.querySelectorAll(".settings-tab").forEach(e=>e.classList.add("hidden")); $(t).classList.remove("hidden"); }
 
-$("createTaskBtn").onclick = async () => {
-    const title = $("tTitle").value;
-    const sub = $("tSub").value;
-    const assignee = $("tAssignee").value;
-    const details = $("tDetails").value;
-    const priority = $("tPriority").value;
-    const dueDate = $("tDate").value;
-    const file = $("tFile").files[0];
-    
-    // Disable Button
-    const btn = $("createTaskBtn");
-    btn.disabled = true;
-    btn.textContent = "Processing...";
-
-    let attachmentUrl = "";
-
-    // 🟢 FIXED FILE UPLOAD LOGIC
-    if (file) {
-        $("uploadProgress").classList.remove("hidden");
-        const ref = storage.ref(`agencies/${AGENCY_ID}/files/${Date.now()}_${file.name}`);
-        const task = ref.put(file);
-        
-        // Wait for upload with progress
-        await new Promise((resolve, reject) => {
-            task.on('state_changed', 
-                (snap) => {
-                    const progress = (snap.bytesTransferred / snap.totalBytes) * 100;
-                    $("uploadProgress").textContent = `Uploading... ${Math.round(progress)}%`;
-                },
-                (err) => { alert("Upload Failed"); reject(err); },
-                async () => {
-                    attachmentUrl = await task.snapshot.ref.getDownloadURL();
-                    resolve();
-                }
-            );
-        });
-    }
-
-    await db.collection("agencies").doc(AGENCY_ID).collection("tasks").add({
-        title, subaccountId: sub, assigneeUsername: assignee, details, priority, dueDate, attachmentUrl,
-        status: pipelineStages[0].id,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    // Reset UI
-    $("taskModal").classList.add("hidden");
-    $("tTitle").value = ""; $("tDetails").value = ""; $("tFile").value = ""; $("uploadProgress").classList.add("hidden");
-    btn.disabled = false; btn.textContent = "Create Task";
-    showToast("Task Created Successfully");
-};
-
-$("addSubBtn").onclick = async () => {
-    const name = prompt("Client Name:");
-    if(name) await db.collection("agencies").doc(AGENCY_ID).collection("subaccounts").add({name});
-}
-
-$("logoutBtn").onclick = () => { auth.signOut(); location.reload(); };
+$("logoutBtn").onclick = () => auth.signOut();
 </script>
 </body>
 </html>
-
-
-
